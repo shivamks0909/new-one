@@ -1,0 +1,87 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Testing
+coverage/
+
+# Next.js
+.next/
+out/
+build/
+
+# Production
+dist/
+
+# Misc
+.DS_Store
+*.pem
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Local env files
+.env
+.env.*
+.env*.local
+
+# Scratch and test exports
+*.xlsx
+scratch/
+test-results/
+.vercel_build/
+api/.vercel_build/
+
+# Vercel
+.vercel
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Logs
+*.log
+dev.log
+
+# Build outputs
+build*.txt
+errors.txt
+ts-errors*.txt
+*.txt
+
+# Local launchers & tunnels
+*.bat
+*.cmd
+run-server.ps1
+start-and-test.ps1
+tunnel.js
+
+# Temporary root maintenance scripts
+apply-*.js
+check-*.js
+check_*.ts
+fix-*.js
+create-vendor.js
+db-query.js
+query_user.js
+update-passwords-*.js
+verify-*.js
+migrate.js
+login.json
+
+# Downloaded assets / Scraped content
+opi.opinioninsights.in/
