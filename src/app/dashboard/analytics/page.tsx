@@ -128,7 +128,7 @@ export default function AnalyticsPage() {
         <>
           {/* Filter Tabs */}
           <div className="flex border-b border-[var(--border)] mb-6">
-            {['all', 'verified', 'unverified'] as const).map(opt => (
+            {(['all', 'verified', 'unverified'] as const).map(opt => (
               <button
                 key={opt}
                 onClick={() => setTrafficFilter(opt)}
