@@ -95909,7 +95909,17 @@ var init_db = __esm({
         const { rows } = await this.pool.query(sql, params);
         return rows;
       }
+      parseValidInet(ipStr) {
+        if (!ipStr || typeof ipStr !== "string") return null;
+        const trimmed = ipStr.trim();
+        if (trimmed === "unknown" || trimmed === "localhost" || trimmed === "::1") return "127.0.0.1";
+        const ipv4Match = trimmed.match(/^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})/);
+        if (ipv4Match) return ipv4Match[1];
+        if (trimmed.includes(":") && /^[0-9a-fA-F:]+$/.test(trimmed)) return trimmed;
+        return null;
+      }
       async updateUserLastLogin(userId, ip, userAgent) {
+        const safeIp = this.parseValidInet(ip);
         await this.pool.query(
           `UPDATE users SET
          last_login_at = NOW(),
@@ -95919,7 +95929,7 @@ var init_db = __esm({
          last_login_ip = COALESCE($2::inet, last_login_ip),
          last_login_user_agent = COALESCE($3, last_login_user_agent)
        WHERE id = $1`,
-          [userId, ip ?? null, userAgent ?? null]
+          [userId, safeIp, userAgent ?? null]
         );
       }
       async recordFailedLogin(userId, ip, userAgent) {
@@ -95941,10 +95951,11 @@ var init_db = __esm({
         return { failedAttempts: r.failed_login_attempts, lockedUntil: r.locked_until };
       }
       async recordLoginAudit(entry) {
+        const safeIp = this.parseValidInet(entry.ip);
         await this.pool.query(
           `INSERT INTO login_audit (user_id, email_attempted, success, failure_reason, ip_address, user_agent, created_at)
        VALUES ($1, $2, $3, $4, $5::inet, $6, NOW())`,
-          [entry.userId, entry.emailAttempted, entry.success, entry.failureReason ?? null, entry.ip ?? null, entry.userAgent ?? null]
+          [entry.userId, entry.emailAttempted, entry.success, entry.failureReason ?? null, safeIp, entry.userAgent ?? null]
         );
       }
       async updateUserPassword(userId, newPasswordHash) {

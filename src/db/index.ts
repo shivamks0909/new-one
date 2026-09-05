@@ -846,7 +846,18 @@ export class Database {
     return rows;
   }
 
+  private parseValidInet(ipStr?: string | null): string | null {
+    if (!ipStr || typeof ipStr !== 'string') return null;
+    const trimmed = ipStr.trim();
+    if (trimmed === 'unknown' || trimmed === 'localhost' || trimmed === '::1') return '127.0.0.1';
+    const ipv4Match = trimmed.match(/^(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})/);
+    if (ipv4Match) return ipv4Match[1];
+    if (trimmed.includes(':') && /^[0-9a-fA-F:]+$/.test(trimmed)) return trimmed;
+    return null;
+  }
+
   async updateUserLastLogin(userId: string, ip?: string, userAgent?: string): Promise<void> {
+    const safeIp = this.parseValidInet(ip);
     await this.pool.query(
       `UPDATE users SET
          last_login_at = NOW(),
@@ -856,7 +867,7 @@ export class Database {
          last_login_ip = COALESCE($2::inet, last_login_ip),
          last_login_user_agent = COALESCE($3, last_login_user_agent)
        WHERE id = $1`,
-      [userId, ip ?? null, userAgent ?? null]
+      [userId, safeIp, userAgent ?? null]
     );
   }
 
@@ -888,10 +899,11 @@ export class Database {
     ip?: string;
     userAgent?: string;
   }): Promise<void> {
+    const safeIp = this.parseValidInet(entry.ip);
     await this.pool.query(
       `INSERT INTO login_audit (user_id, email_attempted, success, failure_reason, ip_address, user_agent, created_at)
        VALUES ($1, $2, $3, $4, $5::inet, $6, NOW())`,
-      [entry.userId, entry.emailAttempted, entry.success, entry.failureReason ?? null, entry.ip ?? null, entry.userAgent ?? null]
+      [entry.userId, entry.emailAttempted, entry.success, entry.failureReason ?? null, safeIp, entry.userAgent ?? null]
     );
   }
 
