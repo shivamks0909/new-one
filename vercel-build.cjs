@@ -1,13 +1,12 @@
-﻿const esbuild = require('esbuild');
+const esbuild = require('esbuild');
 const path = require('path');
 const fs = require('fs');
 
-const outDir = path.join(__dirname, '.vercel_build');
+const outDir = path.join(__dirname, 'dist');
 try {
   fs.rmSync(outDir, { recursive: true, force: true });
 } catch (e) {
-  // Windows EPERM on locked files; handler.js will be overwritten by esbuild anyway
-  console.warn('Could not clean .vercel_build, continuing:', e.code);
+  console.warn('Could not clean dist, continuing:', e.code);
 }
 fs.mkdirSync(outDir, { recursive: true });
 
@@ -18,7 +17,7 @@ esbuild.build({
   format: 'cjs',
   platform: 'node',
   target: 'node20',
-  sourcemap: true,
+  sourcemap: false,
   external: ['better-sqlite3'],
   define: {
     'process.env.VERCEL': '"true"',
@@ -29,9 +28,9 @@ esbuild.build({
   const dst = path.join(outDir, 'src/app/public');
   if (fs.existsSync(src)) {
     fs.cpSync(src, dst, { recursive: true });
-    console.log('Copied src/app/public -> .vercel_build/src/app/public');
+    console.log('Copied src/app/public -> dist/src/app/public');
   }
-  console.log('Build complete: .vercel_build/handler.js');
+  console.log('Build complete: dist/handler.js');
 }).catch((err) => {
   console.error('Build failed:', err);
   process.exit(1);

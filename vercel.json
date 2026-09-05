@@ -1,31 +1,30 @@
-﻿{
+{
   "version": 2,
   "builds": [
     {
-      "src": ".vercel_build/handler.js",
+      "src": "dist/handler.js",
       "use": "@vercel/node",
       "config": {
-        "includeFiles": ["src/db", "src/app/public/**"],
-        "external": ["better-sqlite3"]
+        "includeFiles": ["dist/src/app/public/**"]
       }
     }
   ],
   "routes": [
     {
       "src": "/dashboard/static/(.*)",
-      "dest": "/.vercel_build/handler.js"
+      "dest": "/dist/handler.js"
     },
     {
       "src": "/dashboard/(.*)",
-      "dest": "/.vercel_build/handler.js"
+      "dest": "/dist/handler.js"
     },
     {
       "src": "/static/(.*)",
-      "dest": "/.vercel_build/handler.js"
+      "dest": "/dist/handler.js"
     },
     {
       "src": "/(.*)",
-      "dest": "/.vercel_build/handler.js"
+      "dest": "/dist/handler.js"
     }
   ]
 }
