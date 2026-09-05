@@ -80,7 +80,58 @@ function getQueryParam(req: Request, key: string): string | undefined {
   return String(val);
 }
 
-// â”€â”€â”€ Shared Landing Page Renderer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Helper to parse cookies from request header
+function parseCookies(req: Request): Record<string, string> {
+  const header = req.headers.cookie;
+  if (!header) return {};
+  const map: Record<string, string> = {};
+  header.split(';').forEach(c => {
+    const [k, ...v] = c.trim().split('=');
+    if (k) map[k] = decodeURIComponent(v.join('='));
+  });
+  return map;
+}
+
+const COUNTRY_MAP: Record<string, string> = {
+  FR: 'France',
+  DE: 'Germany',
+  GB: 'United Kingdom',
+  UK: 'United Kingdom',
+  US: 'United States',
+  IN: 'India',
+  IT: 'Italy',
+  ES: 'Spain',
+  BR: 'Brazil',
+  JP: 'Japan',
+  AU: 'Australia',
+  CA: 'Canada',
+  AE: 'UAE',
+  SA: 'Saudi Arabia',
+  ID: 'Indonesia',
+  PH: 'Philippines',
+  VN: 'Vietnam',
+  TH: 'Thailand',
+  PL: 'Poland',
+  NG: 'Nigeria',
+  ZA: 'South Africa',
+  EG: 'Egypt',
+  PK: 'Pakistan',
+  BD: 'Bangladesh',
+  TR: 'Turkey',
+  KR: 'South Korea',
+  MX: 'Mexico',
+  NL: 'Netherlands',
+  SE: 'Sweden',
+  CH: 'Switzerland',
+  GLOBAL: 'Global',
+};
+
+function getCountryNameFromCode(code: string): string {
+  const c = (code || '').toUpperCase().trim();
+  return COUNTRY_MAP[c] || c;
+}
+
+// ─── Shared Landing Page Renderer ─────────────────────────────────────────────
 // Renders a single self-contained landing page for the 5 redirect outcomes.
 // Used by /r/:outcome and /redirect/{type} routes.
 
@@ -94,7 +145,16 @@ const STATUS_DEFINITIONS: Record<string, { title: string; badgeText: string; bad
 
 type CardKey = 'complete' | 'terminate' | 'quota' | 'quality' | 'close';
 
-function buildStatusCardHtml(key: CardKey, projectCode: string, uid: string, ip: string, dateTimeStr: string) {
+function buildStatusCardHtml(
+  key: CardKey,
+  projectCode: string,
+  uid: string,
+  ip: string,
+  dateTimeStr: string,
+  isGenuine = true,
+  sessionToken = '',
+  country = ''
+) {
   const def = STATUS_DEFINITIONS[key];
   return `
     <div class="status-card">
@@ -111,9 +171,25 @@ function buildStatusCardHtml(key: CardKey, projectCode: string, uid: string, ip:
               <span class="data-label">Project Code</span>
               <span class="data-val">${projectCode}</span>
             </div>
+            ${country ? `
+            <div class="data-row">
+              <span class="data-label">Country</span>
+              <span class="data-val">${country}</span>
+            </div>` : ''}
             <div class="data-row">
               <span class="data-label">UID</span>
               <span class="data-val">${uid}</span>
+            </div>
+            ${sessionToken && sessionToken !== '—' ? `
+            <div class="data-row">
+              <span class="data-label">Session Token</span>
+              <span class="data-val" style="font-family:monospace; font-size:11px;">${sessionToken}</span>
+            </div>` : ''}
+            <div class="data-row">
+              <span class="data-label">Verification</span>
+              <span class="status-badge" style="background-color: ${isGenuine ? '#10B981' : '#EF4444'}; color: #FFFFFF; font-weight: 700; letter-spacing: 0.05em;">
+                ${isGenuine ? '✓ GENUINE' : '⚠ UNVERIFIED / FAKE'}
+              </span>
             </div>
             <div class="data-row">
               <span class="data-label">IP Address</span>
@@ -132,18 +208,31 @@ function buildStatusCardHtml(key: CardKey, projectCode: string, uid: string, ip:
               <span class="status-badge" style="background-color: ${def.badgeBg}; color: ${def.badgeColor};">${def.badgeText}</span>
             </div>
           </div>
+          ${!isGenuine ? `
+          <div style="margin-top: 14px; padding: 10px 14px; border-radius: 8px; background: #FEF2F2; border: 1px solid #FCA5A5; color: #991B1B; font-size: 11px; line-height: 1.4; text-align: left;">
+            <strong>Notice:</strong> No valid originating tracking session was found for this participant UID. This outcome has been recorded as <strong>Unverified / Fake</strong>.
+          </div>` : ''}
         </div>
       </div>
     </div>
   `;
 }
 
-function renderLandingPage(cardKey: CardKey, projectCode: string, uid: string, ip: string, allCards = false): string {
+function renderLandingPage(
+  cardKey: CardKey,
+  projectCode: string,
+  uid: string,
+  ip: string,
+  allCards = false,
+  isGenuine = true,
+  sessionToken = '',
+  country = ''
+): string {
   const dateTimeStr = new Date().toLocaleString('en-US', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
   const def = STATUS_DEFINITIONS[cardKey];
   const mainContent = allCards
-    ? `<div class="dashboard-stack">${['complete', 'terminate', 'quota', 'quality', 'close'].map((k) => buildStatusCardHtml(k as CardKey, projectCode, uid, ip, dateTimeStr)).join('\n')}</div>`
-    : `<div class="single-card-wrap">${buildStatusCardHtml(cardKey, projectCode, uid, ip, dateTimeStr)}</div>`;
+    ? `<div class="dashboard-stack">${['complete', 'terminate', 'quota', 'quality', 'close'].map((k) => buildStatusCardHtml(k as CardKey, projectCode, uid, ip, dateTimeStr, isGenuine, sessionToken, country)).join('\n')}</div>`
+    : `<div class="single-card-wrap">${buildStatusCardHtml(cardKey, projectCode, uid, ip, dateTimeStr, isGenuine, sessionToken, country)}</div>`;
 
   return `
     <!DOCTYPE html>
@@ -204,228 +293,212 @@ function resolveRedirectType(type: string): { status: string; cardKey: CardKey }
   if (t.includes('qual') || t.includes('sec')) return { status: 'SECURITY_REJECT', cardKey: 'quality' };
   if (t.includes('term')) return { status: 'TERMINATE', cardKey: 'terminate' };
   if (t.includes('quota')) return { status: 'QUOTA_FULL', cardKey: 'quota' };
-  if (t.includes('close') || t.includes('closed')) return { status: 'EXPIRED', cardKey: 'close' };
+  if (t.includes('close') || t.includes('closed')) return { status: 'CLOSED', cardKey: 'close' };
   return { status: 'COMPLETE', cardKey: 'complete' };
 }
 
 // Shared handler for redirect landing endpoints. Resolves the study/session,
-// persists the final status, and renders the landing page. Never returns 500
-// for a valid request â€” if persistence fails we still render the page.
+// persists the final status, and renders the landing page.
 async function handleRedirectLanding(req: Request, res: Response, type: string) {
   const { status, cardKey } = resolveRedirectType(type);
-  const pid = getQueryParam(req, 'pid') || getQueryParam(req, 'offerId') || getQueryParam(req, 'study_id') || '';
-  const uid = getQueryParam(req, 'uid') || getQueryParam(req, 'zid') || '';
-  const sig = getQueryParam(req, 'sig') || getQueryParam(req, 'signature') || '';
+  const cookies = parseCookies(req);
+
+  const sessionToken = (getQueryParam(req, 'session_token') || getQueryParam(req, 'token') || getQueryParam(req, 'ses') || cookies['opi_session_token'] || '').trim();
+  const pid = (getQueryParam(req, 'pid') || getQueryParam(req, 'code') || getQueryParam(req, 'project') || getQueryParam(req, 'offerId') || getQueryParam(req, 'study_id') || cookies['opi_project_code'] || '').trim();
+  const uid = (getQueryParam(req, 'uid') || getQueryParam(req, 'zid') || getQueryParam(req, 'respondent') || getQueryParam(req, 'id') || cookies['opi_uid'] || '').trim();
+  const countryParam = (getQueryParam(req, 'country') || cookies['opi_country'] || '').trim().toUpperCase();
+  const txid = getQueryParam(req, 'txid') || getQueryParam(req, 'transaction_id') || '';
 
   const xff = req.headers['x-forwarded-for'];
   let rawIp = ((Array.isArray(xff) ? String(xff[0]) : String(xff || ''))?.split(',')[0] || req.ip || '127.0.0.1').trim();
   if (rawIp === '::1' || rawIp === '::ffff:127.0.0.1') rawIp = '127.0.0.1';
 
-  const displayProjectCode = pid || 'PX-2024-0578';
-  const displayUid = uid || 'UID-7F3A-9C21-B8D6';
+  let session: any = null;
+  let project: any = null;
+  let country: any = null;
+  let isGenuine = false;
+  let rejectionReason: string | null = null;
 
-  // If we have a pid+uid, try to resolve project or study AND verify session exists before persisting.
-  let callbackProcessed = false;
-  if (pid && uid) {
-    try {
-      const normUid = uid.toUpperCase().trim();
-      const txid = getQueryParam(req, 'txid') || getQueryParam(req, 'transaction_id') || '';
-
-      // 1. Check if pid matches a project in the projects table directly, or by external link URL / offer ID
-      let { rows: projRows } = await db.pool.query(
-        'SELECT * FROM projects WHERE UPPER(project_code) = UPPER($1) OR id::text = $1',
-        [pid]
-      );
-      if (!projRows[0]) {
-        const { rows: linkProj } = await db.pool.query(
-          `SELECT p.* FROM projects p
-           JOIN project_countries pc ON pc.project_id = p.id
-           JOIN project_links pl ON pl.country_id = pc.id
-           WHERE pl.url ILIKE '%' || $1 || '%' OR pl.link_code ILIKE $1
-           LIMIT 1`,
-          [pid]
-        );
-        projRows = linkProj;
-      }
-      const project = projRows[0];
-
-      if (project) {
-        // Query session for this project and normalized UID
-        const { rows: sessRows } = await db.pool.query(
-          `SELECT s.* FROM sessions s 
-           WHERE (s.metadata_json->>'project_id' = $1 OR s.study_id IN (SELECT id FROM studies WHERE study_code = $2))
-             AND s.normalized_uid = $3
-           ORDER BY s.created_at DESC LIMIT 1`,
-          [project.id, project.project_code, normUid]
-        );
-        const session = sessRows[0];
-
-        const resolvedVendorId = session?.vendor_id || (req.query?.vid as string) || (req.query?.vendor_id as string) || null;
-        if (!session) {
-          console.warn(`[Redirect] No session found for project=${project.project_code} uid=${uid} -> UNVERIFIED (NO_SESSION)`);
-          await recordFakeClick({
-            study_id: null,
-            vendor_id: resolvedVendorId && resolvedVendorId.length === 36 ? resolvedVendorId : null,
-            project_id: project.id,
-            uid,
-            normalized_uid: normUid,
-            rejection_reason: 'NO_SESSION',
-            raw_payload: { pid, uid, outcome: type, project_id: project.id, project_code: project.project_code, query: req.query },
-            ip_address: rawIp,
-            user_agent: req.get('User-Agent'),
-            provider: 'external_redirect',
-          });
-        } else if (isSessionExpired(session)) {
-          console.warn(`[Redirect] Session expired for project=${project.project_code} uid=${uid} -> UNVERIFIED (EXPIRED_SESSION)`);
-          await recordFakeClick({
-            study_id: session.study_id,
-            vendor_id: session.vendor_id,
-            project_id: project.id,
-            uid,
-            normalized_uid: normUid,
-            rejection_reason: 'EXPIRED_SESSION',
-            raw_payload: { pid, uid, outcome: type, project_id: project.id, session_id: session.id },
-            ip_address: rawIp,
-            user_agent: req.get('User-Agent'),
-            provider: 'external_redirect',
-          });
-        } else {
-          // Check LANDING event
-          const events = await db.getEventsBySession(session.id);
-          const hasLanding = events.some((e: any) => e.event_type === 'LANDING' || e.event_type === 'START');
-          if (!hasLanding) {
-            console.warn(`[Redirect] No landing event for session=${session.id} -> UNVERIFIED (NO_LANDING_EVENT)`);
-            await recordFakeClick({
-              study_id: session.study_id,
-              vendor_id: session.vendor_id,
-              project_id: project.id,
-              uid,
-              normalized_uid: normUid,
-              rejection_reason: 'NO_LANDING_EVENT',
-              raw_payload: { pid, uid, outcome: type, project_id: project.id, session_id: session.id },
-              ip_address: rawIp,
-              user_agent: req.get('User-Agent'),
-              provider: 'external_redirect',
-            });
-          } else {
-            // VERIFIED! Idempotent callback processing
-            const crypto = require('crypto');
-            const cbKey = crypto.createHash('sha256').update(`${project.id}|${session.vendor_id}|${normUid}|${status}|${txid}`).digest('hex');
-
-            const eventInserted = await db.createResponseEvent({
-              session_id: session.id,
-              study_id: session.study_id,
-              vendor_id: session.vendor_id,
-              uid,
-              event_type: 'CALLBACK_RECEIVED',
-              source: 'external_redirect',
-              raw_payload: { outcome: type, offerId: pid, query: req.query, txid },
-              normalized_payload: { event_type: status, uid: normUid, provider: 'external_redirect' },
-              event_key: cbKey,
-              ip_address: rawIp,
-              user_agent: req.get('User-Agent'),
-            });
-
-            if (eventInserted) {
-              const loiSeconds = session.created_at
-                ? Math.max(0, Math.round((Date.now() - new Date(session.created_at).getTime()) / 1000))
-                : 0;
-
-              const isComplete = status === 'COMPLETE';
-              await db.pool.query(
-                `UPDATE responses SET
-                  final_status = $1,
-                  first_terminal_event = COALESCE(first_terminal_event, $1),
-                  terminal_at = NOW(),
-                  is_counted = $2,
-                  counted_at = (CASE WHEN $2 = TRUE THEN NOW() ELSE NULL END),
-                  callback_source = 'external_redirect',
-                  loi_seconds = $3,
-                  project_id = $4,
-                  updated_at = NOW()
-                 WHERE session_id = $5`,
-                [status, isComplete, loiSeconds, project.id, session.id]
-              );
-
-              const sessionUpdates: any = {
-                current_status: status,
-                last_seen_at: new Date(),
-              };
-              if (isComplete) sessionUpdates.completed_at = new Date();
-              if (status === 'TERMINATE') sessionUpdates.terminated_at = new Date();
-              await db.updateSession(session.id, sessionUpdates);
-            }
-            callbackProcessed = true;
-          }
-        }
-      } else {
-        // Fall back to study auto-discovery & handling
-        const { study } = await discoveryService.resolveOrCreateExternalOffer(pid, 'ZEPHYR');
-        let vendorId = '';
-        try {
-          const vendors = await db.getStudyVendors(study.id);
-          vendorId = vendors[0]?.vendor_id || '';
-        } catch { }
-
-        // SECURITY: Verify session exists with LANDING event before processing callback.
-        // This prevents fake pid+uid URL hits from creating phantom responses.
-        if (vendorId) {
-          const verification = await callbackService.verifySession(study.id, vendorId, uid);
-          
-          // Also verify HMAC signature if provided (signed URL approach)
-          let sigValid = true;
-          if (sig) {
-            const sigPayload = verifyRedirectSignature(sig);
-            if (!sigPayload || sigPayload.pid !== pid || sigPayload.uid !== uid || sigPayload.outcome !== type) {
-              sigValid = false;
-              console.warn(`[Redirect] Invalid signature for pid=${pid} uid=${uid} type=${type}`);
-            }
-          }
-
-          if (!verification.valid) {
-            console.warn(`[Redirect] Session verification failed for pid=${pid} uid=${uid}: ${verification.error}`);
-            await recordFakeClick({ study_id: study.id, vendor_id: vendorId, uid, normalized_uid: uid.toUpperCase().trim(),
-              rejection_reason: verification.error && verification.error.includes('expired') ? 'EXPIRED_SESSION'
-                : verification.error && verification.error.includes('landing') ? 'NO_LANDING_EVENT' : 'NO_SESSION',
-              raw_payload: { pid, uid, outcome: type }, ip_address: rawIp, user_agent: req.get('User-Agent'), provider: 'external_redirect' });
-          } else if (!sigValid) {
-            console.warn(`[Redirect] Signature verification failed for pid=${pid} uid=${uid}`);
-            await recordFakeClick({ study_id: study.id, vendor_id: vendorId, uid, normalized_uid: uid.toUpperCase().trim(),
-              rejection_reason: 'INVALID_SIGNATURE', raw_payload: { pid, uid, outcome: type },
-              ip_address: rawIp, user_agent: req.get('User-Agent'), provider: 'external_redirect' });
-          } else {
-            await callbackService.processCallback(
-              'external_redirect',
-              study.id,
-              vendorId,
-              uid,
-              status,
-              getQueryParam(req, 'txid'),
-              { outcome: type, offerId: pid, query: req.query },
-              { ip_address: rawIp, user_agent: req.get('User-Agent') }
-            );
-            callbackProcessed = true;
-          }
-        } else {
-          console.warn(`[Redirect] No vendor found for study ${study.id} (pid=${pid})`);
-        }
-      }
-    } catch (err: any) {
-      console.error('[Redirect:resolve]', err?.message);
+  // 1. Session resolution by Session Token
+  if (sessionToken) {
+    const { rows } = await db.pool.query('SELECT * FROM sessions WHERE session_token = $1', [sessionToken]);
+    if (rows[0]) {
+      session = rows[0];
     }
-  } else {
-    console.warn(`[Redirect] Missing pid or uid: pid=${pid} uid=${uid}`);
   }
 
-  // Add indicator if callback was processed
-  const pageHtml = renderLandingPage(cardKey, displayProjectCode, displayUid, rawIp);
-  // Inject callback status into page for debugging
-  const finalHtml = pageHtml.replace(
-    '<div class="status-badge"',
-    `<div class="status-badge" data-callback-processed="${callbackProcessed}"`
+  // 2. Session resolution by Project + UID
+  if (!session && pid && uid) {
+    const normUid = uid.toUpperCase().trim();
+    let { rows: projRows } = await db.pool.query(
+      'SELECT * FROM projects WHERE UPPER(project_code) = UPPER($1) OR id::text = $1',
+      [pid]
+    );
+    if (!projRows[0]) {
+      const { rows: linkProj } = await db.pool.query(
+        `SELECT p.* FROM projects p
+         JOIN project_countries pc ON pc.project_id = p.id
+         JOIN project_links pl ON pl.country_id = pc.id
+         WHERE pl.url ILIKE '%' || $1 || '%' OR pl.link_code ILIKE $1
+         LIMIT 1`,
+        [pid]
+      );
+      projRows = linkProj;
+    }
+    project = projRows[0];
+
+    if (project) {
+      const { rows: sessRows } = await db.pool.query(
+        `SELECT s.* FROM sessions s 
+         WHERE (s.metadata_json->>'project_id' = $1 OR s.study_id IN (SELECT id FROM studies WHERE study_code = $2))
+           AND s.normalized_uid = $3
+         ORDER BY s.created_at DESC LIMIT 1`,
+        [project.id, project.project_code, normUid]
+      );
+      session = sessRows[0];
+    }
+  }
+
+  // 3. Fallback session resolution by UID alone in recent sessions
+  if (!session && uid) {
+    const normUid = uid.toUpperCase().trim();
+    const { rows: sessRows } = await db.pool.query(
+      `SELECT * FROM sessions WHERE normalized_uid = $1 ORDER BY created_at DESC LIMIT 1`,
+      [normUid]
+    );
+    if (sessRows[0]) {
+      session = sessRows[0];
+    }
+  }
+
+  // Resolve project / country / link if session is found
+  if (session) {
+    const projId = session.metadata_json?.project_id;
+    if (projId && !project) {
+      const { rows: pRows } = await db.pool.query('SELECT * FROM projects WHERE id = $1', [projId]);
+      project = pRows[0];
+    }
+    const countryCode = session.country_detected || session.metadata_json?.country_code;
+    if (countryCode && project) {
+      const { rows: cRows } = await db.pool.query(
+        'SELECT * FROM project_countries WHERE project_id = $1 AND UPPER(country_code) = UPPER($2)',
+        [project.id, countryCode]
+      );
+      country = cRows[0];
+    }
+  }
+
+  // 4. Validate Session State & Originating Events (Genuine vs Fake Gate)
+  if (!session) {
+    // FAKE / UNVERIFIED: No originating session exists
+    rejectionReason = 'NO_SESSION';
+    console.warn(`[Redirect] No session found for pid=${pid} uid=${uid} token=${sessionToken} -> UNVERIFIED (NO_SESSION)`);
+  } else if (isSessionExpired(session)) {
+    rejectionReason = 'EXPIRED_SESSION';
+    console.warn(`[Redirect] Session expired for session=${session.id} uid=${uid} -> UNVERIFIED (EXPIRED_SESSION)`);
+  } else {
+    // Check for mandatory LANDING or START event proving real session start
+    const events = await db.getEventsBySession(session.id);
+    const hasLanding = events.some((e: any) => e.event_type === 'LANDING' || e.event_type === 'START');
+    if (!hasLanding) {
+      rejectionReason = 'NO_LANDING_EVENT';
+      console.warn(`[Redirect] No landing event for session=${session.id} uid=${uid} -> UNVERIFIED (NO_LANDING_EVENT)`);
+    } else {
+      // GENUINE!
+      isGenuine = true;
+    }
+  }
+
+  const effectiveProjectCode = project?.project_code || session?.metadata_json?.project_code || pid || 'PX-2024-0578';
+  const effectiveUid = session?.uid || uid || 'UID-7F3A-9C21-B8D6';
+  const effectiveSessionToken = session?.session_token || sessionToken || '—';
+  const effectiveCountry = country?.country_name || session?.metadata_json?.country_code || countryParam || 'Global';
+
+  if (isGenuine && session) {
+    // Process Genuine Callback
+    const normUid = session.normalized_uid || effectiveUid.toUpperCase().trim();
+    const resolvedProjectId = project?.id || session.metadata_json?.project_id;
+    const resolvedVendorId = session.vendor_id;
+    const studyId = session.study_id;
+
+    const crypto = require('crypto');
+    const cbKey = crypto.createHash('sha256').update(`${resolvedProjectId || studyId}|${resolvedVendorId}|${normUid}|${status}|${txid}`).digest('hex');
+
+    const eventInserted = await db.createResponseEvent({
+      session_id: session.id,
+      study_id: studyId,
+      vendor_id: resolvedVendorId,
+      uid: effectiveUid,
+      event_type: 'CALLBACK_RECEIVED',
+      source: 'external_redirect',
+      raw_payload: { outcome: type, offerId: pid, query: req.query, txid, session_token: session.session_token },
+      normalized_payload: { event_type: status, uid: normUid, provider: 'external_redirect', verification: 'GENUINE' },
+      event_key: cbKey,
+      ip_address: rawIp,
+      user_agent: req.get('User-Agent'),
+    });
+
+    if (eventInserted) {
+      const loiSeconds = session.created_at
+        ? Math.max(0, Math.round((Date.now() - new Date(session.created_at).getTime()) / 1000))
+        : 0;
+
+      const isComplete = status === 'COMPLETE';
+      await db.pool.query(
+        `UPDATE responses SET
+          final_status = $1,
+          first_terminal_event = COALESCE(first_terminal_event, $1),
+          terminal_at = NOW(),
+          is_counted = $2,
+          counted_at = (CASE WHEN $2 = TRUE THEN NOW() ELSE NULL END),
+          callback_source = 'external_redirect',
+          loi_seconds = $3,
+          project_id = COALESCE($4, project_id),
+          updated_at = NOW()
+         WHERE session_id = $5`,
+        [status, isComplete, loiSeconds, resolvedProjectId, session.id]
+      );
+
+      const sessionUpdates: any = {
+        current_status: status,
+        last_seen_at: new Date(),
+      };
+      if (isComplete) sessionUpdates.completed_at = new Date();
+      if (status === 'TERMINATE') sessionUpdates.terminated_at = new Date();
+      await db.updateSession(session.id, sessionUpdates);
+    }
+  } else {
+    // UNVERIFIED / FAKE Callback — Record in fake_click_events. Never creates phantom response.
+    const normUid = (effectiveUid || 'UNKNOWN').toUpperCase().trim();
+    const resolvedProjectId = project?.id || session?.metadata_json?.project_id || null;
+    const resolvedVendorId = session?.vendor_id || (req.query?.vid as string) || (req.query?.vendor_id as string) || null;
+
+    await recordFakeClick({
+      study_id: session?.study_id || null,
+      vendor_id: resolvedVendorId && resolvedVendorId.length === 36 ? resolvedVendorId : null,
+      project_id: resolvedProjectId,
+      uid: effectiveUid,
+      normalized_uid: normUid,
+      rejection_reason: rejectionReason || 'NO_SESSION',
+      raw_payload: { pid, uid: effectiveUid, outcome: type, query: req.query, session_token: sessionToken },
+      ip_address: rawIp,
+      user_agent: req.get('User-Agent'),
+      provider: 'external_redirect',
+    });
+  }
+
+  // Render the responsive status landing page
+  const pageHtml = renderLandingPage(
+    cardKey,
+    effectiveProjectCode,
+    effectiveUid,
+    rawIp,
+    false,
+    isGenuine,
+    effectiveSessionToken,
+    effectiveCountry
   );
-  
-  res.send(finalHtml);
+  res.send(pageHtml);
 }
 
 
@@ -2158,6 +2231,243 @@ router.get(
   })
 );
 
+// ─── Survey URL Auto-Analysis Helper ─────────────────────────────────────────
+function analyzeSurveyUrl(surveyUrl: string): {
+  hostname: string; path: string;
+  uid_param: string; uid_placeholder: string;
+  params: Record<string, string>; detected_provider: string;
+} {
+  const result = { hostname: '', path: '', uid_param: '', uid_placeholder: '', params: {} as Record<string, string>, detected_provider: 'UNKNOWN' };
+  if (!surveyUrl || typeof surveyUrl !== 'string') return result;
+  const placeholderPatterns = [
+    /\[identifier\]/gi, /\{identifier\}/gi,
+    /\[UID\]/gi, /\{UID\}/gi, /\[uid\]/gi, /\{uid\}/gi,
+    /\{\{UID\}\}/gi, /\{\{uid\}\}/gi,
+    /\[RESPONDENT_ID\]/gi, /\{RESPONDENT_ID\}/gi,
+    /\[respondent\]/gi, /\{respondent\}/gi,
+  ];
+  try {
+    const parsed = new URL(surveyUrl);
+    result.hostname = parsed.hostname;
+    result.path = parsed.pathname;
+    if (parsed.hostname.includes('zephyr')) result.detected_provider = 'ZEPHYR';
+    else if (parsed.hostname.includes('limesurvey') || parsed.hostname.includes('survey.io')) result.detected_provider = 'LIMESURVEY';
+    else if (parsed.hostname.includes('qualtrics')) result.detected_provider = 'QUALTRICS';
+    else if (parsed.hostname.includes('surveymonkey')) result.detected_provider = 'SURVEYMONKEY';
+    else result.detected_provider = 'CUSTOM';
+    parsed.searchParams.forEach((value, key) => {
+      result.params[key] = value;
+      if (result.uid_param) return;
+      for (const pattern of placeholderPatterns) {
+        pattern.lastIndex = 0;
+        const match = value.match(pattern);
+        if (match) { result.uid_param = key; result.uid_placeholder = match[0]; break; }
+      }
+    });
+    if (!result.uid_param) {
+      const candidates = ['zid', 'uid', 'respondent', 'rid', 'ruid', 'RUID'];
+      for (const candidate of candidates) {
+        if (parsed.searchParams.has(candidate)) {
+          result.uid_param = candidate;
+          result.uid_placeholder = parsed.searchParams.get(candidate) || '';
+          break;
+        }
+      }
+    }
+  } catch { /* invalid URL */ }
+  return result;
+}
+
+function buildOpiLaunchUrl(baseUrl: string, projectCode: string, countryCode: string): string {
+  return `${baseUrl}/track?code=${projectCode}&country=${countryCode.toUpperCase()}&uid={UID}`;
+}
+
+// ─── /track — Canonical OPI Tracking Entrypoint ──────────────────────────────
+// GET /track?code=OPI883&country=FR&uid=VDFERRER
+
+router.get(
+  '/track',
+  startRateLimit,
+  asyncHandler(async (req: Request, res: Response) => {
+    const projectCode = (getQueryParam(req, 'code') || '').trim().toUpperCase();
+    const countryCode = (getQueryParam(req, 'country') || '').trim().toUpperCase();
+    const rawUid = (getQueryParam(req, 'uid') || '').trim();
+
+    if (!projectCode) return apiError(res, 400, 'MISSING_CODE', 'Project code (code=) is required');
+    if (!countryCode) return apiError(res, 400, 'MISSING_COUNTRY', 'Country code (country=) is required');
+    if (!rawUid) return apiError(res, 400, 'MISSING_UID', 'Respondent UID (uid=) is required');
+
+    // 1. Validate project
+    const { rows: projRows } = await db.pool.query(
+      'SELECT * FROM projects WHERE UPPER(project_code) = $1', [projectCode]
+    );
+    const project = projRows[0];
+    if (!project) return apiError(res, 404, 'INVALID_PROJECT', `Project '${projectCode}' not found`);
+
+    // 2. Validate country (must belong to project and be active)
+    const { rows: countryRows } = await db.pool.query(
+      `SELECT * FROM project_countries
+       WHERE project_id = $1 AND UPPER(country_code) = $2
+       AND (status IS NULL OR status = 'ACTIVE')`,
+      [project.id, countryCode]
+    );
+    const country = countryRows[0];
+    if (!country) return apiError(res, 400, 'INVALID_COUNTRY', `Country '${countryCode}' is not active in project ${project.project_code}`);
+
+    // 3. Get survey link for this country
+    const { rows: linkRows } = await db.pool.query(
+      `SELECT * FROM project_links WHERE country_id = $1 AND (status IS NULL OR status = 'ACTIVE')
+       ORDER BY created_at ASC LIMIT 1`,
+      [country.id]
+    );
+    const link = linkRows[0];
+    if (!link && !project.survey_url) {
+      return apiError(res, 400, 'NO_SURVEY_LINK', `No active survey link for country ${countryCode} in project ${projectCode}`);
+    }
+
+    // 4. Validate & normalize UID
+    const uidValidation = normalizeUid(rawUid);
+    if (uidValidation.error) return apiError(res, 400, 'INVALID_UID', uidValidation.error);
+    const { normalized, original } = uidValidation;
+
+    // 5. Request metadata
+    const xff = req.headers['x-forwarded-for'];
+    const ipAddress = ((Array.isArray(xff) ? String(xff[0]) : String(xff || ''))?.split(',')[0] || req.ip || '127.0.0.1').trim();
+    const userAgent = req.get('User-Agent') || null;
+    const referrer = req.get('Referer') || req.get('Referrer') || null;
+    const landingUrl = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
+
+    // 6. Resolve backing study
+    const { rows: studyRows } = await db.pool.query('SELECT id FROM studies WHERE study_code = $1', [project.project_code]);
+    let studyId = studyRows[0]?.id;
+    if (!studyId) {
+      const newStudy = await db.createStudy({ study_code: project.project_code, title: project.name, client_id: project.client_id, status: 'LIVE' });
+      studyId = newStudy.id;
+    }
+
+    // 7. Resolve vendor
+    let assignedVendorId = link?.vendor_id || '';
+    if (!assignedVendorId) {
+      const allVendors = await db.getVendors(true);
+      assignedVendorId = allVendors[0]?.id || '';
+    }
+
+    // 8. Create / resolve session (idempotent by project + country + UID)
+    const crypto = require('crypto');
+    const { rows: existingSess } = await db.pool.query(
+      `SELECT * FROM sessions
+       WHERE metadata_json->>'project_id' = $1
+         AND metadata_json->>'country_id' = $2
+         AND normalized_uid = $3
+       ORDER BY created_at DESC LIMIT 1`,
+      [project.id, country.id, normalized]
+    );
+
+    let session = existingSess[0];
+    if (!session) {
+      const sessionToken = 'trk_' + crypto.randomBytes(20).toString('hex');
+      const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000);
+      const ipHash = crypto.createHash('sha256').update(ipAddress + config.authSecret).digest('hex');
+
+      session = await db.createSession({
+        session_token: sessionToken,
+        study_id: studyId,
+        vendor_id: assignedVendorId,
+        tracking_link_id: null,  // project_links.id ≠ tracking_links.id; store link info in metadata_json
+        uid: original,
+        normalized_uid: normalized,
+        external_uid: null,
+        ip_hash: ipHash,
+        ip_address_encrypted_or_restricted_storage: true,
+        user_agent: userAgent,
+        country_detected: country.country_code,
+        referrer,
+        landing_url: landingUrl,
+        initial_status: 'STARTED',
+        current_status: 'STARTED',
+        expires_at: expiresAt,
+        metadata_json: {
+          project_id: project.id,
+          project_code: project.project_code,
+          country_id: country.id,
+          country_code: country.country_code,
+          link_id: link?.id || null,
+          link_code: link?.link_code || null,
+          vendor_id: assignedVendorId,
+          tracking_type: 'OPI_TRACK',
+        },
+      });
+
+      // LANDING event — required by genuine callback gate
+      const landingKey = crypto.createHash('sha256')
+        .update(`${project.id}|${country.id}|${normalized}|LANDING`).digest('hex');
+      await db.createResponseEvent({
+        session_id: session.id,
+        study_id: studyId,
+        vendor_id: assignedVendorId,
+        uid: original,
+        event_type: 'LANDING',
+        source: 'opi_track',
+        raw_payload: { project_code: project.project_code, country: country.country_code, uid: original },
+        normalized_payload: { event_type: 'LANDING', uid: normalized, provider: 'opi_track' },
+        event_key: landingKey,
+        ip_address: ipAddress,
+        user_agent: userAgent,
+      });
+
+      // Initial IN_PROGRESS response record
+      await db.pool.query(
+        `INSERT INTO responses
+           (session_id, study_id, project_id, vendor_id, uid,
+            final_status, is_counted, client_billing_status, vendor_acceptance_status, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, 'IN_PROGRESS', false, 'PENDING', 'PENDING', NOW(), NOW())
+         ON CONFLICT (session_id) DO NOTHING`,
+        [session.id, studyId, project.id, assignedVendorId, original]
+      );
+      console.log(`[Track] NEW session ${session.session_token} | ${projectCode}/${countryCode} uid=${original}`);
+    } else {
+      await db.updateSession(session.id, { last_seen_at: new Date() });
+      console.log(`[Track] EXISTING session | ${projectCode}/${countryCode} uid=${original}`);
+    }
+
+    // 9. Build client survey redirect URL — substitute UID into placeholder
+    const surveyUrlTemplate = link?.url || project.survey_url || '';
+    let destUrl = surveyUrlTemplate;
+
+    // Use stored uid_placeholder from project_link if available, else project-level, else auto-detect
+    const uidPlaceholder = link?.uid_placeholder || project.uid_placeholder || '';
+    const uidParam = link?.uid_param || project.uid_param || 'uid';
+
+    if (uidPlaceholder && destUrl.includes(uidPlaceholder)) {
+      destUrl = destUrl.split(uidPlaceholder).join(encodeURIComponent(original));
+    } else {
+      const knownPH = ['[identifier]', '{identifier}', '[UID]', '{UID}', '[uid]', '{uid}', '{{UID}}', '{{uid}}', '[RESPONDENT_ID]', '{RESPONDENT_ID}'];
+      let replaced = false;
+      for (const ph of knownPH) {
+        if (destUrl.includes(ph)) { destUrl = destUrl.split(ph).join(encodeURIComponent(original)); replaced = true; break; }
+      }
+      if (!replaced && !destUrl.includes(encodeURIComponent(original))) {
+        destUrl = `${destUrl}${destUrl.includes('?') ? '&' : '?'}${uidParam}=${encodeURIComponent(original)}`;
+      }
+    }
+
+    if (!destUrl || !destUrl.startsWith('http')) {
+      return apiError(res, 500, 'NO_REDIRECT_URL', 'No valid client survey URL configured');
+    }
+
+    // 10. Set tracking cookies for callback resolution
+    res.setHeader('Set-Cookie', [
+      `opi_session_token=${session.session_token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=172800`,
+      `opi_project_code=${projectCode}; Path=/; SameSite=Lax; Max-Age=172800`,
+      `opi_uid=${encodeURIComponent(original)}; Path=/; SameSite=Lax; Max-Age=172800`,
+      `opi_country=${countryCode}; Path=/; SameSite=Lax; Max-Age=172800`,
+    ]);
+
+    return res.redirect(302, destUrl);
+  })
+);
+
+
 // â”€â”€â”€ Redirect Landing Pages (5 types) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Canonical client-facing end links. Accept ?pid=<PROJECT>&uid=<UID>.
 // IMPORTANT: these MUST be defined before /redirect/:sessionToken so they match first.
@@ -2289,6 +2599,10 @@ router.get(
       } catch { }
     }
 
+    const xff = req.headers['x-forwarded-for'];
+    let rawIp = ((Array.isArray(xff) ? String(xff[0]) : String(xff || ''))?.split(',')[0] || req.ip || '127.0.0.1').trim();
+    if (rawIp === '::1' || rawIp === '::ffff:127.0.0.1') rawIp = '127.0.0.1';
+
     // SECURITY: Only process callback if a valid session exists.
     // This prevents fake pid+uid URL hits from creating phantom responses.
     let callbackProcessed = false;
@@ -2304,7 +2618,7 @@ router.get(
           // Also verify HMAC signature if provided (signed URL approach)
           let sigValid = true;
           if (sig) {
-            const { verifyRedirectSignature } = await import('./services/trackingService.js');
+            const { verifyRedirectSignature } = await import('../services/trackingService');
             const sigPayload = verifyRedirectSignature(sig);
             if (!sigPayload || sigPayload.pid !== rawOfferId || sigPayload.uid !== rawUid || sigPayload.outcome !== outcome) {
               sigValid = false;
@@ -2345,9 +2659,6 @@ router.get(
       }
     }
 
-    const xff = req.headers['x-forwarded-for'];
-    let rawIp = ((Array.isArray(xff) ? String(xff[0]) : String(xff || ''))?.split(',')[0] || req.ip || '127.0.0.1').trim();
-    if (rawIp === '::1' || rawIp === '::ffff:127.0.0.1') rawIp = '127.0.0.1';
     const displayProjectCode = rawOfferId || 'PX-2024-0578';
     const displayUid = rawUid || 'UID-7F3A-9C21-B8D6';
     const dateTimeStr = new Date().toLocaleString('en-US', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true });
@@ -3844,7 +4155,176 @@ router.get(
 // GOAL 2: PROJECT MANAGEMENT & MULTI-COUNTRY ARCHITECTURE
 // ═════════════════════════════════════════════════════════════════════════════
 
+// ── Survey URL Analyzer (public, used by admin UI before project creation) ────
+router.get(
+  '/projects/analyze-url',
+  authenticate, authorize(OPS_ROLES),
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const surveyUrl = (getQueryParam(req, 'url') || '').trim();
+    if (!surveyUrl) return validationError(res, ['url query parameter is required']);
+    const analysis = analyzeSurveyUrl(surveyUrl);
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
+    res.json({
+      success: true,
+      data: {
+        ...analysis,
+        example_opi_url: buildOpiLaunchUrl(baseUrl, 'OPI_CODE', 'XX'),
+      },
+    });
+  }),
+);
+
+// ── One-Shot Project Creation ─────────────────────────────────────────────────
+// POST /projects/create-full
+// Body: { name, client_name, client_rate, vendor_rate, currency,
+//         countries: [{ code, survey_url, vendor_id?, target_completes? }] }
+// Creates: project + auto-generated code + project_countries + project_links (per-country)
+
+router.post(
+  '/projects/create-full',
+  authenticate,
+  authorize(['ADMIN', 'PM']),
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { name, client_name, client_rate, vendor_rate, currency, countries } = req.body || {};
+
+    if (!name || !name.trim()) return validationError(res, ['name (Client Project Name) is required']);
+    if (!Array.isArray(countries) || countries.length === 0) {
+      return validationError(res, ['countries must be a non-empty array of { code, survey_url } objects']);
+    }
+
+    // Validate: each country must have a survey_url
+    const missingUrls = countries.filter((c: any) => !c.survey_url || !c.survey_url.trim());
+    if (missingUrls.length > 0) {
+      return validationError(res, [`survey_url is required for each country. Missing for: ${missingUrls.map((c: any) => c.code || 'unknown').join(', ')}`]);
+    }
+
+    // Auto-generate unique project code: OPI + 3 random digits
+    const crypto = require('crypto');
+    let projectCode = '';
+    let attempts = 0;
+    while (attempts < 20) {
+      const suffix = Math.floor(100 + Math.random() * 900).toString(); // 3-digit
+      const candidate = `OPI${suffix}`;
+      const { rows: exists } = await db.pool.query(
+        'SELECT 1 FROM projects WHERE UPPER(project_code) = $1',
+        [candidate]
+      );
+      if (!exists[0]) { projectCode = candidate; break; }
+      attempts++;
+    }
+    if (!projectCode) {
+      projectCode = 'OPI' + crypto.randomBytes(3).toString('hex').toUpperCase();
+    }
+
+    // Validate and resolve country codes + analyze per-country URLs
+    const resolvedCountries: Array<{
+      code: string; name: string; survey_url: string;
+      uid_param: string | null; uid_placeholder: string | null;
+      vendor_id: string | null; target_completes: number | null;
+    }> = [];
+
+    for (const c of countries) {
+      const code = (c.code || c).toString().toUpperCase().trim();
+      const surveyUrl = (c.survey_url || '').trim();
+
+      // Validate URL
+      try { new URL(surveyUrl); } catch {
+        return validationError(res, [`survey_url for country ${code} is not a valid URL: "${surveyUrl}"`]);
+      }
+
+      const urlAnalysis = analyzeSurveyUrl(surveyUrl);
+      resolvedCountries.push({
+        code,
+        name: getCountryNameFromCode(code),
+        survey_url: surveyUrl,
+        uid_param: urlAnalysis.uid_param || null,
+        uid_placeholder: urlAnalysis.uid_placeholder || null,
+        vendor_id: c.vendor_id || null,
+        target_completes: c.target_completes ? Number(c.target_completes) : null,
+      });
+    }
+
+    // Create project (no project-level survey_url — it lives per-country now)
+    const project = await db.createProject({
+      project_code: projectCode,
+      name: name.trim(),
+      client_name: client_name?.trim() || null,
+      client_rate: client_rate !== undefined ? Number(client_rate) : 70,
+      vendor_rate: vendor_rate !== undefined ? Number(vendor_rate) : 50,
+      currency: currency || 'INR',
+      created_by: req.user?.id,
+    });
+
+    // Create project_countries + project_links per country (each with own URL)
+    const appBaseUrl = `${req.protocol}://${req.get('host')}`;
+    const createdCountries: any[] = [];
+
+    for (const c of resolvedCountries) {
+      const country = await db.createCountry({
+        project_id: project.id,
+        country_code: c.code,
+        country_name: c.name,
+      });
+
+      const linkCode = `${projectCode}-${c.code}`;
+      const link = await db.createProjectLink({
+        country_id: country.id,
+        link_code: linkCode,
+        link_name: `${c.name} Survey Link`,
+        url: c.survey_url,
+        uid_mode: 'PROVIDED_UID',
+        uid_param: c.uid_param,
+        uid_placeholder: c.uid_placeholder,
+        vendor_id: c.vendor_id,
+        target_completes: c.target_completes,
+      });
+
+      createdCountries.push({
+        ...country,
+        link,
+        opi_launch_url: buildOpiLaunchUrl(appBaseUrl, projectCode, c.code),
+      });
+    }
+
+    // Audit
+    const ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.socket?.remoteAddress || '127.0.0.1';
+    await db.createAuditLog({
+      user: req.user?.email || 'admin',
+      action: 'PROJECT_CREATED_FULL',
+      entity: 'project',
+      entity_id: project.id,
+      after: {
+        project_code: projectCode,
+        name: project.name,
+        client_name: project.client_name,
+        countries: resolvedCountries.map(c => ({ code: c.code, uid_param: c.uid_param })),
+      },
+      ip,
+    });
+
+    console.log(`[Projects] Created ${projectCode} with countries: ${resolvedCountries.map(c => c.code).join(', ')}`);
+
+    res.status(201).json({
+      success: true,
+      data: {
+        project,
+        countries: createdCountries,
+        // Convenience: per-country OPI launch URLs ready to share with vendors
+        opi_launch_urls: createdCountries.map(c => ({
+          country_code: c.country_code,
+          country_name: c.country_name,
+          opi_launch_url: c.opi_launch_url,
+          uid_param: c.link?.uid_param,
+          uid_placeholder: c.link?.uid_placeholder,
+          target_completes: c.link?.target_completes,
+        })),
+      },
+    });
+  }),
+);
+
 // ── Projects CRUD ─────────────────────────────────────────────────────────────
+
 router.get(
   '/projects',
   authenticate, authorize(OPS_ROLES),

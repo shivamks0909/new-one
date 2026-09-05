@@ -59,6 +59,8 @@ const STATUS_MAP: Record<string, string> = {
   '4':             'SECURITY_REJECT',
   blocked:         'SECURITY_REJECT',
   invalid:         'INVALID',
+  close:           'CLOSED',
+  closed:          'CLOSED',
   expired:         'EXPIRED',
   in_progress:     'IN_PROGRESS',
   inprogress:      'IN_PROGRESS',
@@ -68,6 +70,43 @@ const STATUS_MAP: Record<string, string> = {
 export function normalizeStatus(raw: string): string {
   const key = (raw || '').toLowerCase().replace(/[-\s]/g, '_');
   return STATUS_MAP[key] || raw.toUpperCase();
+}
+
+// ─── State Machine & Transitions ──────────────────────────────────────────────
+
+const TERMINAL_STATES = new Set(['COMPLETE', 'TERMINATE', 'QUOTA_FULL', 'SECURITY_REJECT', 'CLOSED', 'EXPIRED']);
+
+export interface StateTransitionResult {
+  finalStatus: string;
+  isDuplicate: boolean;
+  isCounted: boolean;
+  rejectionReason?: string;
+  terminalAt?: string;
+  firstTerminalEvent?: string;
+}
+
+export function applyStateTransition(currentStatus: string, newStatus: string): StateTransitionResult {
+  const current = (currentStatus || 'IN_PROGRESS').toUpperCase();
+  const next = normalizeStatus(newStatus);
+
+  if (TERMINAL_STATES.has(current)) {
+    return {
+      finalStatus: current,
+      isDuplicate: true,
+      isCounted: false,
+      rejectionReason: `Status already terminal: ${current}`,
+      firstTerminalEvent: current,
+    };
+  }
+
+  const isComplete = next === 'COMPLETE';
+  return {
+    finalStatus: next,
+    isDuplicate: false,
+    isCounted: isComplete,
+    terminalAt: new Date().toISOString(),
+    firstTerminalEvent: next,
+  };
 }
 
 // ─── Idempotency Key ──────────────────────────────────────────────────────────
@@ -199,7 +238,7 @@ export function verifyRedirectSignature(sigParam: string | undefined): RedirectS
 // ─── Session Token / Link Code Generators ────────────────────────────────────
 
 export function generateSessionToken(): string {
-  return 'sess_' + crypto.randomBytes(18).toString('hex');
+  return 'SES_' + crypto.randomBytes(16).toString('hex');
 }
 
 export function generateLinkCode(): string {
@@ -224,6 +263,7 @@ export function isSessionExpired(session: Session): boolean {
 export interface FakeClickEvent {
   study_id?: string | null;
   vendor_id?: string | null;
+  project_id?: string | null;
   uid: string;
   normalized_uid: string;
   rejection_reason: string;
@@ -258,11 +298,9 @@ export function verifyCallbackIp(
   return { match: false, reason: 'IP mismatch — callback from different origin than session' };
 }
 
-// ─── State Machine ────────────────────────────────────────────────────────────
-// Terminal statuses that cannot be overwritten by a new callback
-const TERMINAL_STATUSES = new Set(['COMPLETE', 'TERMINATE', 'QUOTA_FULL', 'SECURITY_REJECT', 'INVALID', 'EXPIRED']);
+// ─── Status Transition Gate ───────────────────────────────────────────────────
 
-interface TransitionResult {
+export interface TransitionResult {
   finalStatus: string;
   firstTerminalEvent: string | null;
   terminalAt: Date | null;
@@ -271,22 +309,27 @@ interface TransitionResult {
   isDuplicate: boolean;
 }
 
-export function applyStateTransition(currentStatus: string, newStatus: string): TransitionResult {
-  // Already in a terminal state — do not change outcome, do not re-count
-  if (TERMINAL_STATUSES.has(currentStatus)) {
+export function evaluateStatusTransition(
+  currentStatus: string,
+  newStatus: string,
+): TransitionResult {
+  const normNew = normalizeStatus(newStatus);
+  const now = new Date();
+
+  // Terminal state immutability — terminal states are permanently locked
+  if (['COMPLETE', 'TERMINATE', 'QUOTA_FULL', 'SECURITY_REJECT', 'EXPIRED'].includes(currentStatus)) {
     return {
       finalStatus: currentStatus,
       firstTerminalEvent: null,
       terminalAt: null,
       isCounted: false,
-      rejectionReason: `Already in terminal state: ${currentStatus}`,
+      rejectionReason: `Terminal status conflict: already ${currentStatus}`,
       isDuplicate: true,
     };
   }
 
-  // Active → terminal transition
-  const now = new Date();
-  switch (newStatus) {
+  // Valid transitions from STARTED or IN_PROGRESS
+  switch (normNew) {
     case 'COMPLETE':
       return { finalStatus: 'COMPLETE', firstTerminalEvent: 'COMPLETE', terminalAt: now, isCounted: true, rejectionReason: null, isDuplicate: false };
     case 'TERMINATE':
@@ -294,9 +337,7 @@ export function applyStateTransition(currentStatus: string, newStatus: string): 
     case 'QUOTA_FULL':
       return { finalStatus: 'QUOTA_FULL', firstTerminalEvent: 'QUOTA_FULL', terminalAt: now, isCounted: false, rejectionReason: null, isDuplicate: false };
     case 'SECURITY_REJECT':
-      return { finalStatus: 'SECURITY_REJECT', firstTerminalEvent: 'SECURITY_REJECT', terminalAt: now, isCounted: false, rejectionReason: null, isDuplicate: false };
-    case 'INVALID':
-      return { finalStatus: 'INVALID', firstTerminalEvent: 'INVALID', terminalAt: now, isCounted: false, rejectionReason: null, isDuplicate: false };
+      return { finalStatus: 'SECURITY_REJECT', firstTerminalEvent: 'SECURITY_REJECT', terminalAt: now, isCounted: false, rejectionReason: 'Security / fraud rejection', isDuplicate: false };
     case 'EXPIRED':
       return { finalStatus: 'EXPIRED', firstTerminalEvent: 'EXPIRED', terminalAt: now, isCounted: false, rejectionReason: null, isDuplicate: false };
     default:
@@ -310,21 +351,35 @@ export function buildSurveyRedirect(link: TrackingLink, session: Session): strin
   const { base_url } = link;
   const encodedUid = encodeURIComponent(session.uid);
 
-  let redirectUrl = base_url;
+  let redirectUrl = base_url || '';
 
-  // Strict literal placeholder replacement — preserve template immutability
-  if (redirectUrl.includes('[identifier]')) {
-    redirectUrl = redirectUrl.replace(/\[identifier\]/g, encodedUid);
-  } else if (redirectUrl.includes('[uid]')) {
-    redirectUrl = redirectUrl.replace(/\[uid\]/g, encodedUid);
-  } else if (redirectUrl.includes('{uid}')) {
-    redirectUrl = redirectUrl.replace(/\{uid\}/g, encodedUid);
-  } else if (redirectUrl.includes('[UID]')) {
-    redirectUrl = redirectUrl.replace(/\[UID\]/g, encodedUid);
-  } else {
-    // Fallback if template has no placeholder — append parameter preserving exact template structure
+  let matched = false;
+  const placeholders = [
+    /\[identifier\]/gi,
+    /\{identifier\}/gi,
+    /\[UID\]/gi,
+    /\[uid\]/gi,
+    /\{UID\}/gi,
+    /\{uid\}/gi,
+    /\{\{UID\}\}/gi,
+    /\{\{uid\}\}/gi,
+    /\[RESPONDENT_ID\]/gi,
+    /\{RESPONDENT_ID\}/gi,
+    /\[respondent\]/gi,
+    /\{respondent\}/gi,
+  ];
+
+  for (const ph of placeholders) {
+    if (ph.test(redirectUrl)) {
+      redirectUrl = redirectUrl.replace(ph, encodedUid);
+      matched = true;
+    }
+  }
+
+  // If template has no placeholder and UID is not yet in URL, cleanly append preserving structure
+  if (!matched && !redirectUrl.includes(encodedUid)) {
     const separator = redirectUrl.includes('?') ? '&' : '?';
-    redirectUrl = `${redirectUrl}${separator}zid=${encodedUid}`;
+    redirectUrl = `${redirectUrl}${separator}uid=${encodedUid}`;
   }
 
   // Replace optional secondary placeholders if present in template

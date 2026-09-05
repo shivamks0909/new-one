@@ -1,16 +1,16 @@
-/**
- * Opinion Insights — Premium Enterprise SPA Dashboard
+﻿/**
+ * Opinion Insights â€” Premium Enterprise SPA Dashboard
  * Clean light theme with teal accent, skeleton loading, health cards, progress bars
  */
 
-// ─── Configuration ─────────────────────────────────────────────────────────────
+// â”€â”€â”€ Configuration â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const API_BASE = "/api";
 let authToken = localStorage.getItem("cawi_token") || null;
 let currentUser = null;
 let currentPage = "dashboard";
 let sidebarCollapsed = false;
 
-// ─── Security: Session Timeout ─────────────────────────────────────────────────
+// â”€â”€â”€ Security: Session Timeout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 // Auto-logout after 30 minutes of inactivity
 const SESSION_TIMEOUT_MS = 30 * 60 * 1000;
 let lastActivityAt = Date.now();
@@ -39,14 +39,14 @@ function startSessionTimer() {
   );
 }
 
-// ─── Security: Login Attempt Tracking ──────────────────────────────────────────
+// â”€â”€â”€ Security: Login Attempt Tracking â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 let loginAttempts = parseInt(
   localStorage.getItem("cawi_login_attempts") || "0",
   10
 );
 let accountLockedUntil = null;
 
-// ─── Security: Password Visibility Toggle ──────────────────────────────────────
+// â”€â”€â”€ Security: Password Visibility Toggle â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function initPasswordToggle() {
   const btn = document.getElementById("toggle-password");
   const input = document.getElementById("login-password");
@@ -76,14 +76,16 @@ const PAGE_SUBTITLES = {
   quotas: "Quota tracking & completion targets",
   analytics: "Performance analytics & conversion insights",
   audit: "System activity & change history",
-  finance: "Client billing · Vendor settlement · Invoice management",
-  "rejection-management": "Accept & reject responses · Manage vendor quality",
+  finance: "Client billing Â· Vendor settlement Â· Invoice management",
+  "rejection-management": "Accept & reject responses Â· Manage vendor quality",
   "vendor-settlements": "Vendor payout calculation & Excel settlement reports",
   users: "Manage users, roles, vendors and account access",
   settings: "Platform configuration",
+  projects: "Client projects Â· Survey tracking Â· OPI launch links",
+  "project-detail": "Project detail Â· OPI launch links per country",
 };
 
-// ─── Utility Functions ─────────────────────────────────────────────────────────
+// â”€â”€â”€ Utility Functions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function $(sel, ctx = document) {
   return ctx.querySelector(sel);
 }
@@ -166,10 +168,10 @@ function showLoading(container = "#content-area") {
 function showError(container, message) {
   $(
     container
-  ).innerHTML = `<div class="empty-state"><div class="empty-state-icon">⚠️</div><h3>Error</h3><p>${message}</p></div>`;
+  ).innerHTML = `<div class="empty-state"><div class="empty-state-icon">âš ï¸</div><h3>Error</h3><p>${message}</p></div>`;
 }
 
-function showEmpty(container, message, icon = "📭") {
+function showEmpty(container, message, icon = "ðŸ“­") {
   $(
     container
   ).innerHTML = `<div class="empty-state"><div class="empty-state-icon">${icon}</div><h3>No Data</h3><p>${message}</p></div>`;
@@ -199,7 +201,7 @@ function formatPct(num, den) {
 }
 
 function formatDate(dateStr) {
-  if (!dateStr) return "—";
+  if (!dateStr) return "â€”";
   return new Date(dateStr).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
@@ -208,7 +210,7 @@ function formatDate(dateStr) {
 }
 
 function formatDateTime(dateStr) {
-  if (!dateStr) return "—";
+  if (!dateStr) return "â€”";
   return new Date(dateStr).toLocaleString("en-US", {
     month: "short",
     day: "numeric",
@@ -239,7 +241,7 @@ function escapeHtml(str) {
     .replace(/'/g, "&#039;");
 }
 
-// ─── API Client ────────────────────────────────────────────────────────────────
+// â”€â”€â”€ API Client â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function api(path, options = {}) {
   const headers = { "Content-Type": "application/json", ...options.headers };
   if (authToken) headers["Authorization"] = `Bearer ${authToken}`;
@@ -254,7 +256,7 @@ async function api(path, options = {}) {
   return data;
 }
 
-// ─── Auth Functions ────────────────────────────────────────────────────────────
+// â”€â”€â”€ Auth Functions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function login(email, password) {
   const res = await api("/auth/login", {
     method: "POST",
@@ -299,15 +301,15 @@ async function checkAuth() {
   }
 }
 
-// ─── Rendering Helpers ─────────────────────────────────────────────────────────
+// â”€â”€â”€ Rendering Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function renderStatCard(
   label,
   value,
-  icon = "📊",
+  icon = "ðŸ“Š",
   iconClass = "icon-accent",
   change = null
 ) {
-  // Count-up only for pure numeric values (per spec §15), otherwise static render
+  // Count-up only for pure numeric values (per spec Â§15), otherwise static render
   const numMatch =
     typeof value === "string" ? value.match(/^([\d.]+)([KMB]?)$/) : null;
   const numericVal = numMatch;
@@ -330,7 +332,7 @@ function renderStatCard(
   `;
 }
 
-// Animate KPI stat values from 0 to target (spec §15: smooth count-up)
+// Animate KPI stat values from 0 to target (spec Â§15: smooth count-up)
 function animateCountUps(container) {
   if (
     !container ||
@@ -355,7 +357,7 @@ function animateCountUps(container) {
 }
 
 function renderBadge(value, type = "neutral") {
-  if (!value) return "—";
+  if (!value) return "â€”";
   const valStr = String(value);
   let badgeType = type;
   if (!badgeType || badgeType === "neutral") {
@@ -435,9 +437,9 @@ function fallbackCopy(text) {
 window.copyToClipboard = copyToClipboard;
 
 function renderIdCell(idValue, extraClass = "") {
-  if (!idValue) return "—";
+  if (!idValue) return "â€”";
   const escaped = escapeHtml(String(idValue));
-  return `<div class="id-cell-wrapper ${extraClass}"><span class="font-mono id-text" title="${escaped}">${escaped}</span><button class="btn-copy" onclick="event.stopPropagation(); copyToClipboard('${escaped}')" title="Copy">📋</button></div>`;
+  return `<div class="id-cell-wrapper ${extraClass}"><span class="font-mono id-text" title="${escaped}">${escaped}</span><button class="btn-copy" onclick="event.stopPropagation(); copyToClipboard('${escaped}')" title="Copy">ðŸ“‹</button></div>`;
 }
 window.renderIdCell = renderIdCell;
 
@@ -450,7 +452,7 @@ function isHtml(str) {
 
 function renderTable(headers, rows, keyField = "id", onRowClick = null) {
   if (!rows.length)
-    return '<div class="empty-state" style="padding:40px 20px;"><div class="empty-state-icon">📭</div><h3>No records found</h3><p>Try adjusting your filters or check back later.</p></div>';
+    return '<div class="empty-state" style="padding:40px 20px;"><div class="empty-state-icon">ðŸ“­</div><h3>No records found</h3><p>Try adjusting your filters or check back later.</p></div>';
   return `
     <div class="table-container">
       <table class="data-table">
@@ -555,7 +557,7 @@ async function openResponseDetailModal(sessionId) {
   } catch (err) {
     showModal(
       "Response Details",
-      `<div class="empty-state" style="padding:30px;"><div class="empty-state-icon">⚠️</div><h3>Failed to load</h3><p>${escapeHtml(
+      `<div class="empty-state" style="padding:30px;"><div class="empty-state-icon">âš ï¸</div><h3>Failed to load</h3><p>${escapeHtml(
         err.message
       )}</p></div>`,
       '<button class="btn btn-secondary" onclick="hideModal()">Close</button>'
@@ -564,7 +566,7 @@ async function openResponseDetailModal(sessionId) {
 }
 window.openResponseDetailModal = openResponseDetailModal;
 
-// ─── Dashboard ─────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Dashboard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function renderDashboard() {
   showLoading();
   try {
@@ -626,27 +628,27 @@ async function renderDashboard() {
     const content = `
       <!-- KPI Cards -->
       <div class="stats-grid">
-        ${renderStatCard("Active Studies", activeStudies, "🔬", "icon-accent")}
+        ${renderStatCard("Active Studies", activeStudies, "ðŸ”¬", "icon-accent")}
         ${renderStatCard(
           "Total Clicks",
           formatNumber(totalClicks),
-          "🖱️",
+          "ðŸ–±ï¸",
           "icon-info"
         )}
-        ${renderStatCard("Starts", formatNumber(starts), "🚀", "icon-warning")}
+        ${renderStatCard("Starts", formatNumber(starts), "ðŸš€", "icon-warning")}
         ${renderStatCard(
           "Completes",
           formatNumber(completes),
-          "✅",
+          "âœ…",
           "icon-success"
         )}
         ${renderStatCard(
           "Conversion Rate",
           conversionRate,
-          "📈",
+          "ðŸ“ˆ",
           "icon-accent"
         )}
-        ${renderStatCard("Average LOI", avgLoi, "⏱️", "icon-purple")}
+        ${renderStatCard("Average LOI", avgLoi, "â±ï¸", "icon-purple")}
       </div>
 
       <!-- Response Funnel -->
@@ -662,7 +664,7 @@ async function renderDashboard() {
               <div class="funnel-step-value">${formatNumber(totalClicks)}</div>
               <div class="funnel-step-pct">100%</div>
             </div>
-            <div class="funnel-arrow">→</div>
+            <div class="funnel-arrow">â†’</div>
             <div class="funnel-step">
               <div class="funnel-step-label">Starts</div>
               <div class="funnel-step-value">${formatNumber(starts)}</div>
@@ -670,7 +672,7 @@ async function renderDashboard() {
                 totalClicks ? ((starts / totalClicks) * 100).toFixed(0) : 0
               }%</div>
             </div>
-            <div class="funnel-arrow">→</div>
+            <div class="funnel-arrow">â†’</div>
             <div class="funnel-step">
               <div class="funnel-step-label">In Progress</div>
               <div class="funnel-step-value">${formatNumber(inProgress)}</div>
@@ -678,7 +680,7 @@ async function renderDashboard() {
                 starts ? ((inProgress / starts) * 100).toFixed(0) : 0
               }%</div>
             </div>
-            <div class="funnel-arrow">→</div>
+            <div class="funnel-arrow">â†’</div>
             <div class="funnel-step">
               <div class="funnel-step-label">Completes</div>
               <div class="funnel-step-value">${formatNumber(completes)}</div>
@@ -702,7 +704,7 @@ async function renderDashboard() {
           </div>
           <div class="section-card-body" style="padding:12px 22px 22px;">
             ${renderStatusRow(
-              "✅",
+              "âœ…",
               "Complete",
               completes,
               starts,
@@ -710,7 +712,7 @@ async function renderDashboard() {
               "var(--color-success-bg)"
             )}
             ${renderStatusRow(
-              "⏹️",
+              "â¹ï¸",
               "Terminate",
               terminated,
               starts,
@@ -718,7 +720,7 @@ async function renderDashboard() {
               "var(--color-danger-bg)"
             )}
             ${renderStatusRow(
-              "⚠️",
+              "âš ï¸",
               "Over Quota",
               quotaFull,
               starts,
@@ -726,7 +728,7 @@ async function renderDashboard() {
               "var(--color-warning-bg)"
             )}
             ${renderStatusRow(
-              "🚫",
+              "ðŸš«",
               "Screened Out",
               screenedOut,
               starts,
@@ -734,7 +736,7 @@ async function renderDashboard() {
               "var(--color-gray-bg)"
             )}
             ${renderStatusRow(
-              "🎯",
+              "ðŸŽ¯",
               "Quality Term",
               qualityTerm,
               starts,
@@ -742,7 +744,7 @@ async function renderDashboard() {
               "var(--color-purple-bg)"
             )}
             ${renderStatusRow(
-              "🔄",
+              "ðŸ”„",
               "In Progress",
               inProgress,
               starts,
@@ -791,7 +793,7 @@ async function renderDashboard() {
                       <tr>
                         <td>${renderIdCell(s.study_code || s.id)}</td>
                         <td>${renderBadge(s.status)}</td>
-                        <td>${tgt || "—"}</td>
+                        <td>${tgt || "â€”"}</td>
                         <td>${starts_}</td>
                         <td>${comps}</td>
                         <td style="color:var(--color-success); font-weight:600;">${conv}%</td>
@@ -810,7 +812,7 @@ async function renderDashboard() {
                 </tbody>
               </table>
             `
-                : '<div class="empty-state" style="padding:40px;"><div class="empty-state-icon">🔬</div><h3>No studies yet</h3><p>Create your first study to get started.</p></div>'
+                : '<div class="empty-state" style="padding:40px;"><div class="empty-state-icon">ðŸ”¬</div><h3>No studies yet</h3><p>Create your first study to get started.</p></div>'
             }
           </div>
         </div>
@@ -846,7 +848,7 @@ async function renderDashboard() {
                     <tr>
                       <td style="font-weight:500;">${escapeHtml(v.name)}${
                         i === 0 && vendors.length > 1
-                          ? ' <span style="font-size:0.6875rem;color:var(--color-success);font-weight:700;margin-left:4px;">★ TOP</span>'
+                          ? ' <span style="font-size:0.6875rem;color:var(--color-success);font-weight:700;margin-left:4px;">â˜… TOP</span>'
                           : ""
                       }</td>
                       <td>${v.quota_target || 10}</td>
@@ -861,7 +863,7 @@ async function renderDashboard() {
                 </tbody>
               </table>
             `
-                : '<div class="empty-state" style="padding:40px;"><div class="empty-state-icon">🏢</div><h3>No vendors yet</h3><p>Add vendors to track fieldwork performance.</p></div>'
+                : '<div class="empty-state" style="padding:40px;"><div class="empty-state-icon">ðŸ¢</div><h3>No vendors yet</h3><p>Add vendors to track fieldwork performance.</p></div>'
             }
           </div>
         </div>
@@ -901,7 +903,7 @@ async function renderDashboard() {
               `
                       )
                       .join("")
-                  : '<div class="empty-state" style="padding:30px;"><div class="empty-state-icon">📭</div><h3>No recent activity</h3><p>Activity will appear here as sessions are processed.</p></div>'
+                  : '<div class="empty-state" style="padding:30px;"><div class="empty-state-icon">ðŸ“­</div><h3>No recent activity</h3><p>Activity will appear here as sessions are processed.</p></div>'
               }
             </div>
           </div>
@@ -912,7 +914,7 @@ async function renderDashboard() {
       <div class="section-card">
         <div class="section-card-header">
           <h3>System Health</h3>
-          <span style="font-size:0.75rem; color:var(--color-success); font-weight:600;">● All Operational</span>
+          <span style="font-size:0.75rem; color:var(--color-success); font-weight:600;">â— All Operational</span>
         </div>
         <div class="section-card-body">
           <div class="health-grid">
@@ -982,7 +984,7 @@ function renderStatusRow(icon, label, count, total, barColor, bgColor) {
   `;
 }
 
-// ─── Studies ───────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Studies â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function renderStudies(page = 1) {
   showLoading();
   try {
@@ -997,7 +999,7 @@ async function renderStudies(page = 1) {
         ["ID", "Name", "Status", "Vendors", "Target", "Created"],
         studies.map((s) => ({
           id: renderIdCell(s.id),
-          name: s.name || s.title || "—",
+          name: s.name || s.title || "â€”",
           status: renderBadge(s.status),
           vendors: s.vendor_count || 0,
           target: s.target_completes || 0,
@@ -1018,7 +1020,7 @@ async function renderStudies(page = 1) {
   }
 }
 
-// ─── Vendors ───────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Vendors â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function renderVendors(page = 1) {
   showLoading();
   try {
@@ -1034,11 +1036,11 @@ async function renderVendors(page = 1) {
         vendors.map((v) => ({
           id: renderIdCell(v.id),
           name: v.name,
-          contact: v.contact_email || "—",
+          contact: v.contact_email || "â€”",
           cpi: formatCurrency(v.cpi_cents || 0),
           quota: v.quota_target
             ? `${v.quota_used || 0}/${v.quota_target}`
-            : "—",
+            : "â€”",
           status: renderBadge(v.status),
         })),
         "id"
@@ -1056,7 +1058,7 @@ async function renderVendors(page = 1) {
   }
 }
 
-// ─── Tracking Links ────────────────────────────────────────────────────────────
+// â”€â”€â”€ Tracking Links â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function renderTrackingLinks(page = 1) {
   showLoading();
   try {
@@ -1084,7 +1086,7 @@ async function renderTrackingLinks(page = 1) {
           code: renderIdCell(l.link_code),
           study: renderIdCell(l.study_id),
           vendor: renderIdCell(l.vendor_id),
-          uid_mode: l.uid_mode || "—",
+          uid_mode: l.uid_mode || "â€”",
           status: renderBadge(l.status),
           clicks: l.click_count || 0,
           created: formatDate(l.created_at),
@@ -1104,7 +1106,7 @@ async function renderTrackingLinks(page = 1) {
   }
 }
 
-// ─── Responses ─────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Responses â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 let responsesState = {
   page: 1,
   limit: 25,
@@ -1157,7 +1159,7 @@ async function exportResponsesExcel(exportType = "filtered") {
   } finally {
     if (btn) {
       btn.disabled = false;
-      btn.textContent = "📊 Export Excel";
+      btn.textContent = "ðŸ“Š Export Excel";
     }
   }
 }
@@ -1196,8 +1198,8 @@ async function renderResponses(page = 1) {
       <div style="display:flex; gap:8px;">
         <button class="btn btn-secondary" onclick="renderResponses(${
           responsesState.page
-        })" title="Refresh">↻ Refresh</button>
-        <button class="btn btn-primary" id="excel-export-btn" onclick="exportResponsesExcel('filtered')">📊 Export Excel</button>
+        })" title="Refresh">â†» Refresh</button>
+        <button class="btn btn-primary" id="excel-export-btn" onclick="exportResponsesExcel('filtered')">ðŸ“Š Export Excel</button>
       </div>
     </div>
     <div class="responses-filter-toolbar">
@@ -1268,38 +1270,38 @@ async function renderResponses(page = 1) {
             <th class="sortable" onclick="toggleRespSort('uid')">UID${
               responsesState.sort_by === "uid"
                 ? responsesState.sort_order === "ASC"
-                  ? " ↑"
-                  : " ↓"
+                  ? " â†‘"
+                  : " â†“"
                 : ""
             }</th>
             <th class="sortable" onclick="toggleRespSort('project')">Project${
               responsesState.sort_by === "project"
                 ? responsesState.sort_order === "ASC"
-                  ? " ↑"
-                  : " ↓"
+                  ? " â†‘"
+                  : " â†“"
                 : ""
             }</th>
             <th>IP Address</th>
             <th class="sortable" onclick="toggleRespSort('device')">Device${
               responsesState.sort_by === "device"
                 ? responsesState.sort_order === "ASC"
-                  ? " ↑"
-                  : " ↓"
+                  ? " â†‘"
+                  : " â†“"
                 : ""
             }</th>
             <th>User Agent</th>
             <th class="sortable" onclick="toggleRespSort('status')">Status${
               responsesState.sort_by === "status"
                 ? responsesState.sort_order === "ASC"
-                  ? " ↑"
-                  : " ↓"
+                  ? " â†‘"
+                  : " â†“"
                 : ""
             }</th>
             <th class="sortable" onclick="toggleRespSort('timestamp')">Timestamp${
               responsesState.sort_by === "timestamp"
                 ? responsesState.sort_order === "ASC"
-                  ? " ↑"
-                  : " ↓"
+                  ? " â†‘"
+                  : " â†“"
                 : ""
             }</th>
           </tr>
@@ -1390,7 +1392,7 @@ async function fetchAndRenderResponsesData() {
     if ($("#resp-pagination-info")) {
       $(
         "#resp-pagination-info"
-      ).textContent = `Showing ${startIdx}–${endIdx} of ${formatNumber(
+      ).textContent = `Showing ${startIdx}â€“${endIdx} of ${formatNumber(
         total
       )} responses`;
     }
@@ -1401,7 +1403,7 @@ async function fetchAndRenderResponsesData() {
         page === 1 ? "disabled" : ""
       } onclick="renderResponses(${
         page - 1
-      })" class="btn btn-secondary btn-sm">← Prev</button>`;
+      })" class="btn btn-secondary btn-sm">â† Prev</button>`;
       for (let i = 1; i <= totalPages; i++) {
         if (i === 1 || i === totalPages || (i >= page - 1 && i <= page + 1)) {
           pagHtml += `<button class="btn btn-sm ${
@@ -1415,13 +1417,13 @@ async function fetchAndRenderResponsesData() {
         page >= totalPages ? "disabled" : ""
       } onclick="renderResponses(${
         page + 1
-      })" class="btn btn-secondary btn-sm">Next →</button>`;
+      })" class="btn btn-secondary btn-sm">Next â†’</button>`;
       $("#resp-pagination-controls").innerHTML = pagHtml;
     }
 
     if (!responses.length) {
       if (tbody) {
-        tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state" style="padding:40px 20px;"><div class="empty-state-icon">📭</div><h3>No responses found</h3><p>Try changing your filters or search criteria.</p></div></td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state" style="padding:40px 20px;"><div class="empty-state-icon">ðŸ“­</div><h3>No responses found</h3><p>Try changing your filters or search criteria.</p></div></td></tr>`;
       }
       return;
     }
@@ -1433,7 +1435,7 @@ async function fetchAndRenderResponsesData() {
         return `<span class="resp-copy-btn" onclick="event.stopPropagation(); copyToClipboard('${e.replace(
           /'/g,
           "\\'"
-        )}')" title="${escapeHtml(tooltip)}">⧉</span>`;
+        )}')" title="${escapeHtml(tooltip)}">â§‰</span>`;
       };
 
       tbody.innerHTML = responses
@@ -1448,7 +1450,7 @@ async function fetchAndRenderResponsesData() {
           const ip = r.ip_address || "";
           const ua = r.user_agent || "";
           const devIcon =
-            r.device === "Mobile" ? "📱" : r.device === "Tablet" ? "📲" : "💻";
+            r.device === "Mobile" ? "ðŸ“±" : r.device === "Tablet" ? "ðŸ“²" : "ðŸ’»";
           const deviceText = r.device || "Desktop";
           const statusVal = r.status || "COMPLETE";
           const ts = formatDateTime(r.created_at || r.updated_at);
@@ -1520,7 +1522,7 @@ async function fetchAndRenderResponsesData() {
           const ip = r.ip_address || "";
           const ua = r.user_agent || "";
           const devIcon =
-            r.device === "Mobile" ? "📱" : r.device === "Tablet" ? "📲" : "💻";
+            r.device === "Mobile" ? "ðŸ“±" : r.device === "Tablet" ? "ðŸ“²" : "ðŸ’»";
           const deviceText = r.device || "Desktop";
           const statusVal = r.status || "COMPLETE";
           const ts = formatDateTime(r.created_at || r.updated_at);
@@ -1545,7 +1547,7 @@ async function fetchAndRenderResponsesData() {
               <span class="mc-label">Timestamp</span>
               <span class="mc-value">${escapeHtml(ts)}</span>
             </div>
-            <div class="mc-toggle" onclick="event.stopPropagation();">Show details ↓</div>
+            <div class="mc-toggle" onclick="event.stopPropagation();">Show details â†“</div>
             <div class="mc-expand">
               <div class="mc-row">
                 <span class="mc-label">IP Address</span>
@@ -1565,7 +1567,7 @@ async function fetchAndRenderResponsesData() {
     }
   } catch (err) {
     if (tbody) {
-      tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state" style="padding:40px 20px;"><div class="empty-state-icon">⚠️</div><h3>Unable to load responses</h3><p>${escapeHtml(
+      tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state" style="padding:40px 20px;"><div class="empty-state-icon">âš ï¸</div><h3>Unable to load responses</h3><p>${escapeHtml(
         err.message
       )}</p><button class="btn btn-secondary btn-sm" style="margin-top:12px;" onclick="fetchAndRenderResponsesData()">Retry</button></div></td></tr>`;
     }
@@ -1591,7 +1593,7 @@ function toggleRespSort(field) {
 }
 window.toggleRespSort = toggleRespSort;
 
-// ─── Analytics ─────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Analytics â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function renderAnalytics(page = 1) {
   showLoading();
   try {
@@ -1604,19 +1606,19 @@ async function renderAnalytics(page = 1) {
       <div class="section-header"><h3>Analytics Overview</h3></div>
       <div class="grid-3 mb-24">
         <div class="stat-card">
-          <div class="stat-card-icon icon-info">📊</div>
+          <div class="stat-card-icon icon-info">ðŸ“Š</div>
           <div class="stat-label">Total Sessions</div>
           <div class="stat-value">${formatNumber(
             funnel.total_sessions || 0
           )}</div>
         </div>
         <div class="stat-card">
-          <div class="stat-card-icon icon-success">✅</div>
+          <div class="stat-card-icon icon-success">âœ…</div>
           <div class="stat-label">Completed</div>
           <div class="stat-value">${formatNumber(funnel.completed || 0)}</div>
         </div>
         <div class="stat-card">
-          <div class="stat-card-icon icon-accent">📈</div>
+          <div class="stat-card-icon icon-accent">ðŸ“ˆ</div>
           <div class="stat-label">Conversion Rate</div>
           <div class="stat-value">${(
             (funnel.completed / funnel.total_sessions) * 100 || 0
@@ -1661,7 +1663,7 @@ async function renderAnalytics(page = 1) {
   }
 }
 
-// ─── Finance Dashboard ──────────────────────────────────────────────────────────
+// â”€â”€â”€ Finance Dashboard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function renderFinance(page = 1) {
   showLoading();
   try {
@@ -1686,10 +1688,10 @@ async function renderFinance(page = 1) {
         </div>
         <div style="display:flex; gap:10px;">
           <button class="btn btn-secondary" onclick="openGenerateInvoiceModal()">
-            📄 Raise Client Invoice
+            ðŸ“„ Raise Client Invoice
           </button>
           <button class="btn btn-primary" onclick="downloadFinanceCsv()">
-            📥 Export CSV
+            ðŸ“¥ Export CSV
           </button>
         </div>
       </div>
@@ -1697,42 +1699,42 @@ async function renderFinance(page = 1) {
       <!-- KPI Overview Cards -->
       <div class="stats-grid mb-24">
         <div class="stat-card">
-          <div class="stat-card-icon icon-info">📁</div>
+          <div class="stat-card-icon icon-info">ðŸ“</div>
           <div class="stat-label">Total Projects</div>
           <div class="stat-value">${formatNumber(sum.total_projects || 0)}</div>
         </div>
         <div class="stat-card">
-          <div class="stat-card-icon icon-purple">📊</div>
+          <div class="stat-card-icon icon-purple">ðŸ“Š</div>
           <div class="stat-label">Total Field Activity</div>
           <div class="stat-value">${formatNumber(sum.total_activity || 0)}</div>
         </div>
         <div class="stat-card">
-          <div class="stat-card-icon icon-accent">🎯</div>
+          <div class="stat-card-icon icon-accent">ðŸŽ¯</div>
           <div class="stat-label">Verified Completes</div>
           <div class="stat-value">${formatNumber(sum.total_verified || sum.total_completes || 0)}</div>
         </div>
         <div class="stat-card">
-          <div class="stat-card-icon icon-warning">⚠️</div>
+          <div class="stat-card-icon icon-warning">âš ï¸</div>
           <div class="stat-label">Unverified (Audit Only)</div>
           <div class="stat-value" style="color:var(--color-warning);">${formatNumber(sum.total_unverified || 0)}</div>
         </div>
         <div class="stat-card">
-          <div class="stat-card-icon icon-success">✅</div>
+          <div class="stat-card-icon icon-success">âœ…</div>
           <div class="stat-label">Accepted / Approved</div>
           <div class="stat-value">${formatNumber(sum.total_approved || 0)}</div>
         </div>
         <div class="stat-card">
-          <div class="stat-card-icon icon-danger">❌</div>
+          <div class="stat-card-icon icon-danger">âŒ</div>
           <div class="stat-label">Rejected Completes</div>
           <div class="stat-value">${formatNumber(sum.total_rejected || 0)}</div>
         </div>
         <div class="stat-card">
-          <div class="stat-card-icon icon-success">💵</div>
+          <div class="stat-card-icon icon-success">ðŸ’µ</div>
           <div class="stat-label">Client Revenue</div>
           <div class="stat-value">${formatINR(sum.total_client_revenue || 0)}</div>
         </div>
         <div class="stat-card">
-          <div class="stat-card-icon icon-purple">📈</div>
+          <div class="stat-card-icon icon-purple">ðŸ“ˆ</div>
           <div class="stat-label">Gross Margin</div>
           <div class="stat-value" style="color:var(--color-success);">${formatINR(sum.total_gross_margin || 0)}</div>
         </div>
@@ -1758,7 +1760,7 @@ async function renderFinance(page = 1) {
                 vendor_rate: formatINR(vRate),
                 margin: `<span style="color:${margin >= 0 ? 'var(--color-success)' : 'var(--color-danger)'}; font-weight:600;">${formatINR(margin)}</span>`,
                 currency: p.currency || 'INR',
-                actions: `<button class="btn btn-sm btn-secondary" onclick="openSetRatesModal('${p.id}', '${escapeHtml(p.project_code)}', ${cRate}, ${vRate}, '${p.currency || 'INR'}')">⚙️ Set Rates</button>`,
+                actions: `<button class="btn btn-sm btn-secondary" onclick="openSetRatesModal('${p.id}', '${escapeHtml(p.project_code)}', ${cRate}, ${vRate}, '${p.currency || 'INR'}')">âš™ï¸ Set Rates</button>`,
               };
             }),
             "id"
@@ -1777,17 +1779,17 @@ async function renderFinance(page = 1) {
             ["Invoice #", "Project", "Client", "Period", "Approved Qty", "Rate", "Total Amount", "Status", "Actions"],
             invoices.map((inv) => ({
               inv_num: `<strong>${escapeHtml(inv.invoice_number)}</strong>`,
-              proj: escapeHtml(inv.project_code || inv.project_name || '—'),
-              client: escapeHtml(inv.client_name || '—'),
-              period: `${formatDate(inv.billing_period_start)} – ${formatDate(inv.billing_period_end)}`,
+              proj: escapeHtml(inv.project_code || inv.project_name || 'â€”'),
+              client: escapeHtml(inv.client_name || 'â€”'),
+              period: `${formatDate(inv.billing_period_start)} â€“ ${formatDate(inv.billing_period_end)}`,
               qty: formatNumber(inv.total_approved_completes),
               rate: formatINR(inv.client_rate),
               total: `<strong>${formatINR(inv.total_amount)}</strong>`,
               status: renderBadge(inv.status),
               actions: `
                 <div style="display:flex; gap:6px;">
-                  <button class="btn btn-sm btn-secondary" onclick="downloadInvoiceExcel('${inv.id}')" title="Download Excel">📥 Excel</button>
-                  ${inv.status === 'RAISED' ? `<button class="btn btn-sm btn-success" onclick="markInvoice('${inv.id}', 'PAID')" title="Mark as Paid">✓ Paid</button>` : ''}
+                  <button class="btn btn-sm btn-secondary" onclick="downloadInvoiceExcel('${inv.id}')" title="Download Excel">ðŸ“¥ Excel</button>
+                  ${inv.status === 'RAISED' ? `<button class="btn btn-sm btn-success" onclick="markInvoice('${inv.id}', 'PAID')" title="Mark as Paid">âœ“ Paid</button>` : ''}
                 </div>
               `,
             })),
@@ -1804,28 +1806,28 @@ async function renderFinance(page = 1) {
   }
 }
 
-// ─── Rate Config Modal ────────────────────────────────────────────────────────
+// â”€â”€â”€ Rate Config Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function openSetRatesModal(projectId, projectCode, clientRate, vendorRate, currency) {
   showModal(
-    `Set Rates — ${projectCode}`,
+    `Set Rates â€” ${projectCode}`,
     `
       <form id="set-rates-form">
         <input type="hidden" name="project_id" value="${projectId}">
         <div class="form-group mb-14">
-          <label>Client Billing Rate (₹ / accepted complete)</label>
+          <label>Client Billing Rate (â‚¹ / accepted complete)</label>
           <input type="number" step="0.01" min="0" name="client_rate" value="${clientRate}" required>
         </div>
         <div class="form-group mb-14">
-          <label>Vendor Payout Rate (₹ / accepted complete)</label>
+          <label>Vendor Payout Rate (â‚¹ / accepted complete)</label>
           <input type="number" step="0.01" min="0" name="vendor_rate" value="${vendorRate}" required>
         </div>
         <div class="form-group">
           <label>Currency</label>
           <select name="currency">
-            <option value="INR" ${currency === 'INR' ? 'selected' : ''}>INR (₹)</option>
+            <option value="INR" ${currency === 'INR' ? 'selected' : ''}>INR (â‚¹)</option>
             <option value="USD" ${currency === 'USD' ? 'selected' : ''}>USD ($)</option>
-            <option value="EUR" ${currency === 'EUR' ? 'selected' : ''}>EUR (€)</option>
-            <option value="GBP" ${currency === 'GBP' ? 'selected' : ''}>GBP (£)</option>
+            <option value="EUR" ${currency === 'EUR' ? 'selected' : ''}>EUR (â‚¬)</option>
+            <option value="GBP" ${currency === 'GBP' ? 'selected' : ''}>GBP (Â£)</option>
           </select>
         </div>
       </form>
@@ -1857,7 +1859,7 @@ async function doSetRates() {
   }
 }
 
-// ─── Invoice Generation Modal with Pre-flight Preview & UID-Level Review ───────
+// â”€â”€â”€ Invoice Generation Modal with Pre-flight Preview & UID-Level Review â”€â”€â”€â”€â”€â”€â”€
 let currentInvoicePreviewData = null;
 let currentInvoiceActiveTab = 'eligible';
 
@@ -1877,7 +1879,7 @@ async function openGenerateInvoiceModal() {
               <label style="font-weight:600; font-size:0.8125rem;">SELECT PROJECT</label>
               <select id="inv-project-select" name="project_id" required onchange="triggerInvoicePreview()" style="padding:8px 12px; border-radius:6px; border:1px solid var(--border-default); width:100%;">
                 <option value="">-- Choose Project --</option>
-                ${projects.map((p) => `<option value="${p.id}">${escapeHtml(p.project_code)} — ${escapeHtml(p.name)} (₹${p.client_rate || 0}/ea)</option>`).join("")}
+                ${projects.map((p) => `<option value="${p.id}">${escapeHtml(p.project_code)} â€” ${escapeHtml(p.name)} (â‚¹${p.client_rate || 0}/ea)</option>`).join("")}
               </select>
             </div>
             <div class="form-group">
@@ -1898,7 +1900,7 @@ async function openGenerateInvoiceModal() {
           <!-- Preview & Pre-Flight Review Container -->
           <div id="invoice-preview-container" style="min-height:80px; padding:12px; background:var(--bg-card); border:1px solid var(--border-default); border-radius:8px; margin-bottom:14px;">
             <div style="text-align:center; color:var(--text-muted); padding:16px;">
-              👈 Select a project and billing period to calculate live commercial metrics & inspect UID-level records.
+              ðŸ‘ˆ Select a project and billing period to calculate live commercial metrics & inspect UID-level records.
             </div>
           </div>
         </form>
@@ -1906,7 +1908,7 @@ async function openGenerateInvoiceModal() {
       `
         <button class="btn btn-secondary" onclick="hideModal()">Cancel</button>
         <button id="btn-raise-invoice" class="btn btn-primary" onclick="doGenerateInvoice()" disabled>
-          📄 Confirm & Raise Invoice
+          ðŸ“„ Confirm & Raise Invoice
         </button>
       `
     );
@@ -1927,7 +1929,7 @@ async function triggerInvoicePreview() {
     return;
   }
 
-  if (container) container.innerHTML = `<div style="text-align:center; padding:16px; color:var(--text-muted);">🔄 Auditing traffic records and calculating billing preview...</div>`;
+  if (container) container.innerHTML = `<div style="text-align:center; padding:16px; color:var(--text-muted);">ðŸ”„ Auditing traffic records and calculating billing preview...</div>`;
 
   try {
     const res = await api(`/finance/invoices/preview?project_id=${pId}&billing_period_start=${start}&billing_period_end=${end}`);
@@ -1937,7 +1939,7 @@ async function triggerInvoicePreview() {
   } catch (err) {
     currentInvoicePreviewData = null;
     if (raiseBtn) raiseBtn.disabled = true;
-    if (container) container.innerHTML = `<div style="color:var(--color-danger); padding:12px;">⚠️ Preview Error: ${escapeHtml(err.message)}</div>`;
+    if (container) container.innerHTML = `<div style="color:var(--color-danger); padding:12px;">âš ï¸ Preview Error: ${escapeHtml(err.message)}</div>`;
   }
 }
 
@@ -2001,26 +2003,26 @@ function renderInvoicePreviewDom(data) {
 
     ${data.already_invoiced_count > 0 ? `
       <div style="background:#eff6ff; border:1px solid #bfdbfe; color:#1e40af; padding:8px 12px; border-radius:6px; font-size:0.78125rem; margin-bottom:12px;">
-        🛡️ <strong>Double-Billing Protection:</strong> ${data.already_invoiced_count} completes in this date range were already invoiced and excluded automatically.
+        ðŸ›¡ï¸ <strong>Double-Billing Protection:</strong> ${data.already_invoiced_count} completes in this date range were already invoiced and excluded automatically.
       </div>
     ` : ''}
 
     ${eligCount === 0 ? `
       <div style="background:#fef2f2; border:1px solid #fecaca; color:#991b1b; padding:8px 12px; border-radius:6px; font-size:0.78125rem; margin-bottom:12px;">
-        ℹ️ <strong>Notice:</strong> No unbilled approved completes found for this billing period. Please complete and review responses before raising invoice.
+        â„¹ï¸ <strong>Notice:</strong> No unbilled approved completes found for this billing period. Please complete and review responses before raising invoice.
       </div>
     ` : ''}
 
     <!-- Tabs for UID-level inspection -->
     <div style="display:flex; border-bottom:1px solid #e2e8f0; gap:8px; margin-bottom:8px;">
       <button type="button" class="btn btn-sm ${currentInvoiceActiveTab === 'eligible' ? 'btn-primary' : 'btn-secondary'}" onclick="switchInvoicePreviewTab('eligible')">
-        ✅ Eligible Billable UIDs (${(data.eligible_records || []).length})
+        âœ… Eligible Billable UIDs (${(data.eligible_records || []).length})
       </button>
       <button type="button" class="btn btn-sm ${currentInvoiceActiveTab === 'unverified' ? 'btn-primary' : 'btn-secondary'}" onclick="switchInvoicePreviewTab('unverified')">
-        ⚠️ Unverified Activity (${(data.unverified_records || []).length})
+        âš ï¸ Unverified Activity (${(data.unverified_records || []).length})
       </button>
       <button type="button" class="btn btn-sm ${currentInvoiceActiveTab === 'rejected' ? 'btn-primary' : 'btn-secondary'}" onclick="switchInvoicePreviewTab('rejected')">
-        ❌ Rejected UIDs (${(data.rejected_records || []).length})
+        âŒ Rejected UIDs (${(data.rejected_records || []).length})
       </button>
     </div>
 
@@ -2098,7 +2100,7 @@ function renderInvoiceTabHtml() {
             <tr style="border-top:1px solid #f1f5f9;">
               <td style="padding:4px 8px; font-family:monospace; font-weight:600;">${escapeHtml(u.uid)}</td>
               <td style="padding:4px 8px; color:#b45309;"><span class="badge badge-warning">${escapeHtml(u.reason)}</span></td>
-              <td style="padding:4px 8px;">${u.created_at ? formatDateTime(u.created_at) : '—'}</td>
+              <td style="padding:4px 8px;">${u.created_at ? formatDateTime(u.created_at) : 'â€”'}</td>
               <td style="padding:4px 8px;">${escapeHtml(u.provider)}</td>
               <td style="padding:4px 8px;"><strong style="color:#d97706;">NON-BILLABLE</strong></td>
             </tr>
@@ -2127,7 +2129,7 @@ function renderInvoiceTabHtml() {
             <tr style="border-top:1px solid #f1f5f9;">
               <td style="padding:4px 8px; font-family:monospace; font-weight:600;">${escapeHtml(r.uid)}</td>
               <td style="padding:4px 8px;"><span class="badge badge-danger">${escapeHtml(r.rejection_reason_code)}</span></td>
-              <td style="padding:4px 8px; color:var(--text-muted);">${escapeHtml(r.rejection_notes || '—')}</td>
+              <td style="padding:4px 8px; color:var(--text-muted);">${escapeHtml(r.rejection_notes || 'â€”')}</td>
               <td style="padding:4px 8px;">REJECTED</td>
               <td style="padding:4px 8px; color:#dc2626; font-weight:600;">- ${formatINR(r.deduction)}</td>
             </tr>
@@ -2187,7 +2189,7 @@ async function downloadInvoiceExcel(invoiceId) {
   }
 }
 
-// ─── Rejection Management ─────────────────────────────────────────────────────
+// â”€â”€â”€ Rejection Management â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 let selectedResponseIds = new Set();
 
 async function renderRejectionManagement(page = 1) {
@@ -2219,10 +2221,10 @@ async function renderRejectionManagement(page = 1) {
         </div>
         <div style="display:flex; gap:10px;">
           <button class="btn btn-secondary" onclick="openBulkRejectModal()">
-            🚫 Bulk Reject (${selectedResponseIds.size})
+            ðŸš« Bulk Reject (${selectedResponseIds.size})
           </button>
           <button class="btn btn-success" onclick="bulkReview('APPROVED', 'ACCEPTED')">
-            ✅ Bulk Accept (${selectedResponseIds.size})
+            âœ… Bulk Accept (${selectedResponseIds.size})
           </button>
         </div>
       </div>
@@ -2235,7 +2237,7 @@ async function renderRejectionManagement(page = 1) {
               <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted);">PROJECT</label>
               <select id="rej-filter-project" onchange="renderRejectionManagement(1)" style="padding:8px 12px; border-radius:6px; border:1px solid var(--border-default);">
                 <option value="">All Projects</option>
-                ${projects.map((p) => `<option value="${p.id}" ${pCodeFilter === p.id ? 'selected' : ''}>${escapeHtml(p.project_code)} — ${escapeHtml(p.name)}</option>`).join("")}
+                ${projects.map((p) => `<option value="${p.id}" ${pCodeFilter === p.id ? 'selected' : ''}>${escapeHtml(p.project_code)} â€” ${escapeHtml(p.name)}</option>`).join("")}
               </select>
             </div>
             <div style="display:flex; flex-direction:column; gap:4px;">
@@ -2271,16 +2273,16 @@ async function renderRejectionManagement(page = 1) {
               return {
                 select: `<input type="checkbox" class="row-checkbox" value="${r.id}" ${isChecked ? 'checked' : ''} onchange="toggleRowSelect('${r.id}', this.checked)" style="cursor:pointer;">`,
                 uid: `<code style="font-weight:600;">${escapeHtml(r.uid)}</code>`,
-                project: escapeHtml(r.project_code || '—'),
-                vendor: escapeHtml(r.vendor_name || '—'),
+                project: escapeHtml(r.project_code || 'â€”'),
+                vendor: escapeHtml(r.vendor_name || 'â€”'),
                 survey_status: renderBadge(r.final_status),
                 review_status: renderBadge(r.vendor_acceptance_status),
-                reason: r.rejection_reason_code ? `<span class="badge badge-danger">${escapeHtml(r.rejection_reason_code)}</span>` : '<span style="color:var(--text-muted);">—</span>',
+                reason: r.rejection_reason_code ? `<span class="badge badge-danger">${escapeHtml(r.rejection_reason_code)}</span>` : '<span style="color:var(--text-muted);">â€”</span>',
                 date: r.reviewed_at ? formatDateTime(r.reviewed_at) : '<span style="color:var(--text-muted);">Pending</span>',
                 actions: `
                   <div style="display:flex; gap:6px;">
-                    <button class="btn btn-sm btn-success" onclick="quickApprove('${r.id}')" title="Approve">✓ Accept</button>
-                    <button class="btn btn-sm btn-danger" onclick="openSingleRejectModal('${r.id}', '${escapeHtml(r.uid)}')" title="Reject">✕ Reject</button>
+                    <button class="btn btn-sm btn-success" onclick="quickApprove('${r.id}')" title="Approve">âœ“ Accept</button>
+                    <button class="btn btn-sm btn-danger" onclick="openSingleRejectModal('${r.id}', '${escapeHtml(r.uid)}')" title="Reject">âœ• Reject</button>
                   </div>
                 `,
               };
@@ -2337,7 +2339,7 @@ async function quickApprove(id) {
 
 function openSingleRejectModal(id, uid) {
   showModal(
-    `Reject Respondent — ${uid}`,
+    `Reject Respondent â€” ${uid}`,
     `
       <form id="single-reject-form">
         <input type="hidden" name="id" value="${id}">
@@ -2468,7 +2470,7 @@ async function bulkReview(clientStatus, vendorStatus) {
   }
 }
 
-// ─── Vendor Settlements ───────────────────────────────────────────────────────
+// â”€â”€â”€ Vendor Settlements â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function renderVendorSettlements() {
   showLoading();
   try {
@@ -2503,7 +2505,7 @@ async function renderVendorSettlements() {
               <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted);">PROJECT</label>
               <select name="project_id" required style="padding:8px 12px; border-radius:6px; border:1px solid var(--border-default); width:100%;">
                 <option value="">-- Choose Project --</option>
-                ${projects.map((p) => `<option value="${p.id}">${escapeHtml(p.project_code)} — ${escapeHtml(p.name)}</option>`).join("")}
+                ${projects.map((p) => `<option value="${p.id}">${escapeHtml(p.project_code)} â€” ${escapeHtml(p.name)}</option>`).join("")}
               </select>
             </div>
             <div style="display:flex; flex-direction:column; gap:4px;">
@@ -2523,7 +2525,7 @@ async function renderVendorSettlements() {
             </div>
             <div style="display:flex; gap:8px;">
               <button type="button" class="btn btn-primary" onclick="doGenerateSettlement()" style="width:100%;">
-                ⚡ Calculate & Save Settlement
+                âš¡ Calculate & Save Settlement
               </button>
             </div>
           </form>
@@ -2551,8 +2553,8 @@ async function renderVendorSettlements() {
               const rejPct = ver > 0 ? ((rej / ver) * 100).toFixed(1) : (Number(s.rejection_percentage) || 0).toFixed(1);
 
               return {
-                project: `<strong>${escapeHtml(s.project_code || '—')}</strong>`,
-                vendor: escapeHtml(s.vendor_name || '—'),
+                project: `<strong>${escapeHtml(s.project_code || 'â€”')}</strong>`,
+                vendor: escapeHtml(s.vendor_name || 'â€”'),
                 rate: formatINR(rate),
                 submitted: formatNumber(sub),
                 verified: `<span style="font-weight:600; color:#059669;">${formatNumber(ver)}</span>`,
@@ -2565,7 +2567,7 @@ async function renderVendorSettlements() {
                 status: renderBadge(s.status),
                 actions: `
                   <div style="display:flex; gap:6px;">
-                    <button class="btn btn-sm btn-secondary" onclick="downloadSettlementExcel('${s.id}')" title="Download 7-Sheet Professional Excel">📥 7-Sheet Excel</button>
+                    <button class="btn btn-sm btn-secondary" onclick="downloadSettlementExcel('${s.id}')" title="Download 7-Sheet Professional Excel">ðŸ“¥ 7-Sheet Excel</button>
                     ${s.status === 'DRAFT' ? `<button class="btn btn-sm btn-info" onclick="finalizeSettlement('${s.id}')">Finalize</button>` : ''}
                     ${s.status === 'FINALIZED' ? `<button class="btn btn-sm btn-success" onclick="markSettlementPaid('${s.id}')">Pay</button>` : ''}
                   </div>
@@ -2648,7 +2650,7 @@ async function downloadSettlementExcel(id) {
   }
 }
 
-// ─── Audit ─────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Audit â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function renderAudit(page = 1) {
   showLoading();
   try {
@@ -2682,7 +2684,7 @@ async function renderAudit(page = 1) {
   }
 }
 
-// ─── Quotas ────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Quotas â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function renderQuotas(page = 1) {
   showLoading();
   try {
@@ -2731,7 +2733,7 @@ async function renderQuotas(page = 1) {
   }
 }
 
-// ─── Settings (placeholder) ────────────────────────────────────────────────────
+// â”€â”€â”€ Settings (placeholder) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function renderSettings() {
   const content = `
     <div class="section-header"><h3>Platform Settings</h3></div>
@@ -2779,7 +2781,7 @@ async function renderSettings() {
 }
 
 
-// ─── Complete User Management Implementation (IAM Blueprint) ──────────────────
+// â”€â”€â”€ Complete User Management Implementation (IAM Blueprint) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 let userFiltersState = {
   search: "",
   role: "",
@@ -2815,10 +2817,10 @@ async function renderUsers(page = 1) {
     const content = `
       <!-- Top KPI Summary Cards -->
       <div class="stats-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 24px;">
-        ${renderStatCard("Total Users", summary.total_users || 0, "👥", "icon-accent")}
-        ${renderStatCard("Active Users", summary.active_users || 0, "✅", "icon-success")}
-        ${renderStatCard("Vendors", summary.vendor_users || 0, "🏢", "icon-purple")}
-        ${renderStatCard("Suspended Users", summary.suspended_users || 0, "⛔", "icon-warning")}
+        ${renderStatCard("Total Users", summary.total_users || 0, "ðŸ‘¥", "icon-accent")}
+        ${renderStatCard("Active Users", summary.active_users || 0, "âœ…", "icon-success")}
+        ${renderStatCard("Vendors", summary.vendor_users || 0, "ðŸ¢", "icon-purple")}
+        ${renderStatCard("Suspended Users", summary.suspended_users || 0, "â›”", "icon-warning")}
       </div>
 
       <!-- Action Bar & Filter Toolbar -->
@@ -2831,7 +2833,7 @@ async function renderUsers(page = 1) {
             </div>
             <div style="display: flex; gap: 10px; align-items: center;">
               <button class="btn btn-secondary" onclick="downloadUsersExcel()" title="Export all users to formatted Excel spreadsheet">
-                📥 Export Users (.xlsx)
+                ðŸ“¥ Export Users (.xlsx)
               </button>
               <button class="btn btn-primary" onclick="openCreateUserModal()">
                 + Create User
@@ -2842,7 +2844,7 @@ async function renderUsers(page = 1) {
           <!-- Filters Row -->
           <div class="user-filter-toolbar" style="margin-bottom: 0; padding: 12px 16px;">
             <div style="flex: 2; min-width: 200px;">
-              <input type="text" id="user-filter-search" placeholder="🔍 Search name or email..." value="${escapeHtml(userFiltersState.search)}" style="width: 100%;" onkeydown="if(event.key==='Enter') applyUserFilters()">
+              <input type="text" id="user-filter-search" placeholder="ðŸ” Search name or email..." value="${escapeHtml(userFiltersState.search)}" style="width: 100%;" onkeydown="if(event.key==='Enter') applyUserFilters()">
             </div>
             <div style="flex: 1; min-width: 130px;">
               <select id="user-filter-role" style="width: 100%;" onchange="applyUserFilters()">
@@ -2878,10 +2880,10 @@ async function renderUsers(page = 1) {
         <span id="users-bulk-count" style="font-weight: 600; color: var(--accent-hover); font-size: 0.875rem;">0 users selected</span>
         <div style="display: flex; gap: 8px;">
           <button class="btn btn-sm btn-secondary" onclick="bulkUpdateUsersStatus('ACTIVE')" style="background: white; border: 1px solid var(--color-success); color: var(--color-success);">
-            ✅ Bulk Activate
+            âœ… Bulk Activate
           </button>
           <button class="btn btn-sm btn-secondary" onclick="bulkUpdateUsersStatus('SUSPENDED')" style="background: white; border: 1px solid var(--color-danger); color: var(--color-danger);">
-            ⛔ Bulk Suspend
+            â›” Bulk Suspend
           </button>
           <button class="btn btn-sm btn-secondary" onclick="clearUserSelections()" style="background: white;">
             Clear
@@ -2911,7 +2913,7 @@ async function renderUsers(page = 1) {
             ${users.length === 0 ? `
               <tr>
                 <td colspan="9" style="text-align: center; padding: 48px 20px;">
-                  <div class="empty-state-icon" style="font-size: 2.5rem; margin-bottom: 8px;">👥</div>
+                  <div class="empty-state-icon" style="font-size: 2.5rem; margin-bottom: 8px;">ðŸ‘¥</div>
                   <h4 style="font-size: 1rem; color: var(--text-primary); margin-bottom: 4px;">No users found</h4>
                   <p style="font-size: 0.8125rem; color: var(--text-muted);">Try clearing your search or filter criteria.</p>
                 </td>
@@ -2922,10 +2924,10 @@ async function renderUsers(page = 1) {
                 ? '<span class="badge badge-purple" style="font-weight: 700;">ADMIN</span>'
                 : '<span class="badge badge-info" style="font-weight: 700;">VENDOR</span>';
               const statusBadge = isSuspended
-                ? '<span class="badge badge-danger">● SUSPENDED</span>'
-                : '<span class="badge badge-success">● ACTIVE</span>';
+                ? '<span class="badge badge-danger">â— SUSPENDED</span>'
+                : '<span class="badge badge-success">â— ACTIVE</span>';
               const vendorDisplay = u.role === "ADMIN"
-                ? '<span style="color: var(--text-muted); font-size: 0.85rem;">—</span>'
+                ? '<span style="color: var(--text-muted); font-size: 0.85rem;">â€”</span>'
                 : (u.vendor_name ? `<span style="font-weight: 600; color: var(--text-primary);">${escapeHtml(u.vendor_name)}</span>` : '<span style="color: var(--color-warning);">Unassigned</span>');
 
               return `
@@ -2935,13 +2937,13 @@ async function renderUsers(page = 1) {
                   </td>
                   <td>
                     <div style="font-weight: 600; color: var(--text-primary); cursor: pointer;" onclick="openUserDetailsModal('${escapeHtml(u.id)}')">
-                      ${escapeHtml(u.full_name || "—")}
+                      ${escapeHtml(u.full_name || "â€”")}
                     </div>
                   </td>
                   <td>
                     <div class="id-cell-wrapper" style="max-width: 280px;">
                       <span class="font-mono id-text" title="${escapeHtml(u.email)}" style="font-size: 0.82rem; font-weight: 500;">${escapeHtml(u.email)}</span>
-                      <button class="btn-copy" onclick="event.stopPropagation(); copyToClipboard('${escapeHtml(u.email)}')" title="Copy Login ID">📋</button>
+                      <button class="btn-copy" onclick="event.stopPropagation(); copyToClipboard('${escapeHtml(u.email)}')" title="Copy Login ID">ðŸ“‹</button>
                     </div>
                   </td>
                   <td>${roleBadge}</td>
@@ -2956,22 +2958,22 @@ async function renderUsers(page = 1) {
                   <td style="text-align: right; white-space: nowrap;">
                     <div style="display: inline-flex; gap: 6px; align-items: center;">
                       <button class="btn btn-sm btn-secondary" onclick="openUserDetailsModal('${escapeHtml(u.id)}')" title="View details and audit activity" style="padding: 4px 8px; font-size: 0.75rem;">
-                        👁 Details
+                        ðŸ‘ Details
                       </button>
                       <button class="btn btn-sm btn-secondary" onclick="openResetPasswordModal('${escapeHtml(u.id)}', '${escapeHtml(u.email)}')" title="Reset temporary password" style="padding: 4px 8px; font-size: 0.75rem;">
-                        🔑 Reset PW
+                        ðŸ”‘ Reset PW
                       </button>
                       ${isSuspended ? `
                         <button class="btn btn-sm" onclick="confirmToggleUserStatus('${escapeHtml(u.id)}', '${escapeHtml(u.full_name || u.email)}', 'SUSPENDED')" title="Reactivate this user account" style="padding: 4px 8px; font-size: 0.75rem; background: var(--color-success-bg); color: var(--color-success); border: 1px solid rgba(16, 185, 129, 0.2);">
-                          ✅ Activate
+                          âœ… Activate
                         </button>
                       ` : `
                         <button class="btn btn-sm" onclick="confirmToggleUserStatus('${escapeHtml(u.id)}', '${escapeHtml(u.full_name || u.email)}', 'ACTIVE')" title="Suspend this user account" style="padding: 4px 8px; font-size: 0.75rem; background: var(--color-danger-bg); color: var(--color-danger); border: 1px solid rgba(239, 68, 68, 0.2);">
-                          ⛔ Suspend
+                          â›” Suspend
                         </button>
                       `}
                       <button class="btn btn-sm" onclick="confirmDeleteUser('${escapeHtml(u.id)}', '${escapeHtml(u.full_name || u.email)}', '${escapeHtml(u.role)}')" title="Delete user" style="padding: 4px 8px; font-size: 0.75rem; background: var(--bg-muted); color: var(--text-muted); border: 1px solid var(--border-default);">
-                        🗑
+                        ðŸ—‘
                       </button>
                     </div>
                   </td>
@@ -3067,7 +3069,7 @@ async function bulkUpdateUsersStatus(newStatus) {
   }
 }
 
-// ─── Create User Modal ─────────────────────────────────────────────────────────
+// â”€â”€â”€ Create User Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function openCreateUserModal() {
   showModal("Create User", '<div class="loading-screen" style="min-height:200px;"><div class="spinner-lg"></div></div>');
   try {
@@ -3107,7 +3109,7 @@ async function openCreateUserModal() {
         <div class="form-group" id="vendor-select-group">
           <label style="font-weight: 600; font-size: 0.8125rem; color: var(--text-primary);">Vendor Assignment</label>
           <select id="new-user-vendor" class="input-glass" style="width: 100%;" disabled>
-            <option value="">— Not Applicable (ADMIN has global oversight) —</option>
+            <option value="">â€” Not Applicable (ADMIN has global oversight) â€”</option>
             ${vendors.map(v => `<option value="${escapeHtml(v.id)}">${escapeHtml(v.name)} (${escapeHtml(v.vendor_code || v.id.slice(0, 6))})</option>`).join("")}
           </select>
           <small id="vendor-hint" style="color: var(--text-muted); font-size: 0.72rem; margin-top: 4px; display: block;">
@@ -3120,7 +3122,7 @@ async function openCreateUserModal() {
             <label style="font-weight: 600; font-size: 0.8125rem; color: var(--text-primary);">Initial Password *</label>
             <span style="font-size: 0.72rem; color: var(--accent); cursor: pointer;" onclick="togglePasswordVisibility('new-user-password', this)">Show</span>
           </div>
-          <input type="password" id="new-user-password" placeholder="••••••••••••" required class="input-glass" style="width: 100%;" oninput="checkNewUserPasswordStrength(this.value)">
+          <input type="password" id="new-user-password" placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" required class="input-glass" style="width: 100%;" oninput="checkNewUserPasswordStrength(this.value)">
           <div class="pw-strength-container">
             <div class="pw-strength-bar"><div id="new-user-pw-bar" class="pw-strength-fill"></div></div>
             <span id="new-user-pw-text" class="pw-strength-text">Password strength: None</span>
@@ -3132,7 +3134,7 @@ async function openCreateUserModal() {
             <label style="font-weight: 600; font-size: 0.8125rem; color: var(--text-primary);">Confirm Password *</label>
             <span style="font-size: 0.72rem; color: var(--accent); cursor: pointer;" onclick="togglePasswordVisibility('new-user-password-confirm', this)">Show</span>
           </div>
-          <input type="password" id="new-user-password-confirm" placeholder="••••••••••••" required class="input-glass" style="width: 100%;">
+          <input type="password" id="new-user-password-confirm" placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" required class="input-glass" style="width: 100%;">
         </div>
 
         <div id="create-user-error" class="error-msg" style="display: none; margin-top: 4px;"></div>
@@ -3158,11 +3160,11 @@ function handleCreateUserRoleChange(role) {
   if (role === "ADMIN") {
     vendorSelect.disabled = true;
     vendorSelect.value = "";
-    vendorSelect.options[0].textContent = "— Not Applicable (ADMIN has global oversight) —";
+    vendorSelect.options[0].textContent = "â€” Not Applicable (ADMIN has global oversight) â€”";
     if (vendorHint) vendorHint.textContent = "Admins have platform-wide access and do not belong to a specific vendor.";
   } else {
     vendorSelect.disabled = false;
-    vendorSelect.options[0].textContent = "— Select Assigned Vendor (Required) —";
+    vendorSelect.options[0].textContent = "â€” Select Assigned Vendor (Required) â€”";
     if (vendorHint) vendorHint.textContent = "Vendor accounts are strictly isolated to their assigned vendor data.";
   }
 }
@@ -3276,7 +3278,7 @@ async function submitCreateUser() {
   }
 }
 
-// ─── Reset Password Modal ──────────────────────────────────────────────────────
+// â”€â”€â”€ Reset Password Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function openResetPasswordModal(userId, email) {
   const bodyHtml = `
     <form id="reset-pw-form" onsubmit="event.preventDefault(); submitResetPassword('${escapeHtml(userId)}');" style="display: flex; flex-direction: column; gap: 14px;">
@@ -3289,7 +3291,7 @@ function openResetPasswordModal(userId, email) {
           <label style="font-weight: 600; font-size: 0.8125rem; color: var(--text-primary);">New Temporary Password *</label>
           <span style="font-size: 0.72rem; color: var(--accent); cursor: pointer;" onclick="togglePasswordVisibility('reset-pw-new', this)">Show</span>
         </div>
-        <input type="password" id="reset-pw-new" placeholder="••••••••••••" required class="input-glass" style="width: 100%;">
+        <input type="password" id="reset-pw-new" placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" required class="input-glass" style="width: 100%;">
       </div>
 
       <div class="form-group">
@@ -3297,7 +3299,7 @@ function openResetPasswordModal(userId, email) {
           <label style="font-weight: 600; font-size: 0.8125rem; color: var(--text-primary);">Confirm Temporary Password *</label>
           <span style="font-size: 0.72rem; color: var(--accent); cursor: pointer;" onclick="togglePasswordVisibility('reset-pw-confirm', this)">Show</span>
         </div>
-        <input type="password" id="reset-pw-confirm" placeholder="••••••••••••" required class="input-glass" style="width: 100%;">
+        <input type="password" id="reset-pw-confirm" placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" required class="input-glass" style="width: 100%;">
       </div>
 
       <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px; padding: 8px 12px; background: var(--accent-light); border-radius: var(--radius-sm);">
@@ -3359,7 +3361,7 @@ async function submitResetPassword(userId) {
   }
 }
 
-// ─── User Details Modal & Audit Activity Timeline ─────────────────────────────
+// â”€â”€â”€ User Details Modal & Audit Activity Timeline â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function openUserDetailsModal(userId) {
   showModal("User Details", '<div class="loading-screen" style="min-height:260px;"><div class="spinner-lg"></div></div>');
   try {
@@ -3381,7 +3383,7 @@ async function openUserDetailsModal(userId) {
               ${escapeHtml((u.full_name || u.email || "U").charAt(0).toUpperCase())}
             </div>
             <div>
-              <div style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary);">${escapeHtml(u.full_name || "—")}</div>
+              <div style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary);">${escapeHtml(u.full_name || "â€”")}</div>
               <div style="font-size: 0.8125rem; color: var(--text-secondary); font-family: ui-monospace, monospace;">${escapeHtml(u.email)}</div>
             </div>
           </div>
@@ -3401,7 +3403,7 @@ async function openUserDetailsModal(userId) {
           <div>
             <label style="font-size: 0.72rem; text-transform: uppercase; font-weight: 600; color: var(--text-muted); display: block;">Assigned Vendor</label>
             <div style="margin-top: 4px; font-weight: 600; color: var(--text-primary);">
-              ${u.role === "ADMIN" ? '<span style="color: var(--text-muted);">— (Global Admin)</span>' : (u.vendor_name ? `${escapeHtml(u.vendor_name)} (${escapeHtml(u.vendor_code || u.vendor_id)})` : '<span style="color: var(--color-warning);">Unassigned</span>')}
+              ${u.role === "ADMIN" ? '<span style="color: var(--text-muted);">â€” (Global Admin)</span>' : (u.vendor_name ? `${escapeHtml(u.vendor_name)} (${escapeHtml(u.vendor_code || u.vendor_id)})` : '<span style="color: var(--color-warning);">Unassigned</span>')}
             </div>
           </div>
 
@@ -3429,19 +3431,19 @@ async function openUserDetailsModal(userId) {
         <!-- Quick Actions Row -->
         <div style="display: flex; gap: 8px; padding-top: 12px; border-top: 1px solid var(--border-light); flex-wrap: wrap;">
           <button class="btn btn-sm btn-secondary" onclick="hideModal(); openResetPasswordModal('${escapeHtml(u.id)}', '${escapeHtml(u.email)}');">
-            🔑 Reset Password
+            ðŸ”‘ Reset Password
           </button>
           ${isSuspended ? `
             <button class="btn btn-sm" onclick="hideModal(); confirmToggleUserStatus('${escapeHtml(u.id)}', '${escapeHtml(u.full_name || u.email)}', 'SUSPENDED');" style="background: var(--color-success-bg); color: var(--color-success); border: 1px solid rgba(16, 185, 129, 0.2);">
-              ✅ Activate Account
+              âœ… Activate Account
             </button>
           ` : `
             <button class="btn btn-sm" onclick="hideModal(); confirmToggleUserStatus('${escapeHtml(u.id)}', '${escapeHtml(u.full_name || u.email)}', 'ACTIVE');" style="background: var(--color-danger-bg); color: var(--color-danger); border: 1px solid rgba(239, 68, 68, 0.2);">
-              ⛔ Suspend Account
+              â›” Suspend Account
             </button>
           `}
           <button class="btn btn-sm" onclick="hideModal(); confirmDeleteUser('${escapeHtml(u.id)}', '${escapeHtml(u.full_name || u.email)}', '${escapeHtml(u.role)}');" style="background: var(--bg-muted); color: var(--color-danger); border: 1px solid var(--border-default);">
-            🗑 Delete
+            ðŸ—‘ Delete
           </button>
         </div>
 
@@ -3458,13 +3460,13 @@ async function openUserDetailsModal(userId) {
                 No audit activity recorded for this user yet.
               </div>
             ` : activities.map(act => {
-              let icon = "📝";
-              if (act.action.includes("LOGIN")) icon = "🔐";
-              else if (act.action.includes("PASSWORD")) icon = "🔑";
-              else if (act.action.includes("SUSPEND")) icon = "⛔";
-              else if (act.action.includes("ACTIVATE")) icon = "✅";
-              else if (act.action.includes("CREATE")) icon = "➕";
-              else if (act.action.includes("DELETE")) icon = "🗑";
+              let icon = "ðŸ“";
+              if (act.action.includes("LOGIN")) icon = "ðŸ”";
+              else if (act.action.includes("PASSWORD")) icon = "ðŸ”‘";
+              else if (act.action.includes("SUSPEND")) icon = "â›”";
+              else if (act.action.includes("ACTIVATE")) icon = "âœ…";
+              else if (act.action.includes("CREATE")) icon = "âž•";
+              else if (act.action.includes("DELETE")) icon = "ðŸ—‘";
 
               return `
                 <div class="timeline-item">
@@ -3476,7 +3478,7 @@ async function openUserDetailsModal(userId) {
                     </div>
                     <div class="timeline-meta">
                       Actor: <strong>${escapeHtml(act.actor_email || "System")}</strong>
-                      ${act.ip_address ? ` · IP: ${escapeHtml(act.ip_address)}` : ""}
+                      ${act.ip_address ? ` Â· IP: ${escapeHtml(act.ip_address)}` : ""}
                     </div>
                   </div>
                 </div>
@@ -3494,7 +3496,7 @@ async function openUserDetailsModal(userId) {
   }
 }
 
-// ─── Suspend / Activate User Confirmation (Section 9 & 10) ───────────────────
+// â”€â”€â”€ Suspend / Activate User Confirmation (Section 9 & 10) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function confirmToggleUserStatus(userId, name, currentStatus) {
   if (currentStatus === "ACTIVE") {
     // Suspend Modal
@@ -3502,7 +3504,7 @@ function confirmToggleUserStatus(userId, name, currentStatus) {
       <div style="font-size: 0.9rem; color: var(--text-primary); line-height: 1.5;">
         <p style="margin-bottom: 12px;">Are you sure you want to suspend <strong>${escapeHtml(name)}</strong>?</p>
         <div style="padding: 12px 14px; background: var(--color-danger-bg); border-radius: var(--radius-md); border: 1px solid rgba(239, 68, 68, 0.2); color: var(--color-danger); font-size: 0.82rem;">
-          ⚠️ <strong>${escapeHtml(name)}</strong> will no longer be able to authenticate or access the platform.
+          âš ï¸ <strong>${escapeHtml(name)}</strong> will no longer be able to authenticate or access the platform.
         </div>
       </div>
     `;
@@ -3543,13 +3545,13 @@ async function doUpdateUserStatus(userId, newStatus) {
   }
 }
 
-// ─── Delete User Confirmation (Section 11) ───────────────────────────────────
+// â”€â”€â”€ Delete User Confirmation (Section 11) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function confirmDeleteUser(userId, name, role) {
   const bodyHtml = `
     <div style="font-size: 0.9rem; color: var(--text-primary); line-height: 1.5;">
       <p style="margin-bottom: 12px;">Delete user account <strong>${escapeHtml(name)}</strong> (${escapeHtml(role)})?</p>
       <div style="padding: 12px 14px; background: var(--bg-muted); border-radius: var(--radius-md); border: 1px solid var(--border-light); font-size: 0.8125rem; color: var(--text-secondary);">
-        ℹ️ To maintain historical response ownership and audit trail compliance, this user will be deactivated and marked as suspended.
+        â„¹ï¸ To maintain historical response ownership and audit trail compliance, this user will be deactivated and marked as suspended.
       </div>
     </div>
   `;
@@ -3573,7 +3575,7 @@ async function doDeleteUser(userId) {
   }
 }
 
-// ─── Download Users Excel (Section 19) ─────────────────────────────────────────
+// â”€â”€â”€ Download Users Excel (Section 19) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function downloadUsersExcel() {
   try {
     showToast("Generating enterprise users export...", "info", 2000);
@@ -3594,13 +3596,13 @@ async function downloadUsersExcel() {
   }
 }
 
-// ─── Pagination ────────────────────────────────────────────────────────────────
+// â”€â”€â”€ Pagination â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function renderPagination(current, total, handler) {
   if (total <= 1) return "";
   let html = "";
   html += `<button ${current === 1 ? "disabled" : ""} onclick="${handler}(${
     current - 1
-  })">← Prev</button>`;
+  })">â† Prev</button>`;
   for (let i = 1; i <= total; i++) {
     if (i === 1 || i === total || (i >= current - 1 && i <= current + 1)) {
       html += `<button class="${
@@ -3612,12 +3614,380 @@ function renderPagination(current, total, handler) {
   }
   html += `<button ${current === total ? "disabled" : ""} onclick="${handler}(${
     current + 1
-  })">Next →</button>`;
+  })">Next â†’</button>`;
   html += `<span class="pagination-info">Page ${current} of ${total}</span>`;
   return html;
 }
 
-// ─── Modal Forms ───────────────────────────────────────────────────────────────
+// â”€â”€â”€ Projects Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+let _currentProjectId = null;
+
+async function renderProjects() {
+  const area = $("#content-area");
+  area.innerHTML = `<div class="loading-screen"><div class="spinner-lg"></div></div>`;
+  try {
+    const { data: projects } = await api("/projects");
+    area.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+        <div>
+          <h2 style="margin:0;font-size:1.25rem;font-weight:700;color:var(--text-primary)">Client Projects</h2>
+          <p style="margin:0.25rem 0 0;font-size:0.8125rem;color:var(--text-muted);">${projects.length} project${projects.length !== 1 ? 's' : ''} configured</p>
+        </div>
+        <button class="btn btn-primary" onclick="showCreateProjectModal()">+ Create Project</button>
+      </div>
+      ${projects.length === 0 ? `
+        <div style="text-align:center;padding:4rem 2rem;background:var(--surface-glass);border-radius:1rem;border:1px solid var(--border-color);">
+          <div style="font-size:3rem;margin-bottom:1rem;">ðŸ“</div>
+          <h3 style="margin:0 0 0.5rem;color:var(--text-primary)">No Projects Yet</h3>
+          <p style="color:var(--text-muted);margin-bottom:1.5rem;">Create your first survey tracking project to get started.</p>
+          <button class="btn btn-primary" onclick="showCreateProjectModal()">+ Create Project</button>
+        </div>
+      ` : `
+        <div style="display:grid;gap:1rem;">
+          ${projects.map(function(p) {
+            var statusColor = p.status === 'LIVE' ? 'var(--color-success)' : p.status === 'DRAFT' ? 'var(--text-muted)' : 'var(--color-warning)';
+            return `
+              <div onclick="renderProjectDetail('${escapeHtml(p.id)}')" style="background:var(--surface-glass);border:1px solid var(--border-color);border-radius:0.875rem;padding:1.25rem 1.5rem;cursor:pointer;transition:all 0.2s ease;display:grid;grid-template-columns:1fr auto;gap:0.75rem;align-items:start;" onmouseover="this.style.borderColor='var(--color-primary)';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='var(--border-color)';this.style.transform='translateY(0)'">
+                <div>
+                  <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.5rem;">
+                    <span style="font-family:monospace;font-size:0.8125rem;font-weight:700;background:var(--color-primary);color:#fff;padding:0.2rem 0.6rem;border-radius:0.375rem;">${escapeHtml(p.project_code)}</span>
+                    <span style="font-size:0.75rem;font-weight:600;color:${statusColor};background:${statusColor}18;padding:0.15rem 0.5rem;border-radius:999px;">${escapeHtml(p.status)}</span>
+                  </div>
+                  <div style="font-size:1rem;font-weight:600;color:var(--text-primary);margin-bottom:0.25rem;">${escapeHtml(p.name)}</div>
+                  ${p.client_name ? `<div style="font-size:0.8125rem;color:var(--text-muted);">Client: ${escapeHtml(p.client_name)}</div>` : ''}
+                  ${p.survey_url ? `<div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.35rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:500px;">ðŸ”— ${escapeHtml(p.survey_url)}</div>` : ''}
+                </div>
+                <div style="text-align:right;font-size:0.75rem;color:var(--text-muted);">
+                  ${p.client_rate ? `<div>Client: <strong style="color:var(--text-primary);">â‚¹${p.client_rate}</strong></div>` : ''}
+                  ${p.vendor_rate ? `<div>Vendor: <strong style="color:var(--text-primary);">â‚¹${p.vendor_rate}</strong></div>` : ''}
+                  <div style="margin-top:0.5rem;color:var(--color-primary);font-weight:500;">View Details â†’</div>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `}
+    `;
+  } catch (e) {
+    showToast("Failed to load projects: " + e.message, "error");
+    area.innerHTML = `<p style="color:var(--color-danger)">Error loading projects.</p>`;
+  }
+}
+
+async function renderProjectDetail(projectId) {
+  _currentProjectId = projectId;
+  const area = $("#content-area");
+  area.innerHTML = `<div class="loading-screen"><div class="spinner-lg"></div></div>`;
+  try {
+    const { data: proj } = await api(`/projects/${projectId}`);
+    var countriesRes = await api(`/projects/${projectId}/countries`).catch(function() { return { data: [] }; });
+    var countries = countriesRes.data || [];
+    var baseUrl = window.location.origin;
+
+    var countryBlocks = countries.map(function(c) {
+      var opiUrl = baseUrl + '/track?code=' + encodeURIComponent(proj.project_code) + '&country=' + encodeURIComponent(c.country_code) + '&uid={UID}';
+      return `
+        <div style="background:var(--bg-primary,#0a0d14);border:1px solid var(--border-color);border-radius:0.75rem;padding:1rem 1.25rem;margin-bottom:0.75rem;">
+          <div style="font-size:0.875rem;font-weight:600;color:var(--text-primary);margin-bottom:0.5rem;">
+            ðŸŒ ${escapeHtml(c.country_name)} <span style="color:var(--text-muted);font-size:0.75rem;">(${escapeHtml(c.country_code)})</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:0.5rem;background:var(--surface-glass);border:1px solid var(--border-color);border-radius:0.5rem;padding:0.5rem 0.75rem;">
+            <code id="opi-${escapeHtml(c.country_code)}" style="flex:1;font-size:0.75rem;color:var(--color-primary);word-break:break-all;">${escapeHtml(opiUrl)}</code>
+            <button class="btn btn-sm" onclick="copyToClipboard(document.getElementById('opi-${escapeHtml(c.country_code)}').textContent, this)" style="padding:0.25rem 0.6rem;font-size:0.7rem;white-space:nowrap;">ðŸ“‹ Copy</button>
+          </div>
+          <div style="font-size:0.7rem;color:var(--text-muted);margin-top:0.35rem;">Replace <code style="color:var(--color-warning);">{UID}</code> with respondent UID before distributing.</div>
+        </div>
+      `;
+    }).join('');
+
+    area.innerHTML = `
+      <div style="max-width:900px;">
+        <button class="btn btn-ghost" onclick="renderProjects()" style="margin-bottom:1.25rem;font-size:0.8125rem;">â† Back to Projects</button>
+        <div style="background:var(--surface-glass);border:1px solid var(--border-color);border-radius:1rem;padding:1.5rem;margin-bottom:1.25rem;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem;">
+            <div>
+              <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.5rem;">
+                <span style="font-family:monospace;font-weight:800;font-size:1.1rem;background:var(--color-primary);color:#fff;padding:0.3rem 0.8rem;border-radius:0.5rem;">${escapeHtml(proj.project_code)}</span>
+                <span style="font-size:0.8rem;font-weight:600;padding:0.2rem 0.6rem;border-radius:999px;background:var(--color-success)20;color:var(--color-success);">${escapeHtml(proj.status)}</span>
+              </div>
+              <h2 style="margin:0 0 0.25rem;font-size:1.25rem;font-weight:700;color:var(--text-primary);">${escapeHtml(proj.name)}</h2>
+              ${proj.client_name ? `<p style="margin:0;font-size:0.875rem;color:var(--text-muted);">Client: <strong style="color:var(--text-primary);">${escapeHtml(proj.client_name)}</strong></p>` : ''}
+            </div>
+            <div style="text-align:right;font-size:0.8125rem;">
+              <div>Client Rate: <strong style="color:var(--text-primary);">â‚¹${proj.client_rate || 0}</strong></div>
+              <div>Vendor Rate: <strong style="color:var(--text-primary);">â‚¹${proj.vendor_rate || 0}</strong></div>
+            </div>
+          </div>
+        </div>
+        ${proj.survey_url ? `
+          <div style="background:var(--surface-glass);border:1px solid var(--border-color);border-radius:0.875rem;padding:1.25rem;margin-bottom:1.25rem;">
+            <h3 style="margin:0 0 0.75rem;font-size:0.875rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;">Survey URL Config</h3>
+            <code style="display:block;font-size:0.75rem;color:var(--text-primary);background:var(--bg-primary,#0a0d14);padding:0.75rem;border-radius:0.5rem;word-break:break-all;margin-bottom:0.75rem;">${escapeHtml(proj.survey_url)}</code>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;font-size:0.8125rem;">
+              <div>UID Param: <code style="color:var(--color-success);">${escapeHtml(proj.uid_param || 'auto-detect')}</code></div>
+              <div>Placeholder: <code style="color:var(--color-warning);">${escapeHtml(proj.uid_placeholder || 'not detected')}</code></div>
+            </div>
+          </div>
+        ` : ''}
+        <div style="background:var(--surface-glass);border:1px solid var(--border-color);border-radius:0.875rem;padding:1.25rem;">
+          <h3 style="margin:0 0 1rem;font-size:0.875rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;">OPI Launch Links</h3>
+          ${countryBlocks || '<p style="color:var(--text-muted);font-size:0.875rem;">No countries configured.</p>'}
+        </div>
+      </div>
+    `;
+  } catch (e) {
+    showToast("Failed to load project: " + e.message, "error");
+    area.innerHTML = `<p style="color:var(--color-danger)">Error: ${escapeHtml(e.message)}</p><button class="btn" onclick="renderProjects()">â† Back</button>`;
+  }
+}
+
+function copyToClipboard(text, btn) {
+  navigator.clipboard.writeText((text || '').trim()).then(function() {
+    var orig = btn.innerHTML;
+    btn.innerHTML = 'âœ… Copied!';
+    btn.style.color = 'var(--color-success)';
+    setTimeout(function() { btn.innerHTML = orig; btn.style.color = ''; }, 1800);
+  }).catch(function() { showToast("Copy failed â€” please copy manually", "error"); });
+}
+
+var _createProjectCountries = [];
+
+// â”€â”€â”€ Create Project Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// _cpCountries: array of { code, name, survey_url, vendor_id, target_completes }
+var _cpCountries = [];
+var _cpVendorList = [];
+
+async function showCreateProjectModal() {
+  _cpCountries = [];
+  // Pre-load vendor list for dropdowns
+  try {
+    var vRes = await api('/vendors?active=true');
+    _cpVendorList = (vRes.data || []).filter(function(v) { return v.status === 'ACTIVE'; });
+  } catch(e) { _cpVendorList = []; }
+
+  showModal(
+    'Create Project',
+    `<form id="create-project-form" style="display:flex;flex-direction:column;gap:1.1rem;">
+      <div class="form-group">
+        <label>Client Project Name <span style="color:var(--color-danger)">*</span></label>
+        <input type="text" id="cp-name" placeholder="e.g. Global Smartphone Study Q4 2025" required style="width:100%;">
+      </div>
+      <div class="form-group">
+        <label>Client Name</label>
+        <input type="text" id="cp-client-name" placeholder="e.g. ABC Research Inc." style="width:100%;">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+        <div class="form-group">
+          <label>Client Rate (â‚¹)</label>
+          <input type="number" id="cp-client-rate" placeholder="70" min="0" step="0.01" style="width:100%;">
+        </div>
+        <div class="form-group">
+          <label>Vendor Rate (â‚¹)</label>
+          <input type="number" id="cp-vendor-rate" placeholder="50" min="0" step="0.01" style="width:100%;">
+        </div>
+      </div>
+      <div class="form-group">
+        <label style="font-weight:600;font-size:0.9rem;letter-spacing:0.01em;">Countries &amp; Survey Links</label>
+        <p style="font-size:0.78rem;color:var(--text-muted);margin:0.25rem 0 0.75rem;">Each country has its own client survey URL. OPI tracking link is auto-generated per country.</p>
+        <div id="cp-country-cards" style="display:flex;flex-direction:column;gap:0.85rem;"></div>
+        <div style="display:flex;gap:0.5rem;margin-top:0.75rem;">
+          <input type="text" id="cp-country-input" placeholder="Country code (IN, FR, DE...)" style="flex:1;" maxlength="3"
+            onkeydown="if(event.key==='Enter'){event.preventDefault();cpAddCountry();}">
+          <button type="button" class="btn btn-secondary" onclick="cpAddCountry()" style="white-space:nowrap;">+ Add Country</button>
+        </div>
+        <div id="cp-countries-error" style="color:var(--color-danger);font-size:0.75rem;margin-top:0.3rem;"></div>
+      </div>
+    </form>`,
+    `<button class="btn btn-secondary" onclick="hideModal()">Cancel</button>
+     <button class="btn btn-primary" id="cp-submit-btn" onclick="submitCreateProject()">Create Project</button>`
+  );
+}
+
+function cpVendorOptions(selectedId) {
+  var opts = '<option value="">â€” No vendor â€”</option>';
+  _cpVendorList.forEach(function(v) {
+    opts += '<option value="' + v.id + '"' + (v.id === selectedId ? ' selected' : '') + '>' + escapeHtml(v.name) + '</option>';
+  });
+  return opts;
+}
+
+function cpRenderCards() {
+  var container = document.getElementById('cp-country-cards');
+  if (!container) return;
+  if (_cpCountries.length === 0) {
+    container.innerHTML = '<p style="font-size:0.8rem;color:var(--text-muted);text-align:center;padding:1rem 0;">No countries added yet.</p>';
+    return;
+  }
+  container.innerHTML = _cpCountries.map(function(c, i) {
+    return `<div id="cp-card-${i}" style="border:1px solid var(--border-color);border-radius:0.6rem;padding:1rem;background:var(--bg-card);position:relative;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
+        <span style="font-weight:700;font-size:0.95rem;">${escapeHtml(c.name || c.code)} <span style="color:var(--text-muted);font-size:0.8rem;">(${escapeHtml(c.code)})</span></span>
+        <button type="button" onclick="cpRemoveCountry(${i})" style="background:none;border:none;cursor:pointer;color:var(--color-danger);font-size:0.8rem;padding:0.1rem 0.4rem;border-radius:4px;" title="Remove">âœ• Remove</button>
+      </div>
+      <div class="form-group" style="margin-bottom:0.6rem;">
+        <label style="font-size:0.8rem;">Client Survey URL <span style="color:var(--color-danger)">*</span></label>
+        <input type="url" id="cp-url-${i}" placeholder="https://client.com/survey?offer=FR123&rid=[identifier]"
+          style="width:100%;font-size:0.82rem;"
+          value="${escapeHtml(c.survey_url || '')}"
+          oninput="cpUrlChanged(${i}, this.value)">
+        <div id="cp-url-info-${i}" style="margin-top:0.35rem;font-size:0.73rem;color:var(--text-muted);min-height:1.1rem;">${cpUrlInfoHtml(c)}</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+        <div class="form-group" style="margin:0;">
+          <label style="font-size:0.8rem;">Vendor</label>
+          <select id="cp-vendor-${i}" onchange="_cpCountries[${i}].vendor_id=this.value" style="width:100%;font-size:0.82rem;">
+            ${cpVendorOptions(c.vendor_id)}
+          </select>
+        </div>
+        <div class="form-group" style="margin:0;">
+          <label style="font-size:0.8rem;">Target Completes</label>
+          <input type="number" id="cp-target-${i}" value="${c.target_completes || ''}" min="1" placeholder="500"
+            style="width:100%;font-size:0.82rem;"
+            onchange="_cpCountries[${i}].target_completes=this.value?parseInt(this.value):null">
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function cpUrlInfoHtml(c) {
+  if (!c.survey_url) return '';
+  if (c._analyzing) return '<span style="color:var(--text-muted);">Analyzingâ€¦</span>';
+  if (c.uid_param) {
+    return 'âœ… UID param: <strong style="color:var(--color-success)">' + escapeHtml(c.uid_param) + '</strong>'
+      + (c.uid_placeholder ? ' Â· Placeholder: <code style="color:var(--color-warning)">' + escapeHtml(c.uid_placeholder) + '</code>' : '');
+  }
+  return '<span style="color:var(--color-warning);">âš ï¸ No placeholder â€” UID will be appended as <code>uid=</code></span>';
+}
+
+var _cpUrlTimers = {};
+function cpUrlChanged(i, url) {
+  _cpCountries[i].survey_url = url;
+  _cpCountries[i].uid_param = null;
+  _cpCountries[i].uid_placeholder = null;
+  _cpCountries[i]._analyzing = url && url.length > 10;
+  var infoEl = document.getElementById('cp-url-info-' + i);
+  if (infoEl) infoEl.innerHTML = _cpCountries[i]._analyzing ? '<span style="color:var(--text-muted);">Analyzingâ€¦</span>' : '';
+  clearTimeout(_cpUrlTimers[i]);
+  if (!url || url.length < 10) return;
+  _cpUrlTimers[i] = setTimeout(function() { cpAnalyzeUrl(i, url); }, 600);
+}
+
+async function cpAnalyzeUrl(i, url) {
+  try {
+    var res = await api('/projects/analyze-url?url=' + encodeURIComponent(url));
+    if (_cpCountries[i] && _cpCountries[i].survey_url === url) {
+      _cpCountries[i].uid_param = res.data.uid_param || null;
+      _cpCountries[i].uid_placeholder = res.data.uid_placeholder || null;
+      _cpCountries[i]._analyzing = false;
+      var infoEl = document.getElementById('cp-url-info-' + i);
+      if (infoEl) infoEl.innerHTML = cpUrlInfoHtml(_cpCountries[i]);
+    }
+  } catch(e) {
+    if (_cpCountries[i]) { _cpCountries[i]._analyzing = false; }
+  }
+}
+
+function cpAddCountry() {
+  var input = document.getElementById('cp-country-input');
+  var errEl = document.getElementById('cp-countries-error');
+  if (!input) return;
+  var code = input.value.trim().toUpperCase();
+  if (!code) return;
+  if (code.length < 2 || code.length > 3) { if(errEl) errEl.textContent = 'Country code must be 2â€“3 chars (e.g. IN, FR, DE)'; return; }
+  if (_cpCountries.some(function(c) { return c.code === code; })) { if(errEl) errEl.textContent = code + ' already added'; return; }
+  if (errEl) errEl.textContent = '';
+  // Look up name from COUNTRY_MAP equivalent (best-effort)
+  var nameMap = {'IN':'India','FR':'France','DE':'Germany','US':'United States','GB':'United Kingdom','AU':'Australia','CA':'Canada','SG':'Singapore','AE':'UAE','PH':'Philippines','TH':'Thailand','MY':'Malaysia','ID':'Indonesia','NG':'Nigeria','ZA':'South Africa','BR':'Brazil','MX':'Mexico','AR':'Argentina','CO':'Colombia','PL':'Poland','IT':'Italy','ES':'Spain','NL':'Netherlands','SE':'Sweden','NO':'Norway','DK':'Denmark','FI':'Finland','BE':'Belgium','CH':'Switzerland','AT':'Austria','JP':'Japan','KR':'South Korea','CN':'China','TW':'Taiwan','HK':'Hong Kong','VN':'Vietnam'};
+  var name = nameMap[code] || code;
+  _cpCountries.push({ code: code, name: name, survey_url: '', uid_param: null, uid_placeholder: null, vendor_id: null, target_completes: null });
+  input.value = '';
+  cpRenderCards();
+}
+
+function cpRemoveCountry(i) {
+  _cpCountries.splice(i, 1);
+  cpRenderCards();
+}
+
+async function submitCreateProject() {
+  var nameEl = document.getElementById('cp-name');
+  var clientNameEl = document.getElementById('cp-client-name');
+  var clientRateEl = document.getElementById('cp-client-rate');
+  var vendorRateEl = document.getElementById('cp-vendor-rate');
+  var submitBtn = document.getElementById('cp-submit-btn');
+  var errEl = document.getElementById('cp-countries-error');
+
+  var name = nameEl ? nameEl.value.trim() : '';
+  if (!name) { showToast('Project name is required', 'error'); return; }
+  if (_cpCountries.length === 0) {
+    if (errEl) errEl.textContent = 'At least one country is required';
+    showToast('Add at least one country', 'error');
+    return;
+  }
+
+  // Collect current URL values from DOM (in case user didn't trigger oninput)
+  _cpCountries.forEach(function(c, i) {
+    var urlEl = document.getElementById('cp-url-' + i);
+    var vendorEl = document.getElementById('cp-vendor-' + i);
+    var targetEl = document.getElementById('cp-target-' + i);
+    if (urlEl) c.survey_url = urlEl.value.trim();
+    if (vendorEl) c.vendor_id = vendorEl.value || null;
+    if (targetEl) c.target_completes = targetEl.value ? parseInt(targetEl.value) : null;
+  });
+
+  // Validate each country has a survey URL
+  var missing = _cpCountries.filter(function(c) { return !c.survey_url; });
+  if (missing.length > 0) {
+    var msg = 'Survey URL is required for: ' + missing.map(function(c) { return c.code; }).join(', ');
+    if (errEl) errEl.textContent = msg;
+    showToast(msg, 'error');
+    return;
+  }
+
+  if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Creatingâ€¦'; }
+  try {
+    var result = await api('/projects/create-full', {
+      method: 'POST',
+      body: JSON.stringify({
+        name: name,
+        client_name: clientNameEl && clientNameEl.value.trim() ? clientNameEl.value.trim() : null,
+        client_rate: clientRateEl && clientRateEl.value ? parseFloat(clientRateEl.value) : 70,
+        vendor_rate: vendorRateEl && vendorRateEl.value ? parseFloat(vendorRateEl.value) : 50,
+        countries: _cpCountries.map(function(c) {
+          return {
+            code: c.code,
+            survey_url: c.survey_url,
+            vendor_id: c.vendor_id || null,
+            target_completes: c.target_completes || null,
+          };
+        }),
+      }),
+    });
+    hideModal();
+    showToast('Project ' + result.data.project.project_code + ' created!', 'success');
+    await renderProjectDetail(result.data.project.id);
+    if ($('#page-title')) $('#page-title').textContent = 'Projects';
+  } catch (e) {
+    showToast('Failed: ' + (e.message || 'Unknown error'), 'error');
+    if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Create Project'; }
+  }
+}
+
+// Legacy stubs â€” kept so old code references don't crash
+var _createProjectCountries = [];
+function addCountryToProject() { cpAddCountry(); }
+function removeCountryTag(code) {
+  var i = _cpCountries.findIndex(function(c) { return c.code === code; });
+  if (i >= 0) cpRemoveCountry(i);
+}
+function renderCountryTags() {}
+function debounceAnalyzeSurveyUrl() {}
+function previewUrlAnalysis() {}
+
+// â”€â”€â”€ Modal Forms â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
 function openCreateStudyModal() {
   showModal(
     "Create Study",
@@ -3717,7 +4087,7 @@ async function submitCreateVendor() {
   }
 }
 
-// ─── Page Router ───────────────────────────────────────────────────────────────
+// â”€â”€â”€ Page Router â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function showPage(page) {
   const cleanPage =
     String(page || "")
@@ -3776,6 +4146,13 @@ async function showPage(page) {
       break;
     case "settings":
       await renderSettings();
+      break;
+    case "projects":
+      await renderProjects();
+      break;
+    case "project-detail":
+      if (_currentProjectId) await renderProjectDetail(_currentProjectId);
+      else await renderProjects();
       break;
     default:
       await renderDashboard();
@@ -3840,7 +4217,7 @@ function showApp() {
   showPage(initialPage);
 }
 
-// ─── doLogin ───────────────────────────────────────────────────────────────────
+// â”€â”€â”€ doLogin â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function doLogin() {
   const btn = document.getElementById("login-btn");
   if (!btn || btn.disabled) return;
@@ -3941,7 +4318,7 @@ async function doLogin() {
 }
 window.doLogin = doLogin;
 
-// ─── Event Handlers ────────────────────────────────────────────────────────────
+// â”€â”€â”€ Event Handlers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function initEventListeners() {
   const loginForm = document.getElementById("login-form");
   if (loginForm)
@@ -3972,7 +4349,7 @@ function initEventListeners() {
   });
 }
 
-// ─── Initialization ────────────────────────────────────────────────────────────
+// â”€â”€â”€ Initialization â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function init() {
   initEventListeners();
   initPasswordToggle();

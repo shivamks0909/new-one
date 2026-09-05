@@ -1181,10 +1181,19 @@ export class Database {
         COALESCE(re.user_agent, sess.user_agent, '') AS user_agent,
         sess.landing_url,
         sess.started_at,
-        sess.country_detected
+        COALESCE(sess.country_detected, s.country, '—') AS country_detected,
+        sess.session_token,
+        COALESCE(p.project_code, s.study_code) AS project_code,
+        COALESCE(p.name, s.title) AS project_name,
+        CASE 
+          WHEN r.final_status = 'IN_PROGRESS' THEN 'IN_PROGRESS'
+          WHEN r.final_status IN ('COMPLETE', 'TERMINATE', 'QUOTA_FULL', 'SECURITY_REJECT', 'EXPIRED') THEN 'GENUINE'
+          ELSE 'UNVERIFIED'
+        END AS verification_status
       FROM responses r
       JOIN studies s ON s.id = r.study_id
       JOIN vendors v ON v.id = r.vendor_id
+      LEFT JOIN projects p ON (p.id = r.project_id OR UPPER(p.project_code) = UPPER(s.study_code))
       LEFT JOIN sessions sess ON sess.id = r.session_id
       LEFT JOIN LATERAL (
         SELECT ip_address, user_agent, raw_payload
@@ -1481,10 +1490,14 @@ export class Database {
     project_code: string; name: string; description?: string;
     client_id?: string; created_by?: string;
     client_rate?: number; vendor_rate?: number; currency?: string;
+    // Survey tracking config (new)
+    client_name?: string; survey_url?: string; uid_param?: string; uid_placeholder?: string;
   }): Promise<any> {
     const { rows } = await this.pool.query(
-      `INSERT INTO projects (project_code, name, description, client_id, created_by, client_rate, vendor_rate, currency)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+      `INSERT INTO projects
+         (project_code, name, description, client_id, created_by, client_rate, vendor_rate, currency,
+          client_name, survey_url, uid_param, uid_placeholder)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *`,
       [
         data.project_code,
         data.name,
@@ -1493,7 +1506,11 @@ export class Database {
         data.created_by || null,
         data.client_rate !== undefined ? data.client_rate : 70,
         data.vendor_rate !== undefined ? data.vendor_rate : 50,
-        data.currency || 'INR'
+        data.currency || 'INR',
+        data.client_name || null,
+        data.survey_url || null,
+        data.uid_param || null,
+        data.uid_placeholder || null,
       ]
     );
     const project = rows[0];
@@ -1535,7 +1552,10 @@ export class Database {
   }
 
   async updateProject(id: string, fields: Partial<any>): Promise<any | null> {
-    const allowed = ['name', 'description', 'status', 'client_id', 'client_rate', 'vendor_rate', 'currency'];
+    const allowed = [
+      'name', 'description', 'status', 'client_id', 'client_rate', 'vendor_rate', 'currency',
+      'client_name', 'survey_url', 'uid_param', 'uid_placeholder',
+    ];
     const sets: string[] = []; const params: any[] = [];
     for (const key of allowed) {
       if (fields[key] !== undefined) { params.push(fields[key]); sets.push(`${key} = $${params.length}`); }
@@ -1630,11 +1650,20 @@ export class Database {
   async createProjectLink(data: {
     country_id: string; link_code: string; link_name: string;
     url: string; provider_id?: string; uid_mode?: string;
+    uid_param?: string; uid_placeholder?: string;
+    vendor_id?: string; target_completes?: number;
   }): Promise<any> {
     const { rows } = await this.pool.query(
-      `INSERT INTO project_links (country_id, link_code, link_name, url, provider_id, uid_mode)
-       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-      [data.country_id, data.link_code, data.link_name, data.url, data.provider_id || null, data.uid_mode || 'PROVIDED_UID']
+      `INSERT INTO project_links
+         (country_id, link_code, link_name, url, provider_id, uid_mode,
+          uid_param, uid_placeholder, vendor_id, target_completes)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
+      [
+        data.country_id, data.link_code, data.link_name, data.url,
+        data.provider_id || null, data.uid_mode || 'PROVIDED_UID',
+        data.uid_param || null, data.uid_placeholder || null,
+        data.vendor_id || null, data.target_completes || null,
+      ]
     );
     return rows[0];
   }
@@ -1652,7 +1681,8 @@ export class Database {
   }
 
   async updateLink(id: string, fields: Partial<any>): Promise<any | null> {
-    const allowed = ['link_name', 'url', 'provider_id', 'uid_mode', 'status'];
+    const allowed = ['link_name', 'url', 'provider_id', 'uid_mode', 'status',
+                     'uid_param', 'uid_placeholder', 'vendor_id', 'target_completes'];
     const sets: string[] = []; const params: any[] = [];
     for (const key of allowed) {
       if (fields[key] !== undefined) { params.push(fields[key]); sets.push(`${key} = $${params.length}`); }
