@@ -118,11 +118,18 @@ function hideModal() {
 function showLoading(container = "#content-area") {
   $(container).innerHTML = `
     <div class="stats-grid">
-      ${Array(6)
-        .fill(0)
-        .map(
-          () =>
-            '<div class="stat-card"><div class="skeleton-box" style="width:60%;height:14px;margin-bottom:12px;"></div><div class="skeleton-box" style="width:40%;height:28px;"></div></div>'
+        ${renderStatCard("Total Callback Activity", formatNumber(analyticsData?.data?.total_callback_activity || totalClicks), "🌐", "icon-info")}
+        ${renderStatCard("Verified Activity", formatNumber(analyticsData?.data?.verified_activity || starts), "🛡️", "icon-success")}
+        ${renderStatCard("Unverified (Fake)", formatNumber(analyticsData?.data?.unverified_activity || 0), "⚠️", "icon-warning")}
+        ${renderStatCard("Active Studies", activeStudies, "🔬", "icon-accent")}
+        ${renderStatCard("Starts", formatNumber(starts), "🚀", "icon-purple")}
+        ${renderStatCard(
+          "Completes",
+          formatNumber(completes),
+          "✅",
+          "icon-success"
+        )}
+      </div><div class="skeleton-box" style="width:40%;height:28px;"></div></div>'
         )
         .join("")}
     </div>
@@ -1281,6 +1288,7 @@ async function renderResponses(page = 1) {
                   : " â†“"
                 : ""
             }</th>
+            <th>Verification</th>
             <th>IP Address</th>
             <th class="sortable" onclick="toggleRespSort('device')">Device${
               responsesState.sort_by === "device"

@@ -95980,9 +95980,13 @@ var init_db = __esm({
       async getResponseWithDetails(id) {
         const { rows } = await this.pool.query(
           `SELECT r.*, s.title as study_title, s.study_code, v.name as vendor_name
-       FROM responses r
-       JOIN studies s ON s.id = r.study_id
-       JOIN vendors v ON v.id = r.vendor_id
+       FROM (
+         SELECT id, study_id, vendor_id, final_status, updated_at, uid, 'VERIFIED' as verification_status FROM responses
+         UNION ALL
+         SELECT id, study_id, vendor_id, 'TERMINATE' as final_status, created_at as updated_at, uid, 'UNVERIFIED' as verification_status FROM fake_click_events
+       ) r
+       LEFT JOIN studies s ON s.id = r.study_id
+       LEFT JOIN vendors v ON v.id = r.vendor_id
        WHERE r.id = $1`,
           [id]
         );
@@ -96185,6 +96189,11 @@ var init_db = __esm({
         const limit = Math.min(Math.max(1, filters.limit ?? 25), 5e3);
         const offset = Math.max(0, ((filters.page ?? 1) - 1) * limit);
         const dataSql = `
+      WITH unified_responses AS (
+        SELECT id, session_id, study_id, vendor_id, uid, final_status, created_at, updated_at, terminal_at, first_terminal_event, NULL as rejection_reason, NULL as raw_payload, NULL as fake_ip, NULL as fake_ua, 'VERIFIED' as _source_type FROM responses
+        UNION ALL
+        SELECT id, NULL as session_id, study_id, vendor_id, uid, 'TERMINATE' as final_status, created_at, created_at as updated_at, created_at as terminal_at, 'fake_click' as first_terminal_event, rejection_reason, raw_payload, ip_address as fake_ip, user_agent as fake_ua, 'UNVERIFIED' as _source_type FROM fake_click_events
+      )
       SELECT 
         r.id,
         r.session_id,
@@ -96206,15 +96215,23 @@ var init_db = __esm({
           re.ip_address::text,
           (re.raw_payload->>'ip')::text,
           NULLIF(sess.ip_hash, ''),
+          r.fake_ip,
           '127.0.0.1'
         ) AS ip_address,
-        COALESCE(re.user_agent, sess.user_agent, '') AS user_agent,
+        COALESCE(re.user_agent, sess.user_agent, r.fake_ua, '') AS user_agent,
         sess.landing_url,
         sess.started_at,
-        sess.country_detected
-      FROM responses r
-      JOIN studies s ON s.id = r.study_id
-      JOIN vendors v ON v.id = r.vendor_id
+        COALESCE(sess.country_detected, s.country, '\u2014') AS country_detected,
+        sess.session_token,
+        COALESCE(p.project_code, s.study_code) AS project_code,
+        COALESCE(p.name, s.title) AS project_name,
+        r._source_type AS verification_status,
+        r.rejection_reason,
+        r.raw_payload
+      FROM unified_responses r
+      LEFT JOIN studies s ON s.id = r.study_id
+      LEFT JOIN vendors v ON v.id = r.vendor_id
+      LEFT JOIN projects p ON (UPPER(p.project_code) = UPPER(s.study_code))
       LEFT JOIN sessions sess ON sess.id = r.session_id
       LEFT JOIN LATERAL (
         SELECT ip_address, user_agent, raw_payload
@@ -96228,10 +96245,15 @@ var init_db = __esm({
       LIMIT ${limit} OFFSET ${offset}
     `;
         const countSql = `
+      WITH unified_responses AS (
+        SELECT id, session_id, study_id, vendor_id, uid, final_status, created_at, updated_at, terminal_at, first_terminal_event, NULL as rejection_reason, NULL as raw_payload, NULL as fake_ip, NULL as fake_ua, 'VERIFIED' as _source_type FROM responses
+        UNION ALL
+        SELECT id, NULL as session_id, study_id, vendor_id, uid, 'TERMINATE' as final_status, created_at, created_at as updated_at, created_at as terminal_at, 'fake_click' as first_terminal_event, rejection_reason, raw_payload, ip_address as fake_ip, user_agent as fake_ua, 'UNVERIFIED' as _source_type FROM fake_click_events
+      )
       SELECT COUNT(*) 
-      FROM responses r
-      JOIN studies s ON s.id = r.study_id
-      JOIN vendors v ON v.id = r.vendor_id
+      FROM unified_responses r
+      LEFT JOIN studies s ON s.id = r.study_id
+      LEFT JOIN vendors v ON v.id = r.vendor_id
       LEFT JOIN sessions sess ON sess.id = r.session_id
       LEFT JOIN LATERAL (
         SELECT ip_address, user_agent 
@@ -96470,8 +96492,10 @@ var init_db = __esm({
       // ── Projects ───────────────────────────────────────────────────────────────
       async createProject(data) {
         const { rows } = await this.pool.query(
-          `INSERT INTO projects (project_code, name, description, client_id, created_by, client_rate, vendor_rate, currency)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
+          `INSERT INTO projects
+         (project_code, name, description, client_id, created_by, client_rate, vendor_rate, currency,
+          client_name, survey_url, uid_param, uid_placeholder)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *`,
           [
             data.project_code,
             data.name,
@@ -96480,7 +96504,11 @@ var init_db = __esm({
             data.created_by || null,
             data.client_rate !== void 0 ? data.client_rate : 70,
             data.vendor_rate !== void 0 ? data.vendor_rate : 50,
-            data.currency || "INR"
+            data.currency || "INR",
+            data.client_name || null,
+            data.survey_url || null,
+            data.uid_param || null,
+            data.uid_placeholder || null
           ]
         );
         const project = rows[0];
@@ -96524,7 +96552,19 @@ var init_db = __esm({
         return rows[0] ?? null;
       }
       async updateProject(id, fields) {
-        const allowed = ["name", "description", "status", "client_id", "client_rate", "vendor_rate", "currency"];
+        const allowed = [
+          "name",
+          "description",
+          "status",
+          "client_id",
+          "client_rate",
+          "vendor_rate",
+          "currency",
+          "client_name",
+          "survey_url",
+          "uid_param",
+          "uid_placeholder"
+        ];
         const sets = [];
         const params = [];
         for (const key of allowed) {
@@ -96619,9 +96659,22 @@ var init_db = __esm({
       // ── Survey Links ───────────────────────────────────────────────────────────
       async createProjectLink(data) {
         const { rows } = await this.pool.query(
-          `INSERT INTO project_links (country_id, link_code, link_name, url, provider_id, uid_mode)
-       VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-          [data.country_id, data.link_code, data.link_name, data.url, data.provider_id || null, data.uid_mode || "PROVIDED_UID"]
+          `INSERT INTO project_links
+         (country_id, link_code, link_name, url, provider_id, uid_mode,
+          uid_param, uid_placeholder, vendor_id, target_completes)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *`,
+          [
+            data.country_id,
+            data.link_code,
+            data.link_name,
+            data.url,
+            data.provider_id || null,
+            data.uid_mode || "PROVIDED_UID",
+            data.uid_param || null,
+            data.uid_placeholder || null,
+            data.vendor_id || null,
+            data.target_completes || null
+          ]
         );
         return rows[0];
       }
@@ -96637,7 +96690,17 @@ var init_db = __esm({
         return rows[0] ?? null;
       }
       async updateLink(id, fields) {
-        const allowed = ["link_name", "url", "provider_id", "uid_mode", "status"];
+        const allowed = [
+          "link_name",
+          "url",
+          "provider_id",
+          "uid_mode",
+          "status",
+          "uid_param",
+          "uid_placeholder",
+          "vendor_id",
+          "target_completes"
+        ];
         const sets = [];
         const params = [];
         for (const key of allowed) {
@@ -97025,6 +97088,7 @@ __export(trackingService_exports, {
   TrackingService: () => TrackingService,
   applyStateTransition: () => applyStateTransition,
   buildSurveyRedirect: () => buildSurveyRedirect,
+  evaluateStatusTransition: () => evaluateStatusTransition,
   generateIdempotencyKey: () => generateIdempotencyKey,
   generateLinkCode: () => generateLinkCode,
   generateSessionToken: () => generateSessionToken,
@@ -97061,6 +97125,27 @@ function normalizeUid(uid) {
 function normalizeStatus(raw) {
   const key = (raw || "").toLowerCase().replace(/[-\s]/g, "_");
   return STATUS_MAP[key] || raw.toUpperCase();
+}
+function applyStateTransition(currentStatus, newStatus) {
+  const current = (currentStatus || "IN_PROGRESS").toUpperCase();
+  const next = normalizeStatus(newStatus);
+  if (TERMINAL_STATES.has(current)) {
+    return {
+      finalStatus: current,
+      isDuplicate: true,
+      isCounted: false,
+      rejectionReason: `Status already terminal: ${current}`,
+      firstTerminalEvent: current
+    };
+  }
+  const isComplete = next === "COMPLETE";
+  return {
+    finalStatus: next,
+    isDuplicate: false,
+    isCounted: isComplete,
+    terminalAt: (/* @__PURE__ */ new Date()).toISOString(),
+    firstTerminalEvent: next
+  };
 }
 function generateIdempotencyKey(studyId, vendorId, normalizedUid, normalizedStatus, externalTransactionId) {
   const parts = [studyId, vendorId, normalizedUid, normalizedStatus];
@@ -97130,7 +97215,7 @@ function verifyRedirectSignature(sigParam) {
   return payload;
 }
 function generateSessionToken() {
-  return "sess_" + crypto5.randomBytes(18).toString("hex");
+  return "SES_" + crypto5.randomBytes(16).toString("hex");
 }
 function generateLinkCode() {
   return "lnk_" + crypto5.randomBytes(6).toString("hex");
@@ -97156,19 +97241,20 @@ function verifyCallbackIp(callbackIp, sessionIpHash) {
   }
   return { match: false, reason: "IP mismatch \u2014 callback from different origin than session" };
 }
-function applyStateTransition(currentStatus, newStatus) {
-  if (TERMINAL_STATUSES.has(currentStatus)) {
+function evaluateStatusTransition(currentStatus, newStatus) {
+  const normNew = normalizeStatus(newStatus);
+  const now = /* @__PURE__ */ new Date();
+  if (["COMPLETE", "TERMINATE", "QUOTA_FULL", "SECURITY_REJECT", "EXPIRED"].includes(currentStatus)) {
     return {
       finalStatus: currentStatus,
       firstTerminalEvent: null,
       terminalAt: null,
       isCounted: false,
-      rejectionReason: `Already in terminal state: ${currentStatus}`,
+      rejectionReason: `Terminal status conflict: already ${currentStatus}`,
       isDuplicate: true
     };
   }
-  const now = /* @__PURE__ */ new Date();
-  switch (newStatus) {
+  switch (normNew) {
     case "COMPLETE":
       return { finalStatus: "COMPLETE", firstTerminalEvent: "COMPLETE", terminalAt: now, isCounted: true, rejectionReason: null, isDuplicate: false };
     case "TERMINATE":
@@ -97176,9 +97262,7 @@ function applyStateTransition(currentStatus, newStatus) {
     case "QUOTA_FULL":
       return { finalStatus: "QUOTA_FULL", firstTerminalEvent: "QUOTA_FULL", terminalAt: now, isCounted: false, rejectionReason: null, isDuplicate: false };
     case "SECURITY_REJECT":
-      return { finalStatus: "SECURITY_REJECT", firstTerminalEvent: "SECURITY_REJECT", terminalAt: now, isCounted: false, rejectionReason: null, isDuplicate: false };
-    case "INVALID":
-      return { finalStatus: "INVALID", firstTerminalEvent: "INVALID", terminalAt: now, isCounted: false, rejectionReason: null, isDuplicate: false };
+      return { finalStatus: "SECURITY_REJECT", firstTerminalEvent: "SECURITY_REJECT", terminalAt: now, isCounted: false, rejectionReason: "Security / fraud rejection", isDuplicate: false };
     case "EXPIRED":
       return { finalStatus: "EXPIRED", firstTerminalEvent: "EXPIRED", terminalAt: now, isCounted: false, rejectionReason: null, isDuplicate: false };
     default:
@@ -97188,18 +97272,31 @@ function applyStateTransition(currentStatus, newStatus) {
 function buildSurveyRedirect(link, session) {
   const { base_url } = link;
   const encodedUid = encodeURIComponent(session.uid);
-  let redirectUrl = base_url;
-  if (redirectUrl.includes("[identifier]")) {
-    redirectUrl = redirectUrl.replace(/\[identifier\]/g, encodedUid);
-  } else if (redirectUrl.includes("[uid]")) {
-    redirectUrl = redirectUrl.replace(/\[uid\]/g, encodedUid);
-  } else if (redirectUrl.includes("{uid}")) {
-    redirectUrl = redirectUrl.replace(/\{uid\}/g, encodedUid);
-  } else if (redirectUrl.includes("[UID]")) {
-    redirectUrl = redirectUrl.replace(/\[UID\]/g, encodedUid);
-  } else {
+  let redirectUrl = base_url || "";
+  let matched = false;
+  const placeholders = [
+    /\[identifier\]/gi,
+    /\{identifier\}/gi,
+    /\[UID\]/gi,
+    /\[uid\]/gi,
+    /\{UID\}/gi,
+    /\{uid\}/gi,
+    /\{\{UID\}\}/gi,
+    /\{\{uid\}\}/gi,
+    /\[RESPONDENT_ID\]/gi,
+    /\{RESPONDENT_ID\}/gi,
+    /\[respondent\]/gi,
+    /\{respondent\}/gi
+  ];
+  for (const ph of placeholders) {
+    if (ph.test(redirectUrl)) {
+      redirectUrl = redirectUrl.replace(ph, encodedUid);
+      matched = true;
+    }
+  }
+  if (!matched && !redirectUrl.includes(encodedUid)) {
     const separator = redirectUrl.includes("?") ? "&" : "?";
-    redirectUrl = `${redirectUrl}${separator}zid=${encodedUid}`;
+    redirectUrl = `${redirectUrl}${separator}uid=${encodedUid}`;
   }
   redirectUrl = redirectUrl.replace(/\[pid\]/gi, encodedUid).replace(/\{pid\}/g, encodedUid).replace(/\{vid\}/g, encodeURIComponent(session.vendor_id));
   if (config.nodeEnv === "production" && redirectUrl.startsWith("http")) {
@@ -97512,7 +97609,7 @@ async function processCallback(provider, studyId, vendorId, rawUid, rawStatus, t
     ip_mismatch_reason: ipMismatchReason
   };
 }
-var crypto5, MAX_UID_LENGTH, STATUS_MAP, USED_NONCES, NONCE_CLEANUP_INTERVAL_MS, NONCE_MAX_AGE_MS, TERMINAL_STATUSES, TrackingService, trackingService;
+var crypto5, MAX_UID_LENGTH, STATUS_MAP, TERMINAL_STATES, USED_NONCES, NONCE_CLEANUP_INTERVAL_MS, NONCE_MAX_AGE_MS, TrackingService, trackingService;
 var init_trackingService = __esm({
   "src/services/trackingService.ts"() {
     "use strict";
@@ -97546,11 +97643,14 @@ var init_trackingService = __esm({
       "4": "SECURITY_REJECT",
       blocked: "SECURITY_REJECT",
       invalid: "INVALID",
+      close: "CLOSED",
+      closed: "CLOSED",
       expired: "EXPIRED",
       in_progress: "IN_PROGRESS",
       inprogress: "IN_PROGRESS",
       started: "STARTED"
     };
+    TERMINAL_STATES = /* @__PURE__ */ new Set(["COMPLETE", "TERMINATE", "QUOTA_FULL", "SECURITY_REJECT", "CLOSED", "EXPIRED"]);
     USED_NONCES = /* @__PURE__ */ new Map();
     NONCE_CLEANUP_INTERVAL_MS = 6e4;
     NONCE_MAX_AGE_MS = (config.redirectSignatureTtlSeconds + 60) * 1e3;
@@ -97564,7 +97664,6 @@ var init_trackingService = __esm({
         }
       }, NONCE_CLEANUP_INTERVAL_MS);
     }
-    TERMINAL_STATUSES = /* @__PURE__ */ new Set(["COMPLETE", "TERMINATE", "QUOTA_FULL", "SECURITY_REJECT", "INVALID", "EXPIRED"]);
     TrackingService = class {
       constructor() {
         this.normalizeUid = normalizeUid;
@@ -117573,6 +117672,53 @@ function getQueryParam(req, key) {
   if (typeof val === "object") return void 0;
   return String(val);
 }
+function parseCookies(req) {
+  const header = req.headers.cookie;
+  if (!header) return {};
+  const map2 = {};
+  header.split(";").forEach((c) => {
+    const [k, ...v] = c.trim().split("=");
+    if (k) map2[k] = decodeURIComponent(v.join("="));
+  });
+  return map2;
+}
+var COUNTRY_MAP = {
+  FR: "France",
+  DE: "Germany",
+  GB: "United Kingdom",
+  UK: "United Kingdom",
+  US: "United States",
+  IN: "India",
+  IT: "Italy",
+  ES: "Spain",
+  BR: "Brazil",
+  JP: "Japan",
+  AU: "Australia",
+  CA: "Canada",
+  AE: "UAE",
+  SA: "Saudi Arabia",
+  ID: "Indonesia",
+  PH: "Philippines",
+  VN: "Vietnam",
+  TH: "Thailand",
+  PL: "Poland",
+  NG: "Nigeria",
+  ZA: "South Africa",
+  EG: "Egypt",
+  PK: "Pakistan",
+  BD: "Bangladesh",
+  TR: "Turkey",
+  KR: "South Korea",
+  MX: "Mexico",
+  NL: "Netherlands",
+  SE: "Sweden",
+  CH: "Switzerland",
+  GLOBAL: "Global"
+};
+function getCountryNameFromCode(code) {
+  const c = (code || "").toUpperCase().trim();
+  return COUNTRY_MAP[c] || c;
+}
 var STATUS_DEFINITIONS = {
   complete: { title: "SURVEY SUCCESSFULLY COMPLETED", badgeText: "COMPLETE", badgeBg: "#10B981", badgeColor: "#FFFFFF", illustration: "/static/illustrations/survey_complete.svg", loi: "12:38" },
   terminate: { title: "SURVEY TERMINATED", badgeText: "TERMINATED", badgeBg: "#EF4444", badgeColor: "#FFFFFF", illustration: "/static/illustrations/survey_terminated.svg", loi: "02:15" },
@@ -117580,7 +117726,7 @@ var STATUS_DEFINITIONS = {
   quality: { title: "QUALITY TERMINATION", badgeText: "QUALITY TERM", badgeBg: "#8B5CF6", badgeColor: "#FFFFFF", illustration: "/static/illustrations/survey_quality.svg", loi: "01:20" },
   close: { title: "SURVEY CLOSED", badgeText: "CLOSED", badgeBg: "#64748B", badgeColor: "#FFFFFF", illustration: "/static/illustrations/survey_closed.svg", loi: "12:30" }
 };
-function buildStatusCardHtml(key, projectCode, uid, ip, dateTimeStr) {
+function buildStatusCardHtml(key, projectCode, uid, ip, dateTimeStr, isGenuine = true, sessionToken = "", country = "") {
   const def = STATUS_DEFINITIONS[key];
   return `
     <div class="status-card">
@@ -117597,9 +117743,25 @@ function buildStatusCardHtml(key, projectCode, uid, ip, dateTimeStr) {
               <span class="data-label">Project Code</span>
               <span class="data-val">${projectCode}</span>
             </div>
+            ${country ? `
+            <div class="data-row">
+              <span class="data-label">Country</span>
+              <span class="data-val">${country}</span>
+            </div>` : ""}
             <div class="data-row">
               <span class="data-label">UID</span>
               <span class="data-val">${uid}</span>
+            </div>
+            ${sessionToken && sessionToken !== "\u2014" ? `
+            <div class="data-row">
+              <span class="data-label">Session Token</span>
+              <span class="data-val" style="font-family:monospace; font-size:11px;">${sessionToken}</span>
+            </div>` : ""}
+            <div class="data-row">
+              <span class="data-label">Verification</span>
+              <span class="status-badge" style="background-color: ${isGenuine ? "#10B981" : "#EF4444"}; color: #FFFFFF; font-weight: 700; letter-spacing: 0.05em;">
+                ${isGenuine ? "\u2713 GENUINE" : "\u26A0 UNVERIFIED / FAKE"}
+              </span>
             </div>
             <div class="data-row">
               <span class="data-label">IP Address</span>
@@ -117618,15 +117780,19 @@ function buildStatusCardHtml(key, projectCode, uid, ip, dateTimeStr) {
               <span class="status-badge" style="background-color: ${def.badgeBg}; color: ${def.badgeColor};">${def.badgeText}</span>
             </div>
           </div>
+          ${!isGenuine ? `
+          <div style="margin-top: 14px; padding: 10px 14px; border-radius: 8px; background: #FEF2F2; border: 1px solid #FCA5A5; color: #991B1B; font-size: 11px; line-height: 1.4; text-align: left;">
+            <strong>Notice:</strong> No valid originating tracking session was found for this participant UID. This outcome has been recorded as <strong>Unverified / Fake</strong>.
+          </div>` : ""}
         </div>
       </div>
     </div>
   `;
 }
-function renderLandingPage(cardKey, projectCode, uid, ip, allCards = false) {
+function renderLandingPage(cardKey, projectCode, uid, ip, allCards = false, isGenuine = true, sessionToken = "", country = "") {
   const dateTimeStr = (/* @__PURE__ */ new Date()).toLocaleString("en-US", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: true });
   const def = STATUS_DEFINITIONS[cardKey];
-  const mainContent = allCards ? `<div class="dashboard-stack">${["complete", "terminate", "quota", "quality", "close"].map((k) => buildStatusCardHtml(k, projectCode, uid, ip, dateTimeStr)).join("\n")}</div>` : `<div class="single-card-wrap">${buildStatusCardHtml(cardKey, projectCode, uid, ip, dateTimeStr)}</div>`;
+  const mainContent = allCards ? `<div class="dashboard-stack">${["complete", "terminate", "quota", "quality", "close"].map((k) => buildStatusCardHtml(k, projectCode, uid, ip, dateTimeStr, isGenuine, sessionToken, country)).join("\n")}</div>` : `<div class="single-card-wrap">${buildStatusCardHtml(cardKey, projectCode, uid, ip, dateTimeStr, isGenuine, sessionToken, country)}</div>`;
   return `
     <!DOCTYPE html>
     <html lang="en">
@@ -117684,212 +117850,178 @@ function resolveRedirectType(type) {
   if (t.includes("qual") || t.includes("sec")) return { status: "SECURITY_REJECT", cardKey: "quality" };
   if (t.includes("term")) return { status: "TERMINATE", cardKey: "terminate" };
   if (t.includes("quota")) return { status: "QUOTA_FULL", cardKey: "quota" };
-  if (t.includes("close") || t.includes("closed")) return { status: "EXPIRED", cardKey: "close" };
+  if (t.includes("close") || t.includes("closed")) return { status: "CLOSED", cardKey: "close" };
   return { status: "COMPLETE", cardKey: "complete" };
 }
 async function handleRedirectLanding(req, res, type) {
   const { status, cardKey } = resolveRedirectType(type);
-  const pid = getQueryParam(req, "pid") || getQueryParam(req, "offerId") || getQueryParam(req, "study_id") || "";
-  const uid = getQueryParam(req, "uid") || getQueryParam(req, "zid") || "";
-  const sig = getQueryParam(req, "sig") || getQueryParam(req, "signature") || "";
+  const cookies = parseCookies(req);
+  const sessionToken = (getQueryParam(req, "session_token") || getQueryParam(req, "token") || getQueryParam(req, "ses") || cookies["opi_session_token"] || "").trim();
+  const pid = (getQueryParam(req, "pid") || getQueryParam(req, "code") || getQueryParam(req, "project") || getQueryParam(req, "offerId") || getQueryParam(req, "study_id") || cookies["opi_project_code"] || "").trim();
+  const uid = (getQueryParam(req, "uid") || getQueryParam(req, "zid") || getQueryParam(req, "respondent") || getQueryParam(req, "id") || cookies["opi_uid"] || "").trim();
+  const countryParam = (getQueryParam(req, "country") || cookies["opi_country"] || "").trim().toUpperCase();
+  const txid = getQueryParam(req, "txid") || getQueryParam(req, "transaction_id") || "";
   const xff = req.headers["x-forwarded-for"];
   let rawIp = ((Array.isArray(xff) ? String(xff[0]) : String(xff || ""))?.split(",")[0] || req.ip || "127.0.0.1").trim();
   if (rawIp === "::1" || rawIp === "::ffff:127.0.0.1") rawIp = "127.0.0.1";
-  const displayProjectCode = pid || "PX-2024-0578";
-  const displayUid = uid || "UID-7F3A-9C21-B8D6";
-  let callbackProcessed = false;
-  if (pid && uid) {
-    try {
-      const normUid = uid.toUpperCase().trim();
-      const txid = getQueryParam(req, "txid") || getQueryParam(req, "transaction_id") || "";
-      let { rows: projRows } = await db.pool.query(
-        "SELECT * FROM projects WHERE UPPER(project_code) = UPPER($1) OR id::text = $1",
+  let session = null;
+  let project = null;
+  let country = null;
+  let isGenuine = false;
+  let rejectionReason = null;
+  if (sessionToken) {
+    const { rows } = await db.pool.query("SELECT * FROM sessions WHERE session_token = $1", [sessionToken]);
+    if (rows[0]) {
+      session = rows[0];
+    }
+  }
+  if (!session && pid && uid) {
+    const normUid = uid.toUpperCase().trim();
+    let { rows: projRows } = await db.pool.query(
+      "SELECT * FROM projects WHERE UPPER(project_code) = UPPER($1) OR id::text = $1",
+      [pid]
+    );
+    if (!projRows[0]) {
+      const { rows: linkProj } = await db.pool.query(
+        `SELECT p.* FROM projects p
+         JOIN project_countries pc ON pc.project_id = p.id
+         JOIN project_links pl ON pl.country_id = pc.id
+         WHERE pl.url ILIKE '%' || $1 || '%' OR pl.link_code ILIKE $1
+         LIMIT 1`,
         [pid]
       );
-      if (!projRows[0]) {
-        const { rows: linkProj } = await db.pool.query(
-          `SELECT p.* FROM projects p
-           JOIN project_countries pc ON pc.project_id = p.id
-           JOIN project_links pl ON pl.country_id = pc.id
-           WHERE pl.url ILIKE '%' || $1 || '%' OR pl.link_code ILIKE $1
-           LIMIT 1`,
-          [pid]
-        );
-        projRows = linkProj;
-      }
-      const project = projRows[0];
-      if (project) {
-        const { rows: sessRows } = await db.pool.query(
-          `SELECT s.* FROM sessions s 
-           WHERE (s.metadata_json->>'project_id' = $1 OR s.study_id IN (SELECT id FROM studies WHERE study_code = $2))
-             AND s.normalized_uid = $3
-           ORDER BY s.created_at DESC LIMIT 1`,
-          [project.id, project.project_code, normUid]
-        );
-        const session = sessRows[0];
-        const resolvedVendorId = session?.vendor_id || req.query?.vid || req.query?.vendor_id || null;
-        if (!session) {
-          console.warn(`[Redirect] No session found for project=${project.project_code} uid=${uid} -> UNVERIFIED (NO_SESSION)`);
-          await recordFakeClick({
-            study_id: null,
-            vendor_id: resolvedVendorId && resolvedVendorId.length === 36 ? resolvedVendorId : null,
-            project_id: project.id,
-            uid,
-            normalized_uid: normUid,
-            rejection_reason: "NO_SESSION",
-            raw_payload: { pid, uid, outcome: type, project_id: project.id, project_code: project.project_code, query: req.query },
-            ip_address: rawIp,
-            user_agent: req.get("User-Agent"),
-            provider: "external_redirect"
-          });
-        } else if (isSessionExpired(session)) {
-          console.warn(`[Redirect] Session expired for project=${project.project_code} uid=${uid} -> UNVERIFIED (EXPIRED_SESSION)`);
-          await recordFakeClick({
-            study_id: session.study_id,
-            vendor_id: session.vendor_id,
-            project_id: project.id,
-            uid,
-            normalized_uid: normUid,
-            rejection_reason: "EXPIRED_SESSION",
-            raw_payload: { pid, uid, outcome: type, project_id: project.id, session_id: session.id },
-            ip_address: rawIp,
-            user_agent: req.get("User-Agent"),
-            provider: "external_redirect"
-          });
-        } else {
-          const events = await db.getEventsBySession(session.id);
-          const hasLanding = events.some((e) => e.event_type === "LANDING" || e.event_type === "START");
-          if (!hasLanding) {
-            console.warn(`[Redirect] No landing event for session=${session.id} -> UNVERIFIED (NO_LANDING_EVENT)`);
-            await recordFakeClick({
-              study_id: session.study_id,
-              vendor_id: session.vendor_id,
-              project_id: project.id,
-              uid,
-              normalized_uid: normUid,
-              rejection_reason: "NO_LANDING_EVENT",
-              raw_payload: { pid, uid, outcome: type, project_id: project.id, session_id: session.id },
-              ip_address: rawIp,
-              user_agent: req.get("User-Agent"),
-              provider: "external_redirect"
-            });
-          } else {
-            const crypto8 = require("crypto");
-            const cbKey = crypto8.createHash("sha256").update(`${project.id}|${session.vendor_id}|${normUid}|${status}|${txid}`).digest("hex");
-            const eventInserted = await db.createResponseEvent({
-              session_id: session.id,
-              study_id: session.study_id,
-              vendor_id: session.vendor_id,
-              uid,
-              event_type: "CALLBACK_RECEIVED",
-              source: "external_redirect",
-              raw_payload: { outcome: type, offerId: pid, query: req.query, txid },
-              normalized_payload: { event_type: status, uid: normUid, provider: "external_redirect" },
-              event_key: cbKey,
-              ip_address: rawIp,
-              user_agent: req.get("User-Agent")
-            });
-            if (eventInserted) {
-              const loiSeconds = session.created_at ? Math.max(0, Math.round((Date.now() - new Date(session.created_at).getTime()) / 1e3)) : 0;
-              const isComplete = status === "COMPLETE";
-              await db.pool.query(
-                `UPDATE responses SET
-                  final_status = $1,
-                  first_terminal_event = COALESCE(first_terminal_event, $1),
-                  terminal_at = NOW(),
-                  is_counted = $2,
-                  counted_at = (CASE WHEN $2 = TRUE THEN NOW() ELSE NULL END),
-                  callback_source = 'external_redirect',
-                  loi_seconds = $3,
-                  project_id = $4,
-                  updated_at = NOW()
-                 WHERE session_id = $5`,
-                [status, isComplete, loiSeconds, project.id, session.id]
-              );
-              const sessionUpdates = {
-                current_status: status,
-                last_seen_at: /* @__PURE__ */ new Date()
-              };
-              if (isComplete) sessionUpdates.completed_at = /* @__PURE__ */ new Date();
-              if (status === "TERMINATE") sessionUpdates.terminated_at = /* @__PURE__ */ new Date();
-              await db.updateSession(session.id, sessionUpdates);
-            }
-            callbackProcessed = true;
-          }
-        }
-      } else {
-        const { study } = await discoveryService.resolveOrCreateExternalOffer(pid, "ZEPHYR");
-        let vendorId = "";
-        try {
-          const vendors = await db.getStudyVendors(study.id);
-          vendorId = vendors[0]?.vendor_id || "";
-        } catch {
-        }
-        if (vendorId) {
-          const verification = await callbackService.verifySession(study.id, vendorId, uid);
-          let sigValid = true;
-          if (sig) {
-            const sigPayload = verifyRedirectSignature(sig);
-            if (!sigPayload || sigPayload.pid !== pid || sigPayload.uid !== uid || sigPayload.outcome !== type) {
-              sigValid = false;
-              console.warn(`[Redirect] Invalid signature for pid=${pid} uid=${uid} type=${type}`);
-            }
-          }
-          if (!verification.valid) {
-            console.warn(`[Redirect] Session verification failed for pid=${pid} uid=${uid}: ${verification.error}`);
-            await recordFakeClick({
-              study_id: study.id,
-              vendor_id: vendorId,
-              uid,
-              normalized_uid: uid.toUpperCase().trim(),
-              rejection_reason: verification.error && verification.error.includes("expired") ? "EXPIRED_SESSION" : verification.error && verification.error.includes("landing") ? "NO_LANDING_EVENT" : "NO_SESSION",
-              raw_payload: { pid, uid, outcome: type },
-              ip_address: rawIp,
-              user_agent: req.get("User-Agent"),
-              provider: "external_redirect"
-            });
-          } else if (!sigValid) {
-            console.warn(`[Redirect] Signature verification failed for pid=${pid} uid=${uid}`);
-            await recordFakeClick({
-              study_id: study.id,
-              vendor_id: vendorId,
-              uid,
-              normalized_uid: uid.toUpperCase().trim(),
-              rejection_reason: "INVALID_SIGNATURE",
-              raw_payload: { pid, uid, outcome: type },
-              ip_address: rawIp,
-              user_agent: req.get("User-Agent"),
-              provider: "external_redirect"
-            });
-          } else {
-            await callbackService.processCallback(
-              "external_redirect",
-              study.id,
-              vendorId,
-              uid,
-              status,
-              getQueryParam(req, "txid"),
-              { outcome: type, offerId: pid, query: req.query },
-              { ip_address: rawIp, user_agent: req.get("User-Agent") }
-            );
-            callbackProcessed = true;
-          }
-        } else {
-          console.warn(`[Redirect] No vendor found for study ${study.id} (pid=${pid})`);
-        }
-      }
-    } catch (err) {
-      console.error("[Redirect:resolve]", err?.message);
+      projRows = linkProj;
+    }
+    project = projRows[0];
+    if (project) {
+      const { rows: sessRows } = await db.pool.query(
+        `SELECT s.* FROM sessions s 
+         WHERE (s.metadata_json->>'project_id' = $1 OR s.study_id IN (SELECT id FROM studies WHERE study_code = $2))
+           AND s.normalized_uid = $3
+         ORDER BY s.created_at DESC LIMIT 1`,
+        [project.id, project.project_code, normUid]
+      );
+      session = sessRows[0];
+    }
+  }
+  if (!session && uid) {
+    const normUid = uid.toUpperCase().trim();
+    const { rows: sessRows } = await db.pool.query(
+      `SELECT * FROM sessions WHERE normalized_uid = $1 ORDER BY created_at DESC LIMIT 1`,
+      [normUid]
+    );
+    if (sessRows[0]) {
+      session = sessRows[0];
+    }
+  }
+  if (session) {
+    const projId = session.metadata_json?.project_id;
+    if (projId && !project) {
+      const { rows: pRows } = await db.pool.query("SELECT * FROM projects WHERE id = $1", [projId]);
+      project = pRows[0];
+    }
+    const countryCode = session.country_detected || session.metadata_json?.country_code;
+    if (countryCode && project) {
+      const { rows: cRows } = await db.pool.query(
+        "SELECT * FROM project_countries WHERE project_id = $1 AND UPPER(country_code) = UPPER($2)",
+        [project.id, countryCode]
+      );
+      country = cRows[0];
+    }
+  }
+  if (!session) {
+    rejectionReason = "NO_SESSION";
+    console.warn(`[Redirect] No session found for pid=${pid} uid=${uid} token=${sessionToken} -> UNVERIFIED (NO_SESSION)`);
+  } else if (isSessionExpired(session)) {
+    rejectionReason = "EXPIRED_SESSION";
+    console.warn(`[Redirect] Session expired for session=${session.id} uid=${uid} -> UNVERIFIED (EXPIRED_SESSION)`);
+  } else {
+    const events = await db.getEventsBySession(session.id);
+    const hasLanding = events.some((e) => e.event_type === "LANDING" || e.event_type === "START");
+    if (!hasLanding) {
+      rejectionReason = "NO_LANDING_EVENT";
+      console.warn(`[Redirect] No landing event for session=${session.id} uid=${uid} -> UNVERIFIED (NO_LANDING_EVENT)`);
+    } else {
+      isGenuine = true;
+    }
+  }
+  const effectiveProjectCode = project?.project_code || session?.metadata_json?.project_code || pid || "PX-2024-0578";
+  const effectiveUid = session?.uid || uid || "UID-7F3A-9C21-B8D6";
+  const effectiveSessionToken = session?.session_token || sessionToken || "\u2014";
+  const effectiveCountry = country?.country_name || session?.metadata_json?.country_code || countryParam || "Global";
+  if (isGenuine && session) {
+    const normUid = session.normalized_uid || effectiveUid.toUpperCase().trim();
+    const resolvedProjectId = project?.id || session.metadata_json?.project_id;
+    const resolvedVendorId = session.vendor_id;
+    const studyId = session.study_id;
+    const crypto8 = require("crypto");
+    const cbKey = crypto8.createHash("sha256").update(`${resolvedProjectId || studyId}|${resolvedVendorId}|${normUid}|${status}|${txid}`).digest("hex");
+    const eventInserted = await db.createResponseEvent({
+      session_id: session.id,
+      study_id: studyId,
+      vendor_id: resolvedVendorId,
+      uid: effectiveUid,
+      event_type: "CALLBACK_RECEIVED",
+      source: "external_redirect",
+      raw_payload: { outcome: type, offerId: pid, query: req.query, txid, session_token: session.session_token },
+      normalized_payload: { event_type: status, uid: normUid, provider: "external_redirect", verification: "GENUINE" },
+      event_key: cbKey,
+      ip_address: rawIp,
+      user_agent: req.get("User-Agent")
+    });
+    if (eventInserted) {
+      const loiSeconds = session.created_at ? Math.max(0, Math.round((Date.now() - new Date(session.created_at).getTime()) / 1e3)) : 0;
+      const isComplete = status === "COMPLETE";
+      await db.pool.query(
+        `UPDATE responses SET
+          final_status = $1,
+          first_terminal_event = COALESCE(first_terminal_event, $1),
+          terminal_at = NOW(),
+          is_counted = $2,
+          counted_at = (CASE WHEN $2 = TRUE THEN NOW() ELSE NULL END),
+          callback_source = 'external_redirect',
+          loi_seconds = $3,
+          project_id = COALESCE($4, project_id),
+          updated_at = NOW()
+         WHERE session_id = $5`,
+        [status, isComplete, loiSeconds, resolvedProjectId, session.id]
+      );
+      const sessionUpdates = {
+        current_status: status,
+        last_seen_at: /* @__PURE__ */ new Date()
+      };
+      if (isComplete) sessionUpdates.completed_at = /* @__PURE__ */ new Date();
+      if (status === "TERMINATE") sessionUpdates.terminated_at = /* @__PURE__ */ new Date();
+      await db.updateSession(session.id, sessionUpdates);
     }
   } else {
-    console.warn(`[Redirect] Missing pid or uid: pid=${pid} uid=${uid}`);
+    const normUid = (effectiveUid || "UNKNOWN").toUpperCase().trim();
+    const resolvedProjectId = project?.id || session?.metadata_json?.project_id || null;
+    const resolvedVendorId = session?.vendor_id || req.query?.vid || req.query?.vendor_id || null;
+    await recordFakeClick({
+      study_id: session?.study_id || null,
+      vendor_id: resolvedVendorId && resolvedVendorId.length === 36 ? resolvedVendorId : null,
+      project_id: resolvedProjectId,
+      uid: effectiveUid,
+      normalized_uid: normUid,
+      rejection_reason: rejectionReason || "NO_SESSION",
+      raw_payload: { pid, uid: effectiveUid, outcome: type, query: req.query, session_token: sessionToken },
+      ip_address: rawIp,
+      user_agent: req.get("User-Agent"),
+      provider: "external_redirect"
+    });
   }
-  const pageHtml = renderLandingPage(cardKey, displayProjectCode, displayUid, rawIp);
-  const finalHtml = pageHtml.replace(
-    '<div class="status-badge"',
-    `<div class="status-badge" data-callback-processed="${callbackProcessed}"`
+  const pageHtml = renderLandingPage(
+    cardKey,
+    effectiveProjectCode,
+    effectiveUid,
+    rawIp,
+    false,
+    isGenuine,
+    effectiveSessionToken,
+    effectiveCountry
   );
-  res.send(finalHtml);
+  res.send(pageHtml);
 }
 var startRateLimit = rateLimitMiddleware(config.rateLimitStartMax);
 var callbackRateLimit = rateLimitMiddleware(config.rateLimitCallbackMax);
@@ -119354,6 +119486,216 @@ router2.get(
     return res.redirect(302, destUrl);
   })
 );
+function analyzeSurveyUrl(surveyUrl) {
+  const result = { hostname: "", path: "", uid_param: "", uid_placeholder: "", params: {}, detected_provider: "UNKNOWN" };
+  if (!surveyUrl || typeof surveyUrl !== "string") return result;
+  const placeholderPatterns = [
+    /\[identifier\]/gi,
+    /\{identifier\}/gi,
+    /\[UID\]/gi,
+    /\{UID\}/gi,
+    /\[uid\]/gi,
+    /\{uid\}/gi,
+    /\{\{UID\}\}/gi,
+    /\{\{uid\}\}/gi,
+    /\[RESPONDENT_ID\]/gi,
+    /\{RESPONDENT_ID\}/gi,
+    /\[respondent\]/gi,
+    /\{respondent\}/gi
+  ];
+  try {
+    const parsed = new URL(surveyUrl);
+    result.hostname = parsed.hostname;
+    result.path = parsed.pathname;
+    if (parsed.hostname.includes("zephyr")) result.detected_provider = "ZEPHYR";
+    else if (parsed.hostname.includes("limesurvey") || parsed.hostname.includes("survey.io")) result.detected_provider = "LIMESURVEY";
+    else if (parsed.hostname.includes("qualtrics")) result.detected_provider = "QUALTRICS";
+    else if (parsed.hostname.includes("surveymonkey")) result.detected_provider = "SURVEYMONKEY";
+    else result.detected_provider = "CUSTOM";
+    parsed.searchParams.forEach((value, key) => {
+      result.params[key] = value;
+      if (result.uid_param) return;
+      for (const pattern of placeholderPatterns) {
+        pattern.lastIndex = 0;
+        const match = value.match(pattern);
+        if (match) {
+          result.uid_param = key;
+          result.uid_placeholder = match[0];
+          break;
+        }
+      }
+    });
+    if (!result.uid_param) {
+      const candidates = ["zid", "uid", "respondent", "rid", "ruid", "RUID"];
+      for (const candidate of candidates) {
+        if (parsed.searchParams.has(candidate)) {
+          result.uid_param = candidate;
+          result.uid_placeholder = parsed.searchParams.get(candidate) || "";
+          break;
+        }
+      }
+    }
+  } catch {
+  }
+  return result;
+}
+function buildOpiLaunchUrl(baseUrl, projectCode, countryCode) {
+  return `${baseUrl}/track?code=${projectCode}&country=${countryCode.toUpperCase()}&uid={UID}`;
+}
+router2.get(
+  "/track",
+  startRateLimit,
+  asyncHandler(async (req, res) => {
+    const projectCode = (getQueryParam(req, "code") || "").trim().toUpperCase();
+    const countryCode = (getQueryParam(req, "country") || "").trim().toUpperCase();
+    const rawUid = (getQueryParam(req, "uid") || "").trim();
+    if (!projectCode) return apiError(res, 400, "MISSING_CODE", "Project code (code=) is required");
+    if (!countryCode) return apiError(res, 400, "MISSING_COUNTRY", "Country code (country=) is required");
+    if (!rawUid) return apiError(res, 400, "MISSING_UID", "Respondent UID (uid=) is required");
+    const { rows: projRows } = await db.pool.query(
+      "SELECT * FROM projects WHERE UPPER(project_code) = $1",
+      [projectCode]
+    );
+    const project = projRows[0];
+    if (!project) return apiError(res, 404, "INVALID_PROJECT", `Project '${projectCode}' not found`);
+    const { rows: countryRows } = await db.pool.query(
+      `SELECT * FROM project_countries
+       WHERE project_id = $1 AND UPPER(country_code) = $2
+       AND (status IS NULL OR status = 'ACTIVE')`,
+      [project.id, countryCode]
+    );
+    const country = countryRows[0];
+    if (!country) return apiError(res, 400, "INVALID_COUNTRY", `Country '${countryCode}' is not active in project ${project.project_code}`);
+    const { rows: linkRows } = await db.pool.query(
+      `SELECT * FROM project_links WHERE country_id = $1 AND (status IS NULL OR status = 'ACTIVE')
+       ORDER BY created_at ASC LIMIT 1`,
+      [country.id]
+    );
+    const link = linkRows[0];
+    if (!link && !project.survey_url) {
+      return apiError(res, 400, "NO_SURVEY_LINK", `No active survey link for country ${countryCode} in project ${projectCode}`);
+    }
+    const uidValidation = normalizeUid(rawUid);
+    if (uidValidation.error) return apiError(res, 400, "INVALID_UID", uidValidation.error);
+    const { normalized, original } = uidValidation;
+    const xff = req.headers["x-forwarded-for"];
+    const ipAddress = ((Array.isArray(xff) ? String(xff[0]) : String(xff || ""))?.split(",")[0] || req.ip || "127.0.0.1").trim();
+    const userAgent = req.get("User-Agent") || null;
+    const referrer = req.get("Referer") || req.get("Referrer") || null;
+    const landingUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+    const { rows: studyRows } = await db.pool.query("SELECT id FROM studies WHERE study_code = $1", [project.project_code]);
+    let studyId = studyRows[0]?.id;
+    if (!studyId) {
+      const newStudy = await db.createStudy({ study_code: project.project_code, title: project.name, client_id: project.client_id, status: "LIVE" });
+      studyId = newStudy.id;
+    }
+    let assignedVendorId = link?.vendor_id || "";
+    if (!assignedVendorId) {
+      const allVendors = await db.getVendors(true);
+      assignedVendorId = allVendors[0]?.id || "";
+    }
+    const crypto8 = require("crypto");
+    const { rows: existingSess } = await db.pool.query(
+      `SELECT * FROM sessions
+       WHERE metadata_json->>'project_id' = $1
+         AND metadata_json->>'country_id' = $2
+         AND normalized_uid = $3
+       ORDER BY created_at DESC LIMIT 1`,
+      [project.id, country.id, normalized]
+    );
+    let session = existingSess[0];
+    if (!session) {
+      const sessionToken = "trk_" + crypto8.randomBytes(20).toString("hex");
+      const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1e3);
+      const ipHash = crypto8.createHash("sha256").update(ipAddress + config.authSecret).digest("hex");
+      session = await db.createSession({
+        session_token: sessionToken,
+        study_id: studyId,
+        vendor_id: assignedVendorId,
+        tracking_link_id: null,
+        // project_links.id ≠ tracking_links.id; store link info in metadata_json
+        uid: original,
+        normalized_uid: normalized,
+        external_uid: null,
+        ip_hash: ipHash,
+        ip_address_encrypted_or_restricted_storage: true,
+        user_agent: userAgent,
+        country_detected: country.country_code,
+        referrer,
+        landing_url: landingUrl,
+        initial_status: "STARTED",
+        current_status: "STARTED",
+        expires_at: expiresAt,
+        metadata_json: {
+          project_id: project.id,
+          project_code: project.project_code,
+          country_id: country.id,
+          country_code: country.country_code,
+          link_id: link?.id || null,
+          link_code: link?.link_code || null,
+          vendor_id: assignedVendorId,
+          tracking_type: "OPI_TRACK"
+        }
+      });
+      const landingKey = crypto8.createHash("sha256").update(`${project.id}|${country.id}|${normalized}|LANDING`).digest("hex");
+      await db.createResponseEvent({
+        session_id: session.id,
+        study_id: studyId,
+        vendor_id: assignedVendorId,
+        uid: original,
+        event_type: "LANDING",
+        source: "opi_track",
+        raw_payload: { project_code: project.project_code, country: country.country_code, uid: original },
+        normalized_payload: { event_type: "LANDING", uid: normalized, provider: "opi_track" },
+        event_key: landingKey,
+        ip_address: ipAddress,
+        user_agent: userAgent
+      });
+      await db.pool.query(
+        `INSERT INTO responses
+           (session_id, study_id, project_id, vendor_id, uid,
+            final_status, is_counted, client_billing_status, vendor_acceptance_status, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, 'IN_PROGRESS', false, 'PENDING', 'PENDING', NOW(), NOW())
+         ON CONFLICT (session_id) DO NOTHING`,
+        [session.id, studyId, project.id, assignedVendorId, original]
+      );
+      console.log(`[Track] NEW session ${session.session_token} | ${projectCode}/${countryCode} uid=${original}`);
+    } else {
+      await db.updateSession(session.id, { last_seen_at: /* @__PURE__ */ new Date() });
+      console.log(`[Track] EXISTING session | ${projectCode}/${countryCode} uid=${original}`);
+    }
+    const surveyUrlTemplate = link?.url || project.survey_url || "";
+    let destUrl = surveyUrlTemplate;
+    const uidPlaceholder = link?.uid_placeholder || project.uid_placeholder || "";
+    const uidParam = link?.uid_param || project.uid_param || "uid";
+    if (uidPlaceholder && destUrl.includes(uidPlaceholder)) {
+      destUrl = destUrl.split(uidPlaceholder).join(encodeURIComponent(original));
+    } else {
+      const knownPH = ["[identifier]", "{identifier}", "[UID]", "{UID}", "[uid]", "{uid}", "{{UID}}", "{{uid}}", "[RESPONDENT_ID]", "{RESPONDENT_ID}"];
+      let replaced = false;
+      for (const ph of knownPH) {
+        if (destUrl.includes(ph)) {
+          destUrl = destUrl.split(ph).join(encodeURIComponent(original));
+          replaced = true;
+          break;
+        }
+      }
+      if (!replaced && !destUrl.includes(encodeURIComponent(original))) {
+        destUrl = `${destUrl}${destUrl.includes("?") ? "&" : "?"}${uidParam}=${encodeURIComponent(original)}`;
+      }
+    }
+    if (!destUrl || !destUrl.startsWith("http")) {
+      return apiError(res, 500, "NO_REDIRECT_URL", "No valid client survey URL configured");
+    }
+    res.setHeader("Set-Cookie", [
+      `opi_session_token=${session.session_token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=172800`,
+      `opi_project_code=${projectCode}; Path=/; SameSite=Lax; Max-Age=172800`,
+      `opi_uid=${encodeURIComponent(original)}; Path=/; SameSite=Lax; Max-Age=172800`,
+      `opi_country=${countryCode}; Path=/; SameSite=Lax; Max-Age=172800`
+    ]);
+    return res.redirect(302, destUrl);
+  })
+);
 router2.get("/redirect/complete", callbackRateLimit, asyncHandler(async (req, res) => {
   await handleRedirectLanding(req, res, "complete");
 }));
@@ -119457,6 +119799,9 @@ router2.get(
       } catch {
       }
     }
+    const xff = req.headers["x-forwarded-for"];
+    let rawIp = ((Array.isArray(xff) ? String(xff[0]) : String(xff || ""))?.split(",")[0] || req.ip || "127.0.0.1").trim();
+    if (rawIp === "::1" || rawIp === "::ffff:127.0.0.1") rawIp = "127.0.0.1";
     let callbackProcessed = false;
     if (studyId && rawUid && !isDashboardView) {
       try {
@@ -119466,8 +119811,8 @@ router2.get(
           const verification = await callbackService.verifySession(studyId, vendorIdForCb, rawUid);
           let sigValid = true;
           if (sig) {
-            const { verifyRedirectSignature: verifyRedirectSignature2 } = await import("./services/trackingService.js");
-            const sigPayload = verifyRedirectSignature2(sig);
+            const { verifyRedirectSignature: verifyRedirectSignature3 } = await Promise.resolve().then(() => (init_trackingService(), trackingService_exports));
+            const sigPayload = verifyRedirectSignature3(sig);
             if (!sigPayload || sigPayload.pid !== rawOfferId || sigPayload.uid !== rawUid || sigPayload.outcome !== outcome) {
               sigValid = false;
               console.warn(`[r/:outcome] Invalid signature for pid=${rawOfferId} uid=${rawUid} type=${outcome}`);
@@ -119517,9 +119862,6 @@ router2.get(
         console.error("[r/:outcome:processCallback]", err?.message);
       }
     }
-    const xff = req.headers["x-forwarded-for"];
-    let rawIp = ((Array.isArray(xff) ? String(xff[0]) : String(xff || ""))?.split(",")[0] || req.ip || "127.0.0.1").trim();
-    if (rawIp === "::1" || rawIp === "::ffff:127.0.0.1") rawIp = "127.0.0.1";
     const displayProjectCode = rawOfferId || "PX-2024-0578";
     const displayUid = rawUid || "UID-7F3A-9C21-B8D6";
     const dateTimeStr = (/* @__PURE__ */ new Date()).toLocaleString("en-US", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: true });
@@ -120642,7 +120984,9 @@ router2.get(
         (SELECT COUNT(*) FROM sessions s WHERE current_status = 'QUOTA_FULL' ${sessionFilter}) AS quota_full,
         (SELECT COUNT(*) FROM responses WHERE is_counted = true)                              AS counted_completes,
         (SELECT COUNT(*) FROM studies)                                                        AS total_studies,
-        (SELECT COUNT(*) FROM vendors)                                                        AS total_vendors
+        (SELECT COUNT(*) FROM vendors)                                                        AS total_vendors,
+        (SELECT COUNT(*) FROM responses)                                                      AS verified_activity,
+        (SELECT COUNT(*) FROM fake_click_events)                                              AS unverified_activity
         ${extraSelect}
     `);
     const summary = rows[0] || {};
@@ -120652,6 +120996,7 @@ router2.get(
     if (verified === false && summary.fake_clicks) {
       summary.total_sessions += summary.fake_clicks;
     }
+    summary.total_callback_activity = (summary.verified_activity || 0) + (summary.unverified_activity || 0);
     res.json({ success: true, data: summary, ...summary });
   })
 );
@@ -120955,6 +121300,145 @@ router2.get(
     const stats = await db.getFakeClickStats(studyId);
     const total = stats.reduce((sum, row) => sum + parseInt(row.count || "0", 10), 0);
     res.json({ success: true, data: { study_id: studyId, total_fake_clicks: total, by_reason: stats } });
+  })
+);
+router2.get(
+  "/projects/analyze-url",
+  authenticate,
+  authorize(OPS_ROLES),
+  asyncHandler(async (req, res) => {
+    const surveyUrl = (getQueryParam(req, "url") || "").trim();
+    if (!surveyUrl) return validationError(res, ["url query parameter is required"]);
+    const analysis = analyzeSurveyUrl(surveyUrl);
+    const baseUrl = `${req.protocol}://${req.get("host")}`;
+    res.json({
+      success: true,
+      data: {
+        ...analysis,
+        example_opi_url: buildOpiLaunchUrl(baseUrl, "OPI_CODE", "XX")
+      }
+    });
+  })
+);
+router2.post(
+  "/projects/create-full",
+  authenticate,
+  authorize(["ADMIN", "PM"]),
+  asyncHandler(async (req, res) => {
+    const { name, client_name, client_rate, vendor_rate, currency, countries } = req.body || {};
+    if (!name || !name.trim()) return validationError(res, ["name (Client Project Name) is required"]);
+    if (!Array.isArray(countries) || countries.length === 0) {
+      return validationError(res, ["countries must be a non-empty array of { code, survey_url } objects"]);
+    }
+    const missingUrls = countries.filter((c) => !c.survey_url || !c.survey_url.trim());
+    if (missingUrls.length > 0) {
+      return validationError(res, [`survey_url is required for each country. Missing for: ${missingUrls.map((c) => c.code || "unknown").join(", ")}`]);
+    }
+    const crypto8 = require("crypto");
+    let projectCode = "";
+    let attempts = 0;
+    while (attempts < 20) {
+      const suffix = Math.floor(100 + Math.random() * 900).toString();
+      const candidate = `OPI${suffix}`;
+      const { rows: exists } = await db.pool.query(
+        "SELECT 1 FROM projects WHERE UPPER(project_code) = $1",
+        [candidate]
+      );
+      if (!exists[0]) {
+        projectCode = candidate;
+        break;
+      }
+      attempts++;
+    }
+    if (!projectCode) {
+      projectCode = "OPI" + crypto8.randomBytes(3).toString("hex").toUpperCase();
+    }
+    const resolvedCountries = [];
+    for (const c of countries) {
+      const code = (c.code || c).toString().toUpperCase().trim();
+      const surveyUrl = (c.survey_url || "").trim();
+      try {
+        new URL(surveyUrl);
+      } catch {
+        return validationError(res, [`survey_url for country ${code} is not a valid URL: "${surveyUrl}"`]);
+      }
+      const urlAnalysis = analyzeSurveyUrl(surveyUrl);
+      resolvedCountries.push({
+        code,
+        name: getCountryNameFromCode(code),
+        survey_url: surveyUrl,
+        uid_param: urlAnalysis.uid_param || null,
+        uid_placeholder: urlAnalysis.uid_placeholder || null,
+        vendor_id: c.vendor_id || null,
+        target_completes: c.target_completes ? Number(c.target_completes) : null
+      });
+    }
+    const project = await db.createProject({
+      project_code: projectCode,
+      name: name.trim(),
+      client_name: client_name?.trim() || null,
+      client_rate: client_rate !== void 0 ? Number(client_rate) : 70,
+      vendor_rate: vendor_rate !== void 0 ? Number(vendor_rate) : 50,
+      currency: currency || "INR",
+      created_by: req.user?.id
+    });
+    const appBaseUrl = `${req.protocol}://${req.get("host")}`;
+    const createdCountries = [];
+    for (const c of resolvedCountries) {
+      const country = await db.createCountry({
+        project_id: project.id,
+        country_code: c.code,
+        country_name: c.name
+      });
+      const linkCode = `${projectCode}-${c.code}`;
+      const link = await db.createProjectLink({
+        country_id: country.id,
+        link_code: linkCode,
+        link_name: `${c.name} Survey Link`,
+        url: c.survey_url,
+        uid_mode: "PROVIDED_UID",
+        uid_param: c.uid_param,
+        uid_placeholder: c.uid_placeholder,
+        vendor_id: c.vendor_id,
+        target_completes: c.target_completes
+      });
+      createdCountries.push({
+        ...country,
+        link,
+        opi_launch_url: buildOpiLaunchUrl(appBaseUrl, projectCode, c.code)
+      });
+    }
+    const ip = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.socket?.remoteAddress || "127.0.0.1";
+    await db.createAuditLog({
+      user: req.user?.email || "admin",
+      action: "PROJECT_CREATED_FULL",
+      entity: "project",
+      entity_id: project.id,
+      after: {
+        project_code: projectCode,
+        name: project.name,
+        client_name: project.client_name,
+        countries: resolvedCountries.map((c) => ({ code: c.code, uid_param: c.uid_param }))
+      },
+      ip
+    });
+    console.log(`[Projects] Created ${projectCode} with countries: ${resolvedCountries.map((c) => c.code).join(", ")}`);
+    res.status(201).json({
+      success: true,
+      data: {
+        project,
+        countries: createdCountries,
+        // Convenience: per-country OPI launch URLs ready to share with vendors
+        opi_launch_urls: createdCountries.map((c) => ({
+          country_code: c.country_code,
+          country_name: c.country_name,
+          opi_launch_url: c.opi_launch_url,
+          uid_param: c.link?.uid_param,
+          uid_placeholder: c.link?.uid_placeholder,
+          target_completes: c.link?.target_completes
+        }))
+      }
+    });
   })
 );
 router2.get(

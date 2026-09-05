@@ -932,9 +932,13 @@ export class Database {
   async getResponseWithDetails(id: string): Promise<any | null> {
     const { rows } = await this.pool.query(
       `SELECT r.*, s.title as study_title, s.study_code, v.name as vendor_name
-       FROM responses r
-       JOIN studies s ON s.id = r.study_id
-       JOIN vendors v ON v.id = r.vendor_id
+       FROM (
+         SELECT id, study_id, vendor_id, final_status, updated_at, uid, 'VERIFIED' as verification_status FROM responses
+         UNION ALL
+         SELECT id, study_id, vendor_id, 'TERMINATE' as final_status, created_at as updated_at, uid, 'UNVERIFIED' as verification_status FROM fake_click_events
+       ) r
+       LEFT JOIN studies s ON s.id = r.study_id
+       LEFT JOIN vendors v ON v.id = r.vendor_id
        WHERE r.id = $1`,
       [id]
     );
@@ -1155,6 +1159,11 @@ export class Database {
     const offset = Math.max(0, ((filters.page ?? 1) - 1) * limit);
 
     const dataSql = `
+      WITH unified_responses AS (
+        SELECT id, session_id, study_id, vendor_id, uid, final_status, created_at, updated_at, terminal_at, first_terminal_event, NULL as rejection_reason, NULL as raw_payload, NULL as fake_ip, NULL as fake_ua, 'VERIFIED' as _source_type FROM responses
+        UNION ALL
+        SELECT id, NULL as session_id, study_id, vendor_id, uid, 'TERMINATE' as final_status, created_at, created_at as updated_at, created_at as terminal_at, 'fake_click' as first_terminal_event, rejection_reason, raw_payload, ip_address as fake_ip, user_agent as fake_ua, 'UNVERIFIED' as _source_type FROM fake_click_events
+      )
       SELECT 
         r.id,
         r.session_id,
@@ -1176,24 +1185,23 @@ export class Database {
           re.ip_address::text,
           (re.raw_payload->>'ip')::text,
           NULLIF(sess.ip_hash, ''),
+          r.fake_ip,
           '127.0.0.1'
         ) AS ip_address,
-        COALESCE(re.user_agent, sess.user_agent, '') AS user_agent,
+        COALESCE(re.user_agent, sess.user_agent, r.fake_ua, '') AS user_agent,
         sess.landing_url,
         sess.started_at,
         COALESCE(sess.country_detected, s.country, '—') AS country_detected,
         sess.session_token,
         COALESCE(p.project_code, s.study_code) AS project_code,
         COALESCE(p.name, s.title) AS project_name,
-        CASE 
-          WHEN r.final_status = 'IN_PROGRESS' THEN 'IN_PROGRESS'
-          WHEN r.final_status IN ('COMPLETE', 'TERMINATE', 'QUOTA_FULL', 'SECURITY_REJECT', 'EXPIRED') THEN 'GENUINE'
-          ELSE 'UNVERIFIED'
-        END AS verification_status
-      FROM responses r
-      JOIN studies s ON s.id = r.study_id
-      JOIN vendors v ON v.id = r.vendor_id
-      LEFT JOIN projects p ON (p.id = r.project_id OR UPPER(p.project_code) = UPPER(s.study_code))
+        r._source_type AS verification_status,
+        r.rejection_reason,
+        r.raw_payload
+      FROM unified_responses r
+      LEFT JOIN studies s ON s.id = r.study_id
+      LEFT JOIN vendors v ON v.id = r.vendor_id
+      LEFT JOIN projects p ON (UPPER(p.project_code) = UPPER(s.study_code))
       LEFT JOIN sessions sess ON sess.id = r.session_id
       LEFT JOIN LATERAL (
         SELECT ip_address, user_agent, raw_payload
@@ -1208,10 +1216,15 @@ export class Database {
     `;
 
     const countSql = `
+      WITH unified_responses AS (
+        SELECT id, session_id, study_id, vendor_id, uid, final_status, created_at, updated_at, terminal_at, first_terminal_event, NULL as rejection_reason, NULL as raw_payload, NULL as fake_ip, NULL as fake_ua, 'VERIFIED' as _source_type FROM responses
+        UNION ALL
+        SELECT id, NULL as session_id, study_id, vendor_id, uid, 'TERMINATE' as final_status, created_at, created_at as updated_at, created_at as terminal_at, 'fake_click' as first_terminal_event, rejection_reason, raw_payload, ip_address as fake_ip, user_agent as fake_ua, 'UNVERIFIED' as _source_type FROM fake_click_events
+      )
       SELECT COUNT(*) 
-      FROM responses r
-      JOIN studies s ON s.id = r.study_id
-      JOIN vendors v ON v.id = r.vendor_id
+      FROM unified_responses r
+      LEFT JOIN studies s ON s.id = r.study_id
+      LEFT JOIN vendors v ON v.id = r.vendor_id
       LEFT JOIN sessions sess ON sess.id = r.session_id
       LEFT JOIN LATERAL (
         SELECT ip_address, user_agent 

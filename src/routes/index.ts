@@ -3815,7 +3815,9 @@ router.get(
         (SELECT COUNT(*) FROM sessions s WHERE current_status = 'QUOTA_FULL' ${sessionFilter}) AS quota_full,
         (SELECT COUNT(*) FROM responses WHERE is_counted = true)                              AS counted_completes,
         (SELECT COUNT(*) FROM studies)                                                        AS total_studies,
-        (SELECT COUNT(*) FROM vendors)                                                        AS total_vendors
+        (SELECT COUNT(*) FROM vendors)                                                        AS total_vendors,
+        (SELECT COUNT(*) FROM responses)                                                      AS verified_activity,
+        (SELECT COUNT(*) FROM fake_click_events)                                              AS unverified_activity
         ${extraSelect}
     `);
     const summary = rows[0] || {};
@@ -3823,6 +3825,7 @@ router.get(
     if (verified === false && summary.fake_clicks) {
       summary.total_sessions += summary.fake_clicks;
     }
+    summary.total_callback_activity = (summary.verified_activity || 0) + (summary.unverified_activity || 0);
     res.json({ success: true, data: summary, ...summary });
   }),
 );
