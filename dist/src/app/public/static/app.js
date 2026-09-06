@@ -1,16 +1,16 @@
 /**
- * Opinion Insights â€” Premium Enterprise SPA Dashboard
+ * Opinion Insights — Premium Enterprise SPA Dashboard
  * Clean light theme with teal accent, skeleton loading, health cards, progress bars
  */
 
-// â”€â”€â”€ Configuration â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Configuration ─────────────────────────────────────────────────────────────
 const API_BASE = "/api";
 let authToken = localStorage.getItem("cawi_token") || null;
 let currentUser = null;
 let currentPage = "dashboard";
 let sidebarCollapsed = false;
 
-// â”€â”€â”€ Security: Session Timeout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Security: Session Timeout ─────────────────────────────────────────────────
 // Auto-logout after 30 minutes of inactivity
 const SESSION_TIMEOUT_MS = 30 * 60 * 1000;
 let lastActivityAt = Date.now();
@@ -39,14 +39,14 @@ function startSessionTimer() {
   );
 }
 
-// â”€â”€â”€ Security: Login Attempt Tracking â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Security: Login Attempt Tracking ──────────────────────────────────────────
 let loginAttempts = parseInt(
   localStorage.getItem("cawi_login_attempts") || "0",
   10
 );
 let accountLockedUntil = null;
 
-// â”€â”€â”€ Security: Password Visibility Toggle â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Security: Password Visibility Toggle ──────────────────────────────────────
 function initPasswordToggle() {
   const btn = document.getElementById("toggle-password");
   const input = document.getElementById("login-password");
@@ -76,16 +76,16 @@ const PAGE_SUBTITLES = {
   quotas: "Quota tracking & completion targets",
   analytics: "Performance analytics & conversion insights",
   audit: "System activity & change history",
-  finance: "Client billing Â· Vendor settlement Â· Invoice management",
-  "rejection-management": "Accept & reject responses Â· Manage vendor quality",
+  finance: "Client billing · Vendor settlement · Invoice management",
+  "rejection-management": "Accept & reject responses · Manage vendor quality",
   "vendor-settlements": "Vendor payout calculation & Excel settlement reports",
   users: "Manage users, roles, vendors and account access",
   settings: "Platform configuration",
-  projects: "Client projects Â· Survey tracking Â· OPI launch links",
-  "project-detail": "Project detail Â· OPI launch links per country",
+  projects: "Client projects · Survey tracking · OPI launch links",
+  "project-detail": "Project detail · OPI launch links per country",
 };
 
-// â”€â”€â”€ Utility Functions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Utility Functions ─────────────────────────────────────────────────────────
 function $(sel, ctx = document) {
   return ctx.querySelector(sel);
 }
@@ -167,10 +167,10 @@ function showLoading(container = "#content-area") {
 function showError(container, message) {
   $(
     container
-  ).innerHTML = `<div class="empty-state"><div class="empty-state-icon">âš ï¸</div><h3>Error</h3><p>${message}</p></div>`;
+  ).innerHTML = `<div class="empty-state"><div class="empty-state-icon">⚠️</div><h3>Error</h3><p>${message}</p></div>`;
 }
 
-function showEmpty(container, message, icon = "ðŸ“­") {
+function showEmpty(container, message, icon = "📭") {
   $(
     container
   ).innerHTML = `<div class="empty-state"><div class="empty-state-icon">${icon}</div><h3>No Data</h3><p>${message}</p></div>`;
@@ -200,7 +200,7 @@ function formatPct(num, den) {
 }
 
 function formatDate(dateStr) {
-  if (!dateStr) return "â€”";
+  if (!dateStr) return "—";
   return new Date(dateStr).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
@@ -209,7 +209,7 @@ function formatDate(dateStr) {
 }
 
 function formatDateTime(dateStr) {
-  if (!dateStr) return "â€”";
+  if (!dateStr) return "—";
   return new Date(dateStr).toLocaleString("en-US", {
     month: "short",
     day: "numeric",
@@ -240,7 +240,7 @@ function escapeHtml(str) {
     .replace(/'/g, "&#039;");
 }
 
-// â”€â”€â”€ API Client â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── API Client ────────────────────────────────────────────────────────────────
 async function api(path, options = {}) {
   const headers = { "Content-Type": "application/json", ...options.headers };
   if (authToken) headers["Authorization"] = `Bearer ${authToken}`;
@@ -255,7 +255,7 @@ async function api(path, options = {}) {
   return data;
 }
 
-// â”€â”€â”€ Auth Functions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Auth Functions ────────────────────────────────────────────────────────────
 async function login(email, password) {
   const res = await api("/auth/login", {
     method: "POST",
@@ -300,11 +300,11 @@ async function checkAuth() {
   }
 }
 
-// â”€â”€â”€ Rendering Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Rendering Helpers ─────────────────────────────────────────────────────────
 function renderStatCard(
   label,
   value,
-  icon = "ðŸ“Š",
+  icon = "📊",
   iconClass = "icon-accent",
   change = null
 ) {
@@ -356,7 +356,7 @@ function animateCountUps(container) {
 }
 
 function renderBadge(value, type = "neutral") {
-  if (!value) return "â€”";
+  if (!value) return "—";
   const valStr = String(value);
   let badgeType = type;
   if (!badgeType || badgeType === "neutral") {
@@ -436,9 +436,9 @@ function fallbackCopy(text) {
 window.copyToClipboard = copyToClipboard;
 
 function renderIdCell(idValue, extraClass = "") {
-  if (!idValue) return "â€”";
+  if (!idValue) return "—";
   const escaped = escapeHtml(String(idValue));
-  return `<div class="id-cell-wrapper ${extraClass}"><span class="font-mono id-text" title="${escaped}">${escaped}</span><button class="btn-copy" onclick="event.stopPropagation(); copyToClipboard('${escaped}')" title="Copy">ðŸ“‹</button></div>`;
+  return `<div class="id-cell-wrapper ${extraClass}"><span class="font-mono id-text" title="${escaped}">${escaped}</span><button class="btn-copy" onclick="event.stopPropagation(); copyToClipboard('${escaped}')" title="Copy">📋</button></div>`;
 }
 window.renderIdCell = renderIdCell;
 
@@ -451,7 +451,7 @@ function isHtml(str) {
 
 function renderTable(headers, rows, keyField = "id", onRowClick = null) {
   if (!rows.length)
-    return '<div class="empty-state" style="padding:40px 20px;"><div class="empty-state-icon">ðŸ“­</div><h3>No records found</h3><p>Try adjusting your filters or check back later.</p></div>';
+    return '<div class="empty-state" style="padding:40px 20px;"><div class="empty-state-icon">📭</div><h3>No records found</h3><p>Try adjusting your filters or check back later.</p></div>';
   return `
     <div class="table-container">
       <table class="data-table">
@@ -1178,7 +1178,7 @@ function renderStatusRow(icon, label, count, total, barColor, bgColor) {
   `;
 }
 
-// â”€â”€â”€ Studies â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Studies ───────────────────────────────────────────────────────────────────
 async function renderStudies(page = 1) {
   showLoading();
   try {
@@ -1193,7 +1193,7 @@ async function renderStudies(page = 1) {
         ["ID", "Name", "Status", "Vendors", "Target", "Created"],
         studies.map((s) => ({
           id: renderIdCell(s.id),
-          name: s.name || s.title || "â€”",
+          name: s.name || s.title || "—",
           status: renderBadge(s.status),
           vendors: s.vendor_count || 0,
           target: s.target_completes || 0,
@@ -1214,7 +1214,7 @@ async function renderStudies(page = 1) {
   }
 }
 
-// â”€â”€â”€ Vendors â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Vendors ───────────────────────────────────────────────────────────────────
 async function renderVendors(page = 1) {
   showLoading();
   try {
@@ -1230,11 +1230,11 @@ async function renderVendors(page = 1) {
         vendors.map((v) => ({
           id: renderIdCell(v.id),
           name: v.name,
-          contact: v.contact_email || "â€”",
+          contact: v.contact_email || "—",
           cpi: formatCurrency(v.cpi_cents || 0),
           quota: v.quota_target
             ? `${v.quota_used || 0}/${v.quota_target}`
-            : "â€”",
+            : "—",
           status: renderBadge(v.status),
         })),
         "id"
@@ -1252,7 +1252,7 @@ async function renderVendors(page = 1) {
   }
 }
 
-// â”€â”€â”€ Tracking Links â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Tracking Links ────────────────────────────────────────────────────────────
 async function renderTrackingLinks(page = 1) {
   showLoading();
   try {
@@ -1280,7 +1280,7 @@ async function renderTrackingLinks(page = 1) {
           code: renderIdCell(l.link_code),
           study: renderIdCell(l.study_id),
           vendor: renderIdCell(l.vendor_id),
-          uid_mode: l.uid_mode || "â€”",
+          uid_mode: l.uid_mode || "—",
           status: renderBadge(l.status),
           clicks: l.click_count || 0,
           created: formatDate(l.created_at),
@@ -1300,7 +1300,7 @@ async function renderTrackingLinks(page = 1) {
   }
 }
 
-// â”€â”€â”€ Responses â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Responses ─────────────────────────────────────────────────────────────────
 let responsesState = {
   page: 1,
   limit: 25,
@@ -1353,7 +1353,7 @@ async function exportResponsesExcel(exportType = "filtered") {
   } finally {
     if (btn) {
       btn.disabled = false;
-      btn.textContent = "ðŸ“Š Export Excel";
+      btn.textContent = "📊 Export Excel";
     }
   }
 }
@@ -1392,8 +1392,8 @@ async function renderResponses(page = 1) {
       <div style="display:flex; gap:8px;">
         <button class="btn btn-secondary" onclick="renderResponses(${
           responsesState.page
-        })" title="Refresh">â†» Refresh</button>
-        <button class="btn btn-primary" id="excel-export-btn" onclick="exportResponsesExcel('filtered')">ðŸ“Š Export Excel</button>
+        })" title="Refresh">↻ Refresh</button>
+        <button class="btn btn-primary" id="excel-export-btn" onclick="exportResponsesExcel('filtered')">📊 Export Excel</button>
       </div>
     </div>
     <div class="responses-filter-toolbar">
@@ -1588,7 +1588,7 @@ async function fetchAndRenderResponsesData() {
     if ($("#resp-pagination-info")) {
       $(
         "#resp-pagination-info"
-      ).textContent = `Showing ${startIdx}â€“${endIdx} of ${formatNumber(
+      ).textContent = `Showing ${startIdx}–${endIdx} of ${formatNumber(
         total
       )} responses`;
     }
@@ -1599,7 +1599,7 @@ async function fetchAndRenderResponsesData() {
         page === 1 ? "disabled" : ""
       } onclick="renderResponses(${
         page - 1
-      })" class="btn btn-secondary btn-sm">â† Prev</button>`;
+      })" class="btn btn-secondary btn-sm">←  Prev</button>`;
       for (let i = 1; i <= totalPages; i++) {
         if (i === 1 || i === totalPages || (i >= page - 1 && i <= page + 1)) {
           pagHtml += `<button class="btn btn-sm ${
@@ -1613,13 +1613,13 @@ async function fetchAndRenderResponsesData() {
         page >= totalPages ? "disabled" : ""
       } onclick="renderResponses(${
         page + 1
-      })" class="btn btn-secondary btn-sm">Next â†’</button>`;
+      })" class="btn btn-secondary btn-sm">Next  →</button>`;
       $("#resp-pagination-controls").innerHTML = pagHtml;
     }
 
     if (!responses.length) {
       if (tbody) {
-        tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state" style="padding:40px 20px;"><div class="empty-state-icon">ðŸ“­</div><h3>No responses found</h3><p>Try changing your filters or search criteria.</p></div></td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state" style="padding:40px 20px;"><div class="empty-state-icon">📭</div><h3>No responses found</h3><p>Try changing your filters or search criteria.</p></div></td></tr>`;
       }
       return;
     }
@@ -1631,7 +1631,7 @@ async function fetchAndRenderResponsesData() {
         return `<span class="resp-copy-btn" onclick="event.stopPropagation(); copyToClipboard('${e.replace(
           /'/g,
           "\\'"
-        )}')" title="${escapeHtml(tooltip)}">â§‰</span>`;
+        )}')" title="${escapeHtml(tooltip)}">⧉</span>`;
       };
 
       tbody.innerHTML = responses
@@ -1779,7 +1779,7 @@ async function fetchAndRenderResponsesData() {
     }
   } catch (err) {
     if (tbody) {
-      tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state" style="padding:40px 20px;"><div class="empty-state-icon">âš ï¸</div><h3>Unable to load responses</h3><p>${escapeHtml(
+      tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state" style="padding:40px 20px;"><div class="empty-state-icon">⚠️</div><h3>Unable to load responses</h3><p>${escapeHtml(
         err.message
       )}</p><button class="btn btn-secondary btn-sm" style="margin-top:12px;" onclick="fetchAndRenderResponsesData()">Retry</button></div></td></tr>`;
     }
@@ -1805,7 +1805,7 @@ function toggleRespSort(field) {
 }
 window.toggleRespSort = toggleRespSort;
 
-// â”€â”€â”€ Analytics â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Analytics ─────────────────────────────────────────────────────────────────
 async function renderAnalytics(page = 1) {
   showLoading();
   try {
@@ -1818,14 +1818,14 @@ async function renderAnalytics(page = 1) {
       <div class="section-header"><h3>Analytics Overview</h3></div>
       <div class="grid-3 mb-24">
         <div class="stat-card">
-          <div class="stat-card-icon icon-info">ðŸ“Š</div>
+          <div class="stat-card-icon icon-info">📊</div>
           <div class="stat-label">Total Sessions</div>
           <div class="stat-value">${formatNumber(
             funnel.total_sessions || 0
           )}</div>
         </div>
         <div class="stat-card">
-          <div class="stat-card-icon icon-success">âœ…</div>
+          <div class="stat-card-icon icon-success">✅</div>
           <div class="stat-label">Completed</div>
           <div class="stat-value">${formatNumber(funnel.completed || 0)}</div>
         </div>
@@ -1875,7 +1875,7 @@ async function renderAnalytics(page = 1) {
   }
 }
 
-// â”€â”€â”€ Finance Dashboard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Finance Dashboard ──────────────────────────────────────────────────────────
 async function renderFinance(page = 1) {
   showLoading();
   try {
@@ -1916,7 +1916,7 @@ async function renderFinance(page = 1) {
           <div class="stat-value">${formatNumber(sum.total_projects || 0)}</div>
         </div>
         <div class="stat-card">
-          <div class="stat-card-icon icon-purple">ðŸ“Š</div>
+          <div class="stat-card-icon icon-purple">📊</div>
           <div class="stat-label">Total Field Activity</div>
           <div class="stat-value">${formatNumber(sum.total_activity || 0)}</div>
         </div>
@@ -1926,12 +1926,12 @@ async function renderFinance(page = 1) {
           <div class="stat-value">${formatNumber(sum.total_verified || sum.total_completes || 0)}</div>
         </div>
         <div class="stat-card">
-          <div class="stat-card-icon icon-warning">âš ï¸</div>
+          <div class="stat-card-icon icon-warning">⚠️</div>
           <div class="stat-label">Unverified (Audit Only)</div>
           <div class="stat-value" style="color:var(--color-warning);">${formatNumber(sum.total_unverified || 0)}</div>
         </div>
         <div class="stat-card">
-          <div class="stat-card-icon icon-success">âœ…</div>
+          <div class="stat-card-icon icon-success">✅</div>
           <div class="stat-label">Accepted / Approved</div>
           <div class="stat-value">${formatNumber(sum.total_approved || 0)}</div>
         </div>
@@ -1972,7 +1972,7 @@ async function renderFinance(page = 1) {
                 vendor_rate: formatINR(vRate),
                 margin: `<span style="color:${margin >= 0 ? 'var(--color-success)' : 'var(--color-danger)'}; font-weight:600;">${formatINR(margin)}</span>`,
                 currency: p.currency || 'INR',
-                actions: `<button class="btn btn-sm btn-secondary" onclick="openSetRatesModal('${p.id}', '${escapeHtml(p.project_code)}', ${cRate}, ${vRate}, '${p.currency || 'INR'}')">âš™ï¸ Set Rates</button>`,
+                actions: `<button class="btn btn-sm btn-secondary" onclick="openSetRatesModal('${p.id}', '${escapeHtml(p.project_code)}', ${cRate}, ${vRate}, '${p.currency || 'INR'}')">⚠️ Set Rates</button>`,
               };
             }),
             "id"
@@ -1991,9 +1991,9 @@ async function renderFinance(page = 1) {
             ["Invoice #", "Project", "Client", "Period", "Approved Qty", "Rate", "Total Amount", "Status", "Actions"],
             invoices.map((inv) => ({
               inv_num: `<strong>${escapeHtml(inv.invoice_number)}</strong>`,
-              proj: escapeHtml(inv.project_code || inv.project_name || 'â€”'),
-              client: escapeHtml(inv.client_name || 'â€”'),
-              period: `${formatDate(inv.billing_period_start)} â€“ ${formatDate(inv.billing_period_end)}`,
+              proj: escapeHtml(inv.project_code || inv.project_name || '—'),
+              client: escapeHtml(inv.client_name || '—'),
+              period: `${formatDate(inv.billing_period_start)} – ${formatDate(inv.billing_period_end)}`,
               qty: formatNumber(inv.total_approved_completes),
               rate: formatINR(inv.client_rate),
               total: `<strong>${formatINR(inv.total_amount)}</strong>`,
@@ -2018,27 +2018,27 @@ async function renderFinance(page = 1) {
   }
 }
 
-// â”€â”€â”€ Rate Config Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Rate Config Modal ────────────────────────────────────────────────────────
 function openSetRatesModal(projectId, projectCode, clientRate, vendorRate, currency) {
   showModal(
-    `Set Rates â€” ${projectCode}`,
+    `Set Rates — ${projectCode}`,
     `
       <form id="set-rates-form">
         <input type="hidden" name="project_id" value="${projectId}">
         <div class="form-group mb-14">
-          <label>Client Billing Rate (â‚¹ / accepted complete)</label>
+          <label>Client Billing Rate (₹ / accepted complete)</label>
           <input type="number" step="0.01" min="0" name="client_rate" value="${clientRate}" required>
         </div>
         <div class="form-group mb-14">
-          <label>Vendor Payout Rate (â‚¹ / accepted complete)</label>
+          <label>Vendor Payout Rate (₹ / accepted complete)</label>
           <input type="number" step="0.01" min="0" name="vendor_rate" value="${vendorRate}" required>
         </div>
         <div class="form-group">
           <label>Currency</label>
           <select name="currency">
-            <option value="INR" ${currency === 'INR' ? 'selected' : ''}>INR (â‚¹)</option>
+            <option value="INR" ${currency === 'INR' ? 'selected' : ''}>INR (₹)</option>
             <option value="USD" ${currency === 'USD' ? 'selected' : ''}>USD ($)</option>
-            <option value="EUR" ${currency === 'EUR' ? 'selected' : ''}>EUR (â‚¬)</option>
+            <option value="EUR" ${currency === 'EUR' ? 'selected' : ''}>EUR (€)</option>
             <option value="GBP" ${currency === 'GBP' ? 'selected' : ''}>GBP (Â£)</option>
           </select>
         </div>
@@ -2071,7 +2071,7 @@ async function doSetRates() {
   }
 }
 
-// â”€â”€â”€ Invoice Generation Modal with Pre-flight Preview & UID-Level Review â”€â”€â”€â”€â”€â”€â”€
+// ─── Invoice Generation Modal with Pre-flight Preview & UID-Level Review ───────
 let currentInvoicePreviewData = null;
 let currentInvoiceActiveTab = 'eligible';
 
@@ -2091,7 +2091,7 @@ async function openGenerateInvoiceModal() {
               <label style="font-weight:600; font-size:0.8125rem;">SELECT PROJECT</label>
               <select id="inv-project-select" name="project_id" required onchange="triggerInvoicePreview()" style="padding:8px 12px; border-radius:6px; border:1px solid var(--border-default); width:100%;">
                 <option value="">-- Choose Project --</option>
-                ${projects.map((p) => `<option value="${p.id}">${escapeHtml(p.project_code)} â€” ${escapeHtml(p.name)} (â‚¹${p.client_rate || 0}/ea)</option>`).join("")}
+                ${projects.map((p) => `<option value="${p.id}">${escapeHtml(p.project_code)} — ${escapeHtml(p.name)} (₹${p.client_rate || 0}/ea)</option>`).join("")}
               </select>
             </div>
             <div class="form-group">
@@ -2110,7 +2110,7 @@ async function openGenerateInvoiceModal() {
           </div>
 
           <!-- Preview & Pre-Flight Review Container -->
-          <div id="invoice-preview-container" style="min-height:80px; padding:12px; background:var(--bg-card); border:1px solid var(--border-default); border-radius:8px; margin-bottom:14px;">
+          <div id="invoice-preview-container" style="min-height:80px; padding:12px; background:var(--bg-surface); border:1px solid var(--border-default); border-radius:8px; margin-bottom:14px;">
             <div style="text-align:center; color:var(--text-muted); padding:16px;">
               ðŸ‘ˆ Select a project and billing period to calculate live commercial metrics & inspect UID-level records.
             </div>
@@ -2151,7 +2151,7 @@ async function triggerInvoicePreview() {
   } catch (err) {
     currentInvoicePreviewData = null;
     if (raiseBtn) raiseBtn.disabled = true;
-    if (container) container.innerHTML = `<div style="color:var(--color-danger); padding:12px;">âš ï¸ Preview Error: ${escapeHtml(err.message)}</div>`;
+    if (container) container.innerHTML = `<div style="color:var(--color-danger); padding:12px;">⚠️ Preview Error: ${escapeHtml(err.message)}</div>`;
   }
 }
 
@@ -2221,17 +2221,17 @@ function renderInvoicePreviewDom(data) {
 
     ${eligCount === 0 ? `
       <div style="background:#fef2f2; border:1px solid #fecaca; color:#991b1b; padding:8px 12px; border-radius:6px; font-size:0.78125rem; margin-bottom:12px;">
-        â„¹ï¸ <strong>Notice:</strong> No unbilled approved completes found for this billing period. Please complete and review responses before raising invoice.
+        ℹ️ï¸ <strong>Notice:</strong> No unbilled approved completes found for this billing period. Please complete and review responses before raising invoice.
       </div>
     ` : ''}
 
     <!-- Tabs for UID-level inspection -->
     <div style="display:flex; border-bottom:1px solid #e2e8f0; gap:8px; margin-bottom:8px;">
       <button type="button" class="btn btn-sm ${currentInvoiceActiveTab === 'eligible' ? 'btn-primary' : 'btn-secondary'}" onclick="switchInvoicePreviewTab('eligible')">
-        âœ… Eligible Billable UIDs (${(data.eligible_records || []).length})
+        ✅ Eligible Billable UIDs (${(data.eligible_records || []).length})
       </button>
       <button type="button" class="btn btn-sm ${currentInvoiceActiveTab === 'unverified' ? 'btn-primary' : 'btn-secondary'}" onclick="switchInvoicePreviewTab('unverified')">
-        âš ï¸ Unverified Activity (${(data.unverified_records || []).length})
+        ⚠️ Unverified Activity (${(data.unverified_records || []).length})
       </button>
       <button type="button" class="btn btn-sm ${currentInvoiceActiveTab === 'rejected' ? 'btn-primary' : 'btn-secondary'}" onclick="switchInvoicePreviewTab('rejected')">
         âŒ Rejected UIDs (${(data.rejected_records || []).length})
@@ -2312,7 +2312,7 @@ function renderInvoiceTabHtml() {
             <tr style="border-top:1px solid #f1f5f9;">
               <td style="padding:4px 8px; font-family:monospace; font-weight:600;">${escapeHtml(u.uid)}</td>
               <td style="padding:4px 8px; color:#b45309;"><span class="badge badge-warning">${escapeHtml(u.reason)}</span></td>
-              <td style="padding:4px 8px;">${u.created_at ? formatDateTime(u.created_at) : 'â€”'}</td>
+              <td style="padding:4px 8px;">${u.created_at ? formatDateTime(u.created_at) : '—'}</td>
               <td style="padding:4px 8px;">${escapeHtml(u.provider)}</td>
               <td style="padding:4px 8px;"><strong style="color:#d97706;">NON-BILLABLE</strong></td>
             </tr>
@@ -2341,7 +2341,7 @@ function renderInvoiceTabHtml() {
             <tr style="border-top:1px solid #f1f5f9;">
               <td style="padding:4px 8px; font-family:monospace; font-weight:600;">${escapeHtml(r.uid)}</td>
               <td style="padding:4px 8px;"><span class="badge badge-danger">${escapeHtml(r.rejection_reason_code)}</span></td>
-              <td style="padding:4px 8px; color:var(--text-muted);">${escapeHtml(r.rejection_notes || 'â€”')}</td>
+              <td style="padding:4px 8px; color:var(--text-muted);">${escapeHtml(r.rejection_notes || '—')}</td>
               <td style="padding:4px 8px;">REJECTED</td>
               <td style="padding:4px 8px; color:#dc2626; font-weight:600;">- ${formatINR(r.deduction)}</td>
             </tr>
@@ -2401,7 +2401,7 @@ async function downloadInvoiceExcel(invoiceId) {
   }
 }
 
-// â”€â”€â”€ Rejection Management â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Rejection Management ─────────────────────────────────────────────────────
 let selectedResponseIds = new Set();
 
 async function renderRejectionManagement(page = 1) {
@@ -2436,7 +2436,7 @@ async function renderRejectionManagement(page = 1) {
             ðŸš« Bulk Reject (${selectedResponseIds.size})
           </button>
           <button class="btn btn-success" onclick="bulkReview('APPROVED', 'ACCEPTED')">
-            âœ… Bulk Accept (${selectedResponseIds.size})
+            ✅ Bulk Accept (${selectedResponseIds.size})
           </button>
         </div>
       </div>
@@ -2449,7 +2449,7 @@ async function renderRejectionManagement(page = 1) {
               <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted);">PROJECT</label>
               <select id="rej-filter-project" onchange="renderRejectionManagement(1)" style="padding:8px 12px; border-radius:6px; border:1px solid var(--border-default);">
                 <option value="">All Projects</option>
-                ${projects.map((p) => `<option value="${p.id}" ${pCodeFilter === p.id ? 'selected' : ''}>${escapeHtml(p.project_code)} â€” ${escapeHtml(p.name)}</option>`).join("")}
+                ${projects.map((p) => `<option value="${p.id}" ${pCodeFilter === p.id ? 'selected' : ''}>${escapeHtml(p.project_code)} — ${escapeHtml(p.name)}</option>`).join("")}
               </select>
             </div>
             <div style="display:flex; flex-direction:column; gap:4px;">
@@ -2485,16 +2485,16 @@ async function renderRejectionManagement(page = 1) {
               return {
                 select: `<input type="checkbox" class="row-checkbox" value="${r.id}" ${isChecked ? 'checked' : ''} onchange="toggleRowSelect('${r.id}', this.checked)" style="cursor:pointer;">`,
                 uid: `<code style="font-weight:600;">${escapeHtml(r.uid)}</code>`,
-                project: escapeHtml(r.project_code || 'â€”'),
-                vendor: escapeHtml(r.vendor_name || 'â€”'),
+                project: escapeHtml(r.project_code || '—'),
+                vendor: escapeHtml(r.vendor_name || '—'),
                 survey_status: renderBadge(r.final_status),
                 review_status: renderBadge(r.vendor_acceptance_status),
-                reason: r.rejection_reason_code ? `<span class="badge badge-danger">${escapeHtml(r.rejection_reason_code)}</span>` : '<span style="color:var(--text-muted);">â€”</span>',
+                reason: r.rejection_reason_code ? `<span class="badge badge-danger">${escapeHtml(r.rejection_reason_code)}</span>` : '<span style="color:var(--text-muted);">—</span>',
                 date: r.reviewed_at ? formatDateTime(r.reviewed_at) : '<span style="color:var(--text-muted);">Pending</span>',
                 actions: `
                   <div style="display:flex; gap:6px;">
                     <button class="btn btn-sm btn-success" onclick="quickApprove('${r.id}')" title="Approve">âœ“ Accept</button>
-                    <button class="btn btn-sm btn-danger" onclick="openSingleRejectModal('${r.id}', '${escapeHtml(r.uid)}')" title="Reject">âœ• Reject</button>
+                    <button class="btn btn-sm btn-danger" onclick="openSingleRejectModal('${r.id}', '${escapeHtml(r.uid)}')" title="Reject">✕ Reject</button>
                   </div>
                 `,
               };
@@ -2555,7 +2555,7 @@ async function quickApprove(id) {
 
 function openSingleRejectModal(id, uid) {
   showModal(
-    `Reject Respondent â€” ${uid}`,
+    `Reject Respondent — ${uid}`,
     `
       <form id="single-reject-form">
         <input type="hidden" name="id" value="${id}">
@@ -2686,7 +2686,7 @@ async function bulkReview(clientStatus, vendorStatus) {
   }
 }
 
-// â”€â”€â”€ Vendor Settlements â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Vendor Settlements ───────────────────────────────────────────────────────
 async function renderVendorSettlements() {
   showLoading();
   try {
@@ -2721,7 +2721,7 @@ async function renderVendorSettlements() {
               <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted);">PROJECT</label>
               <select name="project_id" required style="padding:8px 12px; border-radius:6px; border:1px solid var(--border-default); width:100%;">
                 <option value="">-- Choose Project --</option>
-                ${projects.map((p) => `<option value="${p.id}">${escapeHtml(p.project_code)} â€” ${escapeHtml(p.name)}</option>`).join("")}
+                ${projects.map((p) => `<option value="${p.id}">${escapeHtml(p.project_code)} — ${escapeHtml(p.name)}</option>`).join("")}
               </select>
             </div>
             <div style="display:flex; flex-direction:column; gap:4px;">
@@ -2741,7 +2741,7 @@ async function renderVendorSettlements() {
             </div>
             <div style="display:flex; gap:8px;">
               <button type="button" class="btn btn-primary" onclick="doGenerateSettlement()" style="width:100%;">
-                âš¡ Calculate & Save Settlement
+                ⚠️ Calculate & Save Settlement
               </button>
             </div>
           </form>
@@ -2769,8 +2769,8 @@ async function renderVendorSettlements() {
               const rejPct = ver > 0 ? ((rej / ver) * 100).toFixed(1) : (Number(s.rejection_percentage) || 0).toFixed(1);
 
               return {
-                project: `<strong>${escapeHtml(s.project_code || 'â€”')}</strong>`,
-                vendor: escapeHtml(s.vendor_name || 'â€”'),
+                project: `<strong>${escapeHtml(s.project_code || '—')}</strong>`,
+                vendor: escapeHtml(s.vendor_name || '—'),
                 rate: formatINR(rate),
                 submitted: formatNumber(sub),
                 verified: `<span style="font-weight:600; color:#059669;">${formatNumber(ver)}</span>`,
@@ -2866,7 +2866,7 @@ async function downloadSettlementExcel(id) {
   }
 }
 
-// â”€â”€â”€ Audit â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Audit ─────────────────────────────────────────────────────────────────────
 async function renderAudit(page = 1) {
   showLoading();
   try {
@@ -2900,7 +2900,7 @@ async function renderAudit(page = 1) {
   }
 }
 
-// â”€â”€â”€ Quotas â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Quotas ────────────────────────────────────────────────────────────────────
 async function renderQuotas(page = 1) {
   showLoading();
   try {
@@ -2949,7 +2949,7 @@ async function renderQuotas(page = 1) {
   }
 }
 
-// â”€â”€â”€ Settings (placeholder) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Settings (placeholder) ────────────────────────────────────────────────────
 async function renderSettings() {
   const content = `
     <div class="section-header"><h3>Platform Settings</h3></div>
@@ -2997,7 +2997,7 @@ async function renderSettings() {
 }
 
 
-// â”€â”€â”€ Complete User Management Implementation (IAM Blueprint) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Complete User Management Implementation (IAM Blueprint) ──────────────────
 let userFiltersState = {
   search: "",
   role: "",
@@ -3034,7 +3034,7 @@ async function renderUsers(page = 1) {
       <!-- Top KPI Summary Cards -->
       <div class="stats-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 24px;">
         ${renderStatCard("Total Users", summary.total_users || 0, "ðŸ‘¥", "icon-accent")}
-        ${renderStatCard("Active Users", summary.active_users || 0, "âœ…", "icon-success")}
+        ${renderStatCard("Active Users", summary.active_users || 0, "✅", "icon-success")}
         ${renderStatCard("Vendors", summary.vendor_users || 0, "ðŸ¢", "icon-purple")}
         ${renderStatCard("Suspended Users", summary.suspended_users || 0, "â›”", "icon-warning")}
       </div>
@@ -3096,7 +3096,7 @@ async function renderUsers(page = 1) {
         <span id="users-bulk-count" style="font-weight: 600; color: var(--accent-hover); font-size: 0.875rem;">0 users selected</span>
         <div style="display: flex; gap: 8px;">
           <button class="btn btn-sm btn-secondary" onclick="bulkUpdateUsersStatus('ACTIVE')" style="background: white; border: 1px solid var(--color-success); color: var(--color-success);">
-            âœ… Bulk Activate
+            ✅ Bulk Activate
           </button>
           <button class="btn btn-sm btn-secondary" onclick="bulkUpdateUsersStatus('SUSPENDED')" style="background: white; border: 1px solid var(--color-danger); color: var(--color-danger);">
             â›” Bulk Suspend
@@ -3143,7 +3143,7 @@ async function renderUsers(page = 1) {
                 ? '<span class="badge badge-danger">â— SUSPENDED</span>'
                 : '<span class="badge badge-success">â— ACTIVE</span>';
               const vendorDisplay = u.role === "ADMIN"
-                ? '<span style="color: var(--text-muted); font-size: 0.85rem;">â€”</span>'
+                ? '<span style="color: var(--text-muted); font-size: 0.85rem;">—</span>'
                 : (u.vendor_name ? `<span style="font-weight: 600; color: var(--text-primary);">${escapeHtml(u.vendor_name)}</span>` : '<span style="color: var(--color-warning);">Unassigned</span>');
 
               return `
@@ -3153,13 +3153,13 @@ async function renderUsers(page = 1) {
                   </td>
                   <td>
                     <div style="font-weight: 600; color: var(--text-primary); cursor: pointer;" onclick="openUserDetailsModal('${escapeHtml(u.id)}')">
-                      ${escapeHtml(u.full_name || "â€”")}
+                      ${escapeHtml(u.full_name || "—")}
                     </div>
                   </td>
                   <td>
                     <div class="id-cell-wrapper" style="max-width: 280px;">
                       <span class="font-mono id-text" title="${escapeHtml(u.email)}" style="font-size: 0.82rem; font-weight: 500;">${escapeHtml(u.email)}</span>
-                      <button class="btn-copy" onclick="event.stopPropagation(); copyToClipboard('${escapeHtml(u.email)}')" title="Copy Login ID">ðŸ“‹</button>
+                      <button class="btn-copy" onclick="event.stopPropagation(); copyToClipboard('${escapeHtml(u.email)}')" title="Copy Login ID">📋</button>
                     </div>
                   </td>
                   <td>${roleBadge}</td>
@@ -3181,7 +3181,7 @@ async function renderUsers(page = 1) {
                       </button>
                       ${isSuspended ? `
                         <button class="btn btn-sm" onclick="confirmToggleUserStatus('${escapeHtml(u.id)}', '${escapeHtml(u.full_name || u.email)}', 'SUSPENDED')" title="Reactivate this user account" style="padding: 4px 8px; font-size: 0.75rem; background: var(--color-success-bg); color: var(--color-success); border: 1px solid rgba(16, 185, 129, 0.2);">
-                          âœ… Activate
+                          ✅ Activate
                         </button>
                       ` : `
                         <button class="btn btn-sm" onclick="confirmToggleUserStatus('${escapeHtml(u.id)}', '${escapeHtml(u.full_name || u.email)}', 'ACTIVE')" title="Suspend this user account" style="padding: 4px 8px; font-size: 0.75rem; background: var(--color-danger-bg); color: var(--color-danger); border: 1px solid rgba(239, 68, 68, 0.2);">
@@ -3285,7 +3285,7 @@ async function bulkUpdateUsersStatus(newStatus) {
   }
 }
 
-// â”€â”€â”€ Create User Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Create User Modal ─────────────────────────────────────────────────────────
 async function openCreateUserModal() {
   showModal("Create User", '<div class="loading-screen" style="min-height:200px;"><div class="spinner-lg"></div></div>');
   try {
@@ -3325,7 +3325,7 @@ async function openCreateUserModal() {
         <div class="form-group" id="vendor-select-group">
           <label style="font-weight: 600; font-size: 0.8125rem; color: var(--text-primary);">Vendor Assignment</label>
           <select id="new-user-vendor" class="input-glass" style="width: 100%;" disabled>
-            <option value="">â€” Not Applicable (ADMIN has global oversight) â€”</option>
+            <option value="">— Not Applicable (ADMIN has global oversight) —</option>
             ${vendors.map(v => `<option value="${escapeHtml(v.id)}">${escapeHtml(v.name)} (${escapeHtml(v.vendor_code || v.id.slice(0, 6))})</option>`).join("")}
           </select>
           <small id="vendor-hint" style="color: var(--text-muted); font-size: 0.72rem; margin-top: 4px; display: block;">
@@ -3376,11 +3376,11 @@ function handleCreateUserRoleChange(role) {
   if (role === "ADMIN") {
     vendorSelect.disabled = true;
     vendorSelect.value = "";
-    vendorSelect.options[0].textContent = "â€” Not Applicable (ADMIN has global oversight) â€”";
+    vendorSelect.options[0].textContent = "— Not Applicable (ADMIN has global oversight) —";
     if (vendorHint) vendorHint.textContent = "Admins have platform-wide access and do not belong to a specific vendor.";
   } else {
     vendorSelect.disabled = false;
-    vendorSelect.options[0].textContent = "â€” Select Assigned Vendor (Required) â€”";
+    vendorSelect.options[0].textContent = "— Select Assigned Vendor (Required) —";
     if (vendorHint) vendorHint.textContent = "Vendor accounts are strictly isolated to their assigned vendor data.";
   }
 }
@@ -3494,7 +3494,7 @@ async function submitCreateUser() {
   }
 }
 
-// â”€â”€â”€ Reset Password Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Reset Password Modal ──────────────────────────────────────────────────────
 function openResetPasswordModal(userId, email) {
   const bodyHtml = `
     <form id="reset-pw-form" onsubmit="event.preventDefault(); submitResetPassword('${escapeHtml(userId)}');" style="display: flex; flex-direction: column; gap: 14px;">
@@ -3577,7 +3577,7 @@ async function submitResetPassword(userId) {
   }
 }
 
-// â”€â”€â”€ User Details Modal & Audit Activity Timeline â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── User Details Modal & Audit Activity Timeline ─────────────────────────────
 async function openUserDetailsModal(userId) {
   showModal("User Details", '<div class="loading-screen" style="min-height:260px;"><div class="spinner-lg"></div></div>');
   try {
@@ -3599,7 +3599,7 @@ async function openUserDetailsModal(userId) {
               ${escapeHtml((u.full_name || u.email || "U").charAt(0).toUpperCase())}
             </div>
             <div>
-              <div style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary);">${escapeHtml(u.full_name || "â€”")}</div>
+              <div style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary);">${escapeHtml(u.full_name || "—")}</div>
               <div style="font-size: 0.8125rem; color: var(--text-secondary); font-family: ui-monospace, monospace;">${escapeHtml(u.email)}</div>
             </div>
           </div>
@@ -3619,7 +3619,7 @@ async function openUserDetailsModal(userId) {
           <div>
             <label style="font-size: 0.72rem; text-transform: uppercase; font-weight: 600; color: var(--text-muted); display: block;">Assigned Vendor</label>
             <div style="margin-top: 4px; font-weight: 600; color: var(--text-primary);">
-              ${u.role === "ADMIN" ? '<span style="color: var(--text-muted);">â€” (Global Admin)</span>' : (u.vendor_name ? `${escapeHtml(u.vendor_name)} (${escapeHtml(u.vendor_code || u.vendor_id)})` : '<span style="color: var(--color-warning);">Unassigned</span>')}
+              ${u.role === "ADMIN" ? '<span style="color: var(--text-muted);">— (Global Admin)</span>' : (u.vendor_name ? `${escapeHtml(u.vendor_name)} (${escapeHtml(u.vendor_code || u.vendor_id)})` : '<span style="color: var(--color-warning);">Unassigned</span>')}
             </div>
           </div>
 
@@ -3651,7 +3651,7 @@ async function openUserDetailsModal(userId) {
           </button>
           ${isSuspended ? `
             <button class="btn btn-sm" onclick="hideModal(); confirmToggleUserStatus('${escapeHtml(u.id)}', '${escapeHtml(u.full_name || u.email)}', 'SUSPENDED');" style="background: var(--color-success-bg); color: var(--color-success); border: 1px solid rgba(16, 185, 129, 0.2);">
-              âœ… Activate Account
+              ✅ Activate Account
             </button>
           ` : `
             <button class="btn btn-sm" onclick="hideModal(); confirmToggleUserStatus('${escapeHtml(u.id)}', '${escapeHtml(u.full_name || u.email)}', 'ACTIVE');" style="background: var(--color-danger-bg); color: var(--color-danger); border: 1px solid rgba(239, 68, 68, 0.2);">
@@ -3680,7 +3680,7 @@ async function openUserDetailsModal(userId) {
               if (act.action.includes("LOGIN")) icon = "ðŸ”";
               else if (act.action.includes("PASSWORD")) icon = "ðŸ”‘";
               else if (act.action.includes("SUSPEND")) icon = "â›”";
-              else if (act.action.includes("ACTIVATE")) icon = "âœ…";
+              else if (act.action.includes("ACTIVATE")) icon = "✅";
               else if (act.action.includes("CREATE")) icon = "âž•";
               else if (act.action.includes("DELETE")) icon = "ðŸ—‘";
 
@@ -3694,7 +3694,7 @@ async function openUserDetailsModal(userId) {
                     </div>
                     <div class="timeline-meta">
                       Actor: <strong>${escapeHtml(act.actor_email || "System")}</strong>
-                      ${act.ip_address ? ` Â· IP: ${escapeHtml(act.ip_address)}` : ""}
+                      ${act.ip_address ? ` · IP: ${escapeHtml(act.ip_address)}` : ""}
                     </div>
                   </div>
                 </div>
@@ -3712,7 +3712,7 @@ async function openUserDetailsModal(userId) {
   }
 }
 
-// â”€â”€â”€ Suspend / Activate User Confirmation (Section 9 & 10) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Suspend / Activate User Confirmation (Section 9 & 10) ───────────────────
 function confirmToggleUserStatus(userId, name, currentStatus) {
   if (currentStatus === "ACTIVE") {
     // Suspend Modal
@@ -3720,7 +3720,7 @@ function confirmToggleUserStatus(userId, name, currentStatus) {
       <div style="font-size: 0.9rem; color: var(--text-primary); line-height: 1.5;">
         <p style="margin-bottom: 12px;">Are you sure you want to suspend <strong>${escapeHtml(name)}</strong>?</p>
         <div style="padding: 12px 14px; background: var(--color-danger-bg); border-radius: var(--radius-md); border: 1px solid rgba(239, 68, 68, 0.2); color: var(--color-danger); font-size: 0.82rem;">
-          âš ï¸ <strong>${escapeHtml(name)}</strong> will no longer be able to authenticate or access the platform.
+          ⚠️ <strong>${escapeHtml(name)}</strong> will no longer be able to authenticate or access the platform.
         </div>
       </div>
     `;
@@ -3761,13 +3761,13 @@ async function doUpdateUserStatus(userId, newStatus) {
   }
 }
 
-// â”€â”€â”€ Delete User Confirmation (Section 11) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Delete User Confirmation (Section 11) ───────────────────────────────────
 function confirmDeleteUser(userId, name, role) {
   const bodyHtml = `
     <div style="font-size: 0.9rem; color: var(--text-primary); line-height: 1.5;">
       <p style="margin-bottom: 12px;">Delete user account <strong>${escapeHtml(name)}</strong> (${escapeHtml(role)})?</p>
       <div style="padding: 12px 14px; background: var(--bg-muted); border-radius: var(--radius-md); border: 1px solid var(--border-light); font-size: 0.8125rem; color: var(--text-secondary);">
-        â„¹ï¸ To maintain historical response ownership and audit trail compliance, this user will be deactivated and marked as suspended.
+        ℹ️ï¸ To maintain historical response ownership and audit trail compliance, this user will be deactivated and marked as suspended.
       </div>
     </div>
   `;
@@ -3791,7 +3791,7 @@ async function doDeleteUser(userId) {
   }
 }
 
-// â”€â”€â”€ Download Users Excel (Section 19) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Download Users Excel (Section 19) ─────────────────────────────────────────
 async function downloadUsersExcel() {
   try {
     showToast("Generating enterprise users export...", "info", 2000);
@@ -3812,13 +3812,13 @@ async function downloadUsersExcel() {
   }
 }
 
-// â”€â”€â”€ Pagination â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Pagination ────────────────────────────────────────────────────────────────
 function renderPagination(current, total, handler) {
   if (total <= 1) return "";
   let html = "";
   html += `<button ${current === 1 ? "disabled" : ""} onclick="${handler}(${
     current - 1
-  })">â† Prev</button>`;
+  })">←  Prev</button>`;
   for (let i = 1; i <= total; i++) {
     if (i === 1 || i === total || (i >= current - 1 && i <= current + 1)) {
       html += `<button class="${
@@ -3830,12 +3830,12 @@ function renderPagination(current, total, handler) {
   }
   html += `<button ${current === total ? "disabled" : ""} onclick="${handler}(${
     current + 1
-  })">Next â†’</button>`;
+  })">Next  →</button>`;
   html += `<span class="pagination-info">Page ${current} of ${total}</span>`;
   return html;
 }
 
-// â”€â”€â”€ Projects Page â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Projects Page ─────────────────────────────────────────────────────────────
 
 let _currentProjectId = null;
 
@@ -3853,7 +3853,7 @@ async function renderProjects() {
         <button class="btn btn-primary" onclick="showCreateProjectModal()">+ Create Project</button>
       </div>
       ${projects.length === 0 ? `
-        <div style="text-align:center;padding:4rem 2rem;background:var(--surface-glass);border-radius:1rem;border:1px solid var(--border-color);">
+        <div style="text-align:center;padding:4rem 2rem;background:var(--bg-surface);border-radius:1rem;border:1px solid var(--border-default);">
           <div style="font-size:3rem;margin-bottom:1rem;">ðŸ“</div>
           <h3 style="margin:0 0 0.5rem;color:var(--text-primary)">No Projects Yet</h3>
           <p style="color:var(--text-muted);margin-bottom:1.5rem;">Create your first survey tracking project to get started.</p>
@@ -3864,20 +3864,20 @@ async function renderProjects() {
           ${projects.map(function(p) {
             var statusColor = p.status === 'LIVE' ? 'var(--color-success)' : p.status === 'DRAFT' ? 'var(--text-muted)' : 'var(--color-warning)';
             return `
-              <div onclick="renderProjectDetail('${escapeHtml(p.id)}')" style="background:var(--surface-glass);border:1px solid var(--border-color);border-radius:0.875rem;padding:1.25rem 1.5rem;cursor:pointer;transition:all 0.2s ease;display:grid;grid-template-columns:1fr auto;gap:0.75rem;align-items:start;" onmouseover="this.style.borderColor='var(--color-primary)';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='var(--border-color)';this.style.transform='translateY(0)'">
+              <div onclick="renderProjectDetail('${escapeHtml(p.id)}')" style="background:var(--bg-surface);border:1px solid var(--border-default);border-radius:0.875rem;padding:1.25rem 1.5rem;cursor:pointer;transition:all 0.2s ease;display:grid;grid-template-columns:1fr auto;gap:0.75rem;align-items:start;" onmouseover="this.style.borderColor='var(--accent)';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='var(--border-default)';this.style.transform='translateY(0)'">
                 <div>
                   <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.5rem;">
-                    <span style="font-family:monospace;font-size:0.8125rem;font-weight:700;background:var(--color-primary);color:#fff;padding:0.2rem 0.6rem;border-radius:0.375rem;">${escapeHtml(p.project_code)}</span>
+                    <span style="font-family:monospace;font-size:0.8125rem;font-weight:700;background:var(--accent);color:#fff;padding:0.2rem 0.6rem;border-radius:0.375rem;">${escapeHtml(p.project_code)}</span>
                     <span style="font-size:0.75rem;font-weight:600;color:${statusColor};background:${statusColor}18;padding:0.15rem 0.5rem;border-radius:999px;">${escapeHtml(p.status)}</span>
                   </div>
                   <div style="font-size:1rem;font-weight:600;color:var(--text-primary);margin-bottom:0.25rem;">${escapeHtml(p.name)}</div>
                   ${p.client_name ? `<div style="font-size:0.8125rem;color:var(--text-muted);">Client: ${escapeHtml(p.client_name)}</div>` : ''}
-                  ${p.survey_url ? `<div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.35rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:500px;">ðŸ”— ${escapeHtml(p.survey_url)}</div>` : ''}
+                  ${p.survey_url ? `<div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.35rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:500px;">🔗 ${escapeHtml(p.survey_url)}</div>` : ''}
                 </div>
                 <div style="text-align:right;font-size:0.75rem;color:var(--text-muted);">
-                  ${p.client_rate ? `<div>Client: <strong style="color:var(--text-primary);">â‚¹${p.client_rate}</strong></div>` : ''}
-                  ${p.vendor_rate ? `<div>Vendor: <strong style="color:var(--text-primary);">â‚¹${p.vendor_rate}</strong></div>` : ''}
-                  <div style="margin-top:0.5rem;color:var(--color-primary);font-weight:500;">View Details â†’</div>
+                  ${p.client_rate ? `<div>Client: <strong style="color:var(--text-primary);">₹${p.client_rate}</strong></div>` : ''}
+                  ${p.vendor_rate ? `<div>Vendor: <strong style="color:var(--text-primary);">₹${p.vendor_rate}</strong></div>` : ''}
+                  <div style="margin-top:0.5rem;color:var(--accent);font-weight:500;">View Details  →</div>
                 </div>
               </div>
             `;
@@ -3894,82 +3894,179 @@ async function renderProjects() {
 async function renderProjectDetail(projectId) {
   _currentProjectId = projectId;
   const area = $("#content-area");
-  area.innerHTML = `<div class="loading-screen"><div class="spinner-lg"></div></div>`;
+  area.innerHTML = '<div class="loading-screen"><div class="spinner-lg"></div></div>';
   try {
-    const { data: proj } = await api(`/projects/${projectId}`);
-    var countriesRes = await api(`/projects/${projectId}/countries`).catch(function() { return { data: [] }; });
-    var countries = countriesRes.data || [];
-    var baseUrl = window.location.origin;
+    const { data: proj } = await api('/projects/' + projectId);
+    const countriesRes = await api('/projects/' + projectId + '/countries').catch(() => ({ data: [] }));
+    const countries = countriesRes.data || [];
+    const baseUrl = window.location.origin;
 
-    var countryBlocks = countries.map(function(c) {
-      var opiUrl = baseUrl + '/track?code=' + encodeURIComponent(proj.project_code) + '&country=' + encodeURIComponent(c.country_code) + '&uid={UID}';
+    const flagMap = {
+      IN: '🇮🇳', US: '🇺🇸', GB: '🇬🇧', UK: '🇬🇧', FR: '🇫🇷', DE: '🇩🇪',
+      CA: '🇨🇦', AU: '🇦🇺', JP: '🇯🇵', BR: '🇧🇷', SG: '🇸🇬', ES: '🇪🇸', IT: '🇮🇹'
+    };
+
+    const countryBlocks = countries.map(function(c) {
+      const flag = flagMap[(c.country_code || '').toUpperCase()] || '🌐';
+      const opiUrl = baseUrl + '/track?code=' + encodeURIComponent(proj.project_code) + '&country=' + encodeURIComponent(c.country_code) + '&uid={UID}';
+      const testUrl = baseUrl + '/track?code=' + encodeURIComponent(proj.project_code) + '&country=' + encodeURIComponent(c.country_code) + '&uid=TEST_PREVIEW';
+
       return `
-        <div style="background:var(--bg-primary,#0a0d14);border:1px solid var(--border-color);border-radius:0.75rem;padding:1rem 1.25rem;margin-bottom:0.75rem;">
-          <div style="font-size:0.875rem;font-weight:600;color:var(--text-primary);margin-bottom:0.5rem;">
-            ðŸŒ ${escapeHtml(c.country_name)} <span style="color:var(--text-muted);font-size:0.75rem;">(${escapeHtml(c.country_code)})</span>
+        <div style="background:var(--bg-surface);border:1px solid var(--border-default);border-radius:var(--radius-md);padding:1.25rem 1.5rem;margin-bottom:1rem;box-shadow:var(--shadow-xs);">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:0.875rem;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <span style="font-size:1.25rem;">${flag}</span>
+              <span style="font-size:1rem;font-weight:700;color:var(--text-primary);">
+                ${escapeHtml(c.country_name || c.country_code)}
+              </span>
+              <span style="font-size:0.8rem;font-weight:600;color:var(--text-muted);background:var(--bg-muted);padding:2px 8px;border-radius:4px;">
+                ${escapeHtml(c.country_code)}
+              </span>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;font-size:0.8125rem;">
+              ${c.target_completes ? `<span class="badge" style="background:var(--color-info-bg);color:var(--color-info);font-weight:600;">Target: ${formatNumber(c.target_completes)}</span>` : ''}
+              ${c.vendor_name ? `<span class="badge" style="background:var(--bg-muted);color:var(--text-secondary);">Vendor: ${escapeHtml(c.vendor_name)}</span>` : '<span class="badge" style="background:var(--bg-muted);color:var(--text-muted);">All Vendors / Organic</span>'}
+            </div>
           </div>
-          <div style="display:flex;align-items:center;gap:0.5rem;background:var(--surface-glass);border:1px solid var(--border-color);border-radius:0.5rem;padding:0.5rem 0.75rem;">
-            <code id="opi-${escapeHtml(c.country_code)}" style="flex:1;font-size:0.75rem;color:var(--color-primary);word-break:break-all;">${escapeHtml(opiUrl)}</code>
-            <button class="btn btn-sm" onclick="copyToClipboard(document.getElementById('opi-${escapeHtml(c.country_code)}').textContent, this)" style="padding:0.25rem 0.6rem;font-size:0.7rem;white-space:nowrap;">ðŸ“‹ Copy</button>
+
+          <label style="display:block;font-size:0.75rem;font-weight:600;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.04em;margin-bottom:6px;">
+            OPI Tracking Launch Link
+          </label>
+
+          <div style="display:flex;align-items:center;gap:10px;background:var(--bg-input);border:1px solid var(--border-default);border-radius:var(--radius-sm);padding:8px 12px;margin-bottom:8px;">
+            <div style="flex:1;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;font-size:0.85rem;color:var(--text-primary);word-break:break-all;line-height:1.5;">
+              ${escapeHtml(baseUrl + '/track?code=' + proj.project_code + '&country=' + c.country_code + '&uid=')}<span style="background:var(--accent-bg);color:var(--accent);font-weight:700;padding:2px 6px;border-radius:4px;border:1px solid var(--accent-ring);">{UID}</span>
+            </div>
+            <div style="display:flex;gap:6px;flex-shrink:0;">
+              <button class="btn btn-primary btn-sm" onclick="copyToClipboard('${opiUrl}', this)" style="padding:6px 14px;font-size:0.8125rem;font-weight:600;display:inline-flex;align-items:center;gap:6px;">
+                📋 Copy Link
+              </button>
+              <a href="${testUrl}" target="_blank" class="btn btn-secondary btn-sm" style="padding:6px 12px;font-size:0.8125rem;text-decoration:none;display:inline-flex;align-items:center;gap:4px;" title="Test redirect flow">
+                ↗ Test
+              </a>
+            </div>
           </div>
-          <div style="font-size:0.7rem;color:var(--text-muted);margin-top:0.35rem;">Replace <code style="color:var(--color-warning);">{UID}</code> with respondent UID before distributing.</div>
+
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;font-size:0.78rem;color:var(--text-muted);">
+            <div>
+              💡 Replace <code style="color:var(--accent);font-weight:700;background:var(--accent-bg);padding:1px 4px;border-radius:3px;">{UID}</code> with respondent's unique ID before providing to vendors.
+            </div>
+            ${c.survey_url ? `
+              <div style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:420px;" title="${escapeHtml(c.survey_url)}">
+                Target Survey: <span style="font-family:monospace;color:var(--text-secondary);">${escapeHtml(c.survey_url)}</span>
+              </div>
+            ` : ''}
+          </div>
         </div>
       `;
     }).join('');
 
+    const clientRate = proj.client_rate || 0;
+    const vendorRate = proj.vendor_rate || 0;
+    const margin = Math.max(0, clientRate - vendorRate);
+
     area.innerHTML = `
-      <div style="max-width:900px;">
-        <button class="btn btn-ghost" onclick="renderProjects()" style="margin-bottom:1.25rem;font-size:0.8125rem;">â† Back to Projects</button>
-        <div style="background:var(--surface-glass);border:1px solid var(--border-color);border-radius:1rem;padding:1.5rem;margin-bottom:1.25rem;">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1rem;">
-            <div>
-              <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.5rem;">
-                <span style="font-family:monospace;font-weight:800;font-size:1.1rem;background:var(--color-primary);color:#fff;padding:0.3rem 0.8rem;border-radius:0.5rem;">${escapeHtml(proj.project_code)}</span>
-                <span style="font-size:0.8rem;font-weight:600;padding:0.2rem 0.6rem;border-radius:999px;background:var(--color-success)20;color:var(--color-success);">${escapeHtml(proj.status)}</span>
+      <div style="max-width:1020px;margin:0 auto;">
+        <button class="btn btn-ghost btn-sm" onclick="renderProjects()" style="display:inline-flex;align-items:center;gap:6px;margin-bottom:1.25rem;font-size:0.875rem;font-weight:500;color:var(--text-secondary);">
+          ← Back to Projects
+        </button>
+
+        <div style="background:var(--bg-surface);border:1px solid var(--border-default);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);padding:1.75rem;margin-bottom:1.5rem;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1.5rem;">
+            <div style="flex:1;min-width:280px;">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+                <span style="font-family:ui-monospace,monospace;font-weight:800;font-size:1.15rem;background:var(--accent);color:#ffffff;padding:4px 12px;border-radius:6px;letter-spacing:0.04em;">
+                  ${escapeHtml(proj.project_code)}
+                </span>
+                ${renderBadge(proj.status || 'ACTIVE')}
               </div>
-              <h2 style="margin:0 0 0.25rem;font-size:1.25rem;font-weight:700;color:var(--text-primary);">${escapeHtml(proj.name)}</h2>
-              ${proj.client_name ? `<p style="margin:0;font-size:0.875rem;color:var(--text-muted);">Client: <strong style="color:var(--text-primary);">${escapeHtml(proj.client_name)}</strong></p>` : ''}
+              <h2 style="margin:0 0 6px;font-size:1.4rem;font-weight:700;color:var(--text-primary);line-height:1.3;">
+                ${escapeHtml(proj.name)}
+              </h2>
+              ${proj.client_name ? `<p style="margin:0;font-size:0.875rem;color:var(--text-muted);">Client: <strong style="color:var(--text-secondary);font-weight:600;">${escapeHtml(proj.client_name)}</strong></p>` : ''}
             </div>
-            <div style="text-align:right;font-size:0.8125rem;">
-              <div>Client Rate: <strong style="color:var(--text-primary);">â‚¹${proj.client_rate || 0}</strong></div>
-              <div>Vendor Rate: <strong style="color:var(--text-primary);">â‚¹${proj.vendor_rate || 0}</strong></div>
+
+            <div style="display:flex;gap:12px;flex-wrap:wrap;">
+              <div style="background:var(--bg-page);border:1px solid var(--border-default);border-radius:var(--radius-sm);padding:10px 16px;text-align:right;min-width:110px;">
+                <div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;font-weight:600;letter-spacing:0.04em;">Client Rate</div>
+                <div style="font-size:1.15rem;font-weight:700;color:var(--text-primary);margin-top:2px;">₹${formatNumber(clientRate)}</div>
+              </div>
+              <div style="background:var(--bg-page);border:1px solid var(--border-default);border-radius:var(--radius-sm);padding:10px 16px;text-align:right;min-width:110px;">
+                <div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;font-weight:600;letter-spacing:0.04em;">Vendor Rate</div>
+                <div style="font-size:1.15rem;font-weight:700;color:var(--text-secondary);margin-top:2px;">₹${formatNumber(vendorRate)}</div>
+              </div>
+              <div style="background:var(--color-success-bg);border:1px solid rgba(16,185,129,0.3);border-radius:var(--radius-sm);padding:10px 16px;text-align:right;min-width:110px;">
+                <div style="font-size:0.72rem;color:var(--color-success);text-transform:uppercase;font-weight:600;letter-spacing:0.04em;">Margin</div>
+                <div style="font-size:1.15rem;font-weight:700;color:var(--color-success);margin-top:2px;">₹${formatNumber(margin)}</div>
+              </div>
             </div>
           </div>
         </div>
+
         ${proj.survey_url ? `
-          <div style="background:var(--surface-glass);border:1px solid var(--border-color);border-radius:0.875rem;padding:1.25rem;margin-bottom:1.25rem;">
-            <h3 style="margin:0 0 0.75rem;font-size:0.875rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;">Survey URL Config</h3>
-            <code style="display:block;font-size:0.75rem;color:var(--text-primary);background:var(--bg-primary,#0a0d14);padding:0.75rem;border-radius:0.5rem;word-break:break-all;margin-bottom:0.75rem;">${escapeHtml(proj.survey_url)}</code>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;font-size:0.8125rem;">
-              <div>UID Param: <code style="color:var(--color-success);">${escapeHtml(proj.uid_param || 'auto-detect')}</code></div>
-              <div>Placeholder: <code style="color:var(--color-warning);">${escapeHtml(proj.uid_placeholder || 'not detected')}</code></div>
+          <div style="background:var(--bg-surface);border:1px solid var(--border-default);border-radius:var(--radius-md);box-shadow:var(--shadow-xs);padding:1.25rem 1.5rem;margin-bottom:1.5rem;">
+            <h3 style="margin:0 0 0.75rem;font-size:0.8125rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;">Default Client Survey URL</h3>
+            <div style="font-family:ui-monospace,monospace;font-size:0.8125rem;color:var(--text-primary);background:var(--bg-input);padding:0.75rem 1rem;border-radius:var(--radius-sm);border:1px solid var(--border-default);word-break:break-all;margin-bottom:0.75rem;">
+              ${escapeHtml(proj.survey_url)}
+            </div>
+            <div style="display:flex;gap:1.5rem;font-size:0.8125rem;">
+              <div><span style="color:var(--text-muted);">UID Param:</span> <code style="color:var(--accent);font-weight:600;">${escapeHtml(proj.uid_param || 'auto-detect')}</code></div>
+              <div><span style="color:var(--text-muted);">Placeholder:</span> <code style="color:var(--color-warning);font-weight:600;">${escapeHtml(proj.uid_placeholder || 'not detected')}</code></div>
             </div>
           </div>
         ` : ''}
-        <div style="background:var(--surface-glass);border:1px solid var(--border-color);border-radius:0.875rem;padding:1.25rem;">
-          <h3 style="margin:0 0 1rem;font-size:0.875rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;">OPI Launch Links</h3>
-          ${countryBlocks || '<p style="color:var(--text-muted);font-size:0.875rem;">No countries configured.</p>'}
+
+        <div style="background:var(--bg-surface);border:1px solid var(--border-default);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);padding:1.75rem;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;padding-bottom:0.875rem;border-bottom:1px solid var(--border-light);">
+            <div>
+              <h3 style="margin:0;font-size:1.1rem;font-weight:700;color:var(--text-primary);display:flex;align-items:center;gap:8px;">
+                🔗 OPI Launch Links (${countries.length})
+              </h3>
+              <p style="margin:4px 0 0;font-size:0.8125rem;color:var(--text-muted);">
+                Dedicated tracking URLs generated per country. Responses will automatically map to this project.
+              </p>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="renderProjectDetail('${escapeHtml(projectId)}')" title="Refresh links">
+              ↻ Refresh
+            </button>
+          </div>
+
+          ${countryBlocks || `
+            <div style="text-align:center;padding:3rem 1rem;background:var(--bg-page);border-radius:var(--radius-md);border:1px dashed var(--border-default);">
+              <div style="font-size:2rem;margin-bottom:0.5rem;">🌐</div>
+              <h4 style="margin:0 0 0.25rem;color:var(--text-primary);">No Countries Configured</h4>
+              <p style="font-size:0.8125rem;color:var(--text-muted);margin:0;">No country-specific survey links have been created for this project yet.</p>
+            </div>
+          `}
         </div>
       </div>
     `;
   } catch (e) {
     showToast("Failed to load project: " + e.message, "error");
-    area.innerHTML = `<p style="color:var(--color-danger)">Error: ${escapeHtml(e.message)}</p><button class="btn" onclick="renderProjects()">â† Back</button>`;
+    area.innerHTML = `<p style="color:var(--color-danger);padding:1rem;">Error: ${escapeHtml(e.message)}</p><button class="btn btn-secondary" onclick="renderProjects()">← Back to Projects</button>`;
   }
 }
 
 function copyToClipboard(text, btn) {
   navigator.clipboard.writeText((text || '').trim()).then(function() {
-    var orig = btn.innerHTML;
-    btn.innerHTML = 'âœ… Copied!';
-    btn.style.color = 'var(--color-success)';
-    setTimeout(function() { btn.innerHTML = orig; btn.style.color = ''; }, 1800);
-  }).catch(function() { showToast("Copy failed â€” please copy manually", "error"); });
+    if (btn) {
+      var origHtml = btn.innerHTML;
+      btn.innerHTML = '✅ Copied!';
+      btn.classList.add('btn-success');
+      setTimeout(function() {
+        btn.innerHTML = origHtml;
+        btn.classList.remove('btn-success');
+      }, 2000);
+    }
+    showToast("Link copied to clipboard!", "success");
+  }).catch(function() {
+    showToast("Failed to copy link automatically. Please select and copy manually.", "warning");
+  });
 }
 
 var _createProjectCountries = [];
 
-// â”€â”€â”€ Create Project Modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Create Project Modal ────────────────────────────────────────────────────
 // _cpCountries: array of { code, name, survey_url, vendor_id, target_completes }
 var _cpCountries = [];
 var _cpVendorList = [];
@@ -3995,11 +4092,11 @@ async function showCreateProjectModal() {
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
         <div class="form-group">
-          <label>Client Rate (â‚¹)</label>
+          <label>Client Rate (₹)</label>
           <input type="number" id="cp-client-rate" placeholder="70" min="0" step="0.01" style="width:100%;">
         </div>
         <div class="form-group">
-          <label>Vendor Rate (â‚¹)</label>
+          <label>Vendor Rate (₹)</label>
           <input type="number" id="cp-vendor-rate" placeholder="50" min="0" step="0.01" style="width:100%;">
         </div>
       </div>
@@ -4021,7 +4118,7 @@ async function showCreateProjectModal() {
 }
 
 function cpVendorOptions(selectedId) {
-  var opts = '<option value="">â€” No vendor â€”</option>';
+  var opts = '<option value="">— No vendor —</option>';
   _cpVendorList.forEach(function(v) {
     opts += '<option value="' + v.id + '"' + (v.id === selectedId ? ' selected' : '') + '>' + escapeHtml(v.name) + '</option>';
   });
@@ -4036,10 +4133,10 @@ function cpRenderCards() {
     return;
   }
   container.innerHTML = _cpCountries.map(function(c, i) {
-    return `<div id="cp-card-${i}" style="border:1px solid var(--border-color);border-radius:0.6rem;padding:1rem;background:var(--bg-card);position:relative;">
+    return `<div id="cp-card-${i}" style="border:1px solid var(--border-default);border-radius:0.6rem;padding:1rem;background:var(--bg-surface);position:relative;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
         <span style="font-weight:700;font-size:0.95rem;">${escapeHtml(c.name || c.code)} <span style="color:var(--text-muted);font-size:0.8rem;">(${escapeHtml(c.code)})</span></span>
-        <button type="button" onclick="cpRemoveCountry(${i})" style="background:none;border:none;cursor:pointer;color:var(--color-danger);font-size:0.8rem;padding:0.1rem 0.4rem;border-radius:4px;" title="Remove">âœ• Remove</button>
+        <button type="button" onclick="cpRemoveCountry(${i})" style="background:none;border:none;cursor:pointer;color:var(--color-danger);font-size:0.8rem;padding:0.1rem 0.4rem;border-radius:4px;" title="Remove">✕ Remove</button>
       </div>
       <div class="form-group" style="margin-bottom:0.6rem;">
         <label style="font-size:0.8rem;">Client Survey URL <span style="color:var(--color-danger)">*</span></label>
@@ -4111,7 +4208,7 @@ function cpAddCountry() {
   if (!input) return;
   var code = input.value.trim().toUpperCase();
   if (!code) return;
-  if (code.length < 2 || code.length > 3) { if(errEl) errEl.textContent = 'Country code must be 2â€“3 chars (e.g. IN, FR, DE)'; return; }
+  if (code.length < 2 || code.length > 3) { if(errEl) errEl.textContent = 'Country code must be 2–3 chars (e.g. IN, FR, DE)'; return; }
   if (_cpCountries.some(function(c) { return c.code === code; })) { if(errEl) errEl.textContent = code + ' already added'; return; }
   if (errEl) errEl.textContent = '';
   // Look up name from COUNTRY_MAP equivalent (best-effort)
@@ -4162,7 +4259,7 @@ async function submitCreateProject() {
     return;
   }
 
-  if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Creatingâ€¦'; }
+  if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Creating…'; }
   try {
     var result = await api('/projects/create-full', {
       method: 'POST',
@@ -4191,7 +4288,7 @@ async function submitCreateProject() {
   }
 }
 
-// Legacy stubs â€” kept so old code references don't crash
+// Legacy stubs — kept so old code references don't crash
 var _createProjectCountries = [];
 function addCountryToProject() { cpAddCountry(); }
 function removeCountryTag(code) {
@@ -4202,7 +4299,7 @@ function renderCountryTags() {}
 function debounceAnalyzeSurveyUrl() {}
 function previewUrlAnalysis() {}
 
-// â”€â”€â”€ Modal Forms â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Modal Forms ───────────────────────────────────────────────────────────────
 
 function openCreateStudyModal() {
   showModal(
@@ -4303,7 +4400,7 @@ async function submitCreateVendor() {
   }
 }
 
-// â”€â”€â”€ Page Router â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Page Router ───────────────────────────────────────────────────────────────
 async function showPage(page) {
   const isVendor = (currentUser?.role || "").toUpperCase() === "VENDOR";
   let cleanPage =
@@ -4440,7 +4537,7 @@ function showApp() {
   showPage(initialPage);
 }
 
-// â”€â”€â”€ doLogin â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── doLogin ───────────────────────────────────────────────────────────────────
 async function doLogin() {
   const btn = document.getElementById("login-btn");
   if (!btn || btn.disabled) return;
@@ -4541,7 +4638,7 @@ async function doLogin() {
 }
 window.doLogin = doLogin;
 
-// â”€â”€â”€ Event Handlers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Event Handlers ────────────────────────────────────────────────────────────
 function initEventListeners() {
   const loginForm = document.getElementById("login-form");
   if (loginForm)
@@ -4572,7 +4669,7 @@ function initEventListeners() {
   });
 }
 
-// â”€â”€â”€ Initialization â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Initialization ────────────────────────────────────────────────────────────
 async function init() {
   initEventListeners();
   initPasswordToggle();
