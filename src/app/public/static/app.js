@@ -556,7 +556,7 @@ async function openResponseDetailModal(sessionId) {
   } catch (err) {
     showModal(
       "Response Details",
-      `<div class="empty-state" style="padding:30px;"><div class="empty-state-icon">âš ï¸</div><h3>Failed to load</h3><p>${escapeHtml(
+      `<div class="empty-state" style="padding:30px;"><div class="empty-state-icon">⚠️</div><h3>Failed to load</h3><p>${escapeHtml(
         err.message
       )}</p></div>`,
       '<button class="btn btn-secondary" onclick="hideModal()">Close</button>'
@@ -565,7 +565,7 @@ async function openResponseDetailModal(sessionId) {
 }
 window.openResponseDetailModal = openResponseDetailModal;
 
-// â”€â”€â”€ Dashboard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ——— Dashboard ——————————————————————————————————————————————————————
 async function renderDashboard() {
   showLoading();
   try {
@@ -587,7 +587,7 @@ async function renderDashboard() {
 
     const studies = studiesData.studies || [];
     const vendors = vendorsData.vendors || [];
-    const sessions = sessionsData.sessions || sessionsData.data || [];
+    const responses = responsesData.responses || [];
     const links = linksData.tracking_links || [];
 
     const activeStudies = studies.filter(
@@ -595,59 +595,59 @@ async function renderDashboard() {
     ).length;
     const totalClicks =
       links.reduce((acc, l) => acc + (l.click_count || 0), 0) ||
-      sessions.length;
+      responses.length;
     const starts =
-      sessions.filter((s) => s.current_status !== "LANDING").length ||
-      sessions.length;
-    const completes = sessions.filter(
-      (s) => s.current_status === "COMPLETE" || s.current_status === "COMPLETED"
+      responses.filter((s) => s.status !== "LANDING" && s.status !== "INITIALIZED").length ||
+      responses.length;
+    const completes = responses.filter(
+      (s) => s.status === "COMPLETE" || s.status === "COMPLETED"
     ).length;
     const conversionRate = starts
       ? ((completes / starts) * 100).toFixed(1) + "%"
       : "0%";
-    const inProgress = sessions.filter(
+    const inProgress = responses.filter(
       (s) =>
-        s.current_status === "IN_PROGRESS" || s.current_status === "STARTED"
+        s.status === "IN_PROGRESS" || s.status === "STARTED"
     ).length;
-    const terminated = sessions.filter(
+    const terminated = responses.filter(
       (s) =>
-        s.current_status === "TERMINATE" || s.current_status === "TERMINATED"
+        s.status === "TERMINATE" || s.status === "TERMINATED"
     ).length;
-    const quotaFull = sessions.filter(
-      (s) => s.current_status === "QUOTA_FULL"
+    const quotaFull = responses.filter(
+      (s) => s.status === "QUOTA_FULL" || s.status === "QUOTAFULL"
     ).length;
-    const screenedOut = sessions.filter(
-      (s) => s.current_status === "SCREENED_OUT"
+    const screenedOut = responses.filter(
+      (s) => s.status === "SCREENED_OUT" || s.status === "SCREENEDOUT"
     ).length;
-    const qualityTerm = sessions.filter(
-      (s) => s.current_status === "SECURITY_REJECT"
+    const qualityTerm = responses.filter(
+      (s) => s.status === "SECURITY_REJECT"
     ).length;
     const avgLoi = "08:45";
 
     const content = `
       <!-- KPI Cards -->
       <div class="stats-grid">
-        ${renderStatCard("Active Studies", activeStudies, "ðŸ”¬", "icon-accent")}
+        ${renderStatCard("Active Studies", activeStudies, "📅", "icon-accent")}
         ${renderStatCard(
           "Total Clicks",
           formatNumber(totalClicks),
-          "ðŸ–±ï¸",
+          "🖱️",
           "icon-info"
         )}
-        ${renderStatCard("Starts", formatNumber(starts), "ðŸš€", "icon-warning")}
+        ${renderStatCard("Starts", formatNumber(starts), "🚀", "icon-warning")}
         ${renderStatCard(
           "Completes",
           formatNumber(completes),
-          "âœ…",
+          "✅",
           "icon-success"
         )}
         ${renderStatCard(
           "Conversion Rate",
           conversionRate,
-          "ðŸ“ˆ",
+          "📈",
           "icon-accent"
         )}
-        ${renderStatCard("Average LOI", avgLoi, "â±ï¸", "icon-purple")}
+        ${renderStatCard("Average LOI", avgLoi, "⌛", "icon-purple")}
       </div>
 
       <!-- Response Funnel -->
@@ -663,7 +663,7 @@ async function renderDashboard() {
               <div class="funnel-step-value">${formatNumber(totalClicks)}</div>
               <div class="funnel-step-pct">100%</div>
             </div>
-            <div class="funnel-arrow">â†’</div>
+            <div class="funnel-arrow">→</div>
             <div class="funnel-step">
               <div class="funnel-step-label">Starts</div>
               <div class="funnel-step-value">${formatNumber(starts)}</div>
@@ -671,7 +671,7 @@ async function renderDashboard() {
                 totalClicks ? ((starts / totalClicks) * 100).toFixed(0) : 0
               }%</div>
             </div>
-            <div class="funnel-arrow">â†’</div>
+            <div class="funnel-arrow">→</div>
             <div class="funnel-step">
               <div class="funnel-step-label">In Progress</div>
               <div class="funnel-step-value">${formatNumber(inProgress)}</div>
@@ -679,7 +679,7 @@ async function renderDashboard() {
                 starts ? ((inProgress / starts) * 100).toFixed(0) : 0
               }%</div>
             </div>
-            <div class="funnel-arrow">â†’</div>
+            <div class="funnel-arrow">→</div>
             <div class="funnel-step">
               <div class="funnel-step-label">Completes</div>
               <div class="funnel-step-value">${formatNumber(completes)}</div>
@@ -703,7 +703,7 @@ async function renderDashboard() {
           </div>
           <div class="section-card-body" style="padding:12px 22px 22px;">
             ${renderStatusRow(
-              "âœ…",
+              "✅",
               "Complete",
               completes,
               starts,
@@ -711,7 +711,7 @@ async function renderDashboard() {
               "var(--color-success-bg)"
             )}
             ${renderStatusRow(
-              "â¹ï¸",
+              "❌",
               "Terminate",
               terminated,
               starts,
@@ -719,7 +719,7 @@ async function renderDashboard() {
               "var(--color-danger-bg)"
             )}
             ${renderStatusRow(
-              "âš ï¸",
+              "⚠️",
               "Over Quota",
               quotaFull,
               starts,
@@ -727,7 +727,7 @@ async function renderDashboard() {
               "var(--color-warning-bg)"
             )}
             ${renderStatusRow(
-              "ðŸš«",
+              "🚫",
               "Screened Out",
               screenedOut,
               starts,
@@ -735,7 +735,7 @@ async function renderDashboard() {
               "var(--color-gray-bg)"
             )}
             ${renderStatusRow(
-              "ðŸŽ¯",
+              "🎯",
               "Quality Term",
               qualityTerm,
               starts,
@@ -743,7 +743,7 @@ async function renderDashboard() {
               "var(--color-purple-bg)"
             )}
             ${renderStatusRow(
-              "ðŸ”„",
+              "🔄",
               "In Progress",
               inProgress,
               starts,
@@ -792,7 +792,7 @@ async function renderDashboard() {
                       <tr>
                         <td>${renderIdCell(s.study_code || s.id)}</td>
                         <td>${renderBadge(s.status)}</td>
-                        <td>${tgt || "â€”"}</td>
+                        <td>${tgt || "—"}</td>
                         <td>${starts_}</td>
                         <td>${comps}</td>
                         <td style="color:var(--color-success); font-weight:600;">${conv}%</td>
@@ -811,7 +811,7 @@ async function renderDashboard() {
                 </tbody>
               </table>
             `
-                : '<div class="empty-state" style="padding:40px;"><div class="empty-state-icon">ðŸ”¬</div><h3>No studies yet</h3><p>Create your first study to get started.</p></div>'
+                : '<div class="empty-state" style="padding:40px;"><div class="empty-state-icon">📅</div><h3>No studies yet</h3><p>Create your first study to get started.</p></div>'
             }
           </div>
         </div>
@@ -847,7 +847,7 @@ async function renderDashboard() {
                     <tr>
                       <td style="font-weight:500;">${escapeHtml(v.name)}${
                         i === 0 && vendors.length > 1
-                          ? ' <span style="font-size:0.6875rem;color:var(--color-success);font-weight:700;margin-left:4px;">â˜… TOP</span>'
+                          ? ' <span style="font-size:0.6875rem;color:var(--color-success);font-weight:700;margin-left:4px;">★ TOP</span>'
                           : ""
                       }</td>
                       <td>${v.quota_target || 10}</td>
