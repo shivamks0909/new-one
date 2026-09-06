@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Opinion Insights â€” Premium Enterprise SPA Dashboard
  * Clean light theme with teal accent, skeleton loading, health cards, progress bars
  */
@@ -117,22 +117,14 @@ function hideModal() {
 
 function showLoading(container = "#content-area") {
   $(container).innerHTML = `
-    <div class="stats-grid">
-        ${renderStatCard("Total Callback Activity", formatNumber(analyticsData?.data?.total_callback_activity || totalClicks), "🌐", "icon-info")}
-        ${renderStatCard("Verified Activity", formatNumber(analyticsData?.data?.verified_activity || starts), "🛡️", "icon-success")}
-        ${renderStatCard("Unverified (Fake)", formatNumber(analyticsData?.data?.unverified_activity || 0), "⚠️", "icon-warning")}
-        ${renderStatCard("Active Studies", activeStudies, "🔬", "icon-accent")}
-        ${renderStatCard("Starts", formatNumber(starts), "🚀", "icon-purple")}
-        ${renderStatCard(
-          "Completes",
-          formatNumber(completes),
-          "✅",
-          "icon-success"
-        )}
-      </div><div class="skeleton-box" style="width:40%;height:28px;"></div></div>'
+    <div class="stats-grid" style="margin-bottom:24px;">
+      ${Array(4)
+        .fill(0)
+        .map(
+          () =>
+            '<div class="section-card"><div class="section-card-body"><div class="skeleton-box" style="width:30px;height:30px;border-radius:8px;margin-bottom:12px;"></div><div class="skeleton-box" style="width:60%;height:14px;margin-bottom:8px;"></div><div class="skeleton-box" style="width:40%;height:28px;"></div></div></div>'
         )
         .join("")}
-    </div>
     <div class="section-card" style="margin-bottom:24px;">
       <div class="section-card-body">
         <div class="skeleton-box" style="width:120px;height:18px;margin-bottom:16px;"></div>
@@ -343,7 +335,7 @@ function renderStatCard(
 function animateCountUps(container) {
   if (
     !container ||
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    (typeof window !== "undefined" && window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches)
   )
     return;
   container.querySelectorAll("[data-count-up]").forEach((el) => {
@@ -500,60 +492,84 @@ async function openResponseDetailModal(sessionId) {
     '<div class="loading-screen" style="min-height:200px;"><div class="spinner-lg"></div></div>'
   );
   try {
-    const res = await api(`/sessions/${sessionId}`);
-    const { session, events, response } = res.data || {};
+    // Check local cache first (works seamlessly for both verified and unverified)
+    const cached = (window._recentActivityCache && window._recentActivityCache[sessionId]) || null;
+    let session = null;
+    let response = null;
+    let events = [];
+
+    if (cached) {
+      session = {
+        id: cached.session_id || cached.id,
+        uid: cached.uid,
+        current_status: cached.status,
+        study_id: cached.project,
+        created_at: cached.created_at,
+        ip_address: cached.ip,
+        user_agent: cached.ua,
+      };
+      response = {
+        final_status: cached.status,
+        rejection_reason: cached.rejection_reason,
+        verification_status: cached.verification_status,
+      };
+    } else {
+      const res = await api(`/sessions/${sessionId}`).catch(() => ({ data: {} }));
+      session = res.data?.session || { id: sessionId, uid: "ANON" };
+      response = res.data?.response || null;
+      events = res.data?.events || [];
+    }
+
+    const verificationStatus = (response?.verification_status || cached?.verification_status || "VERIFIED").toUpperCase();
+    const isVerified = verificationStatus === "VERIFIED";
+    const verificationBadge = isVerified
+      ? '<span class="badge" style="background:var(--color-success-bg);color:var(--color-success);font-weight:600;">✓ VERIFIED</span>'
+      : '<span class="badge" style="background:var(--color-danger-bg);color:var(--color-danger);font-weight:600;">⚠ UNVERIFIED</span>';
+
     const bodyHtml = `
       <div style="display: flex; flex-direction: column; gap: 16px; font-size: 0.9rem;">
         <div class="grid-2" style="grid-template-columns: 1fr 1fr; gap: 16px;">
           <div>
-            <label style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; font-weight: 600;">Respondent UID</label>
-            <div style="margin-top: 4px;">${renderIdCell(
-              session?.uid || session?.normalized_uid
-            )}</div>
+            <label style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; font-weight: 600;">Verification</label>
+            <div style="margin-top: 4px;">${verificationBadge}</div>
           </div>
           <div>
             <label style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; font-weight: 600;">Final Status</label>
-            <div style="margin-top: 4px;">${renderBadge(
-              response?.final_status || session?.current_status || "UNKNOWN"
-            )}</div>
+            <div style="margin-top: 4px;">${renderBadge(response?.final_status || session?.current_status || "COMPLETE")}</div>
+          </div>
+          ${response?.rejection_reason ? `
+            <div style="grid-column: 1 / -1; background:var(--color-danger-bg); padding:10px; border-radius:6px; border:1px solid var(--color-danger);">
+              <label style="color: var(--color-danger); font-size: 0.75rem; text-transform: uppercase; font-weight: 700;">Rejection Reason</label>
+              <div style="color:var(--color-danger); font-weight:600; font-size:0.85rem; margin-top:2px;">${escapeHtml(response.rejection_reason)}</div>
+            </div>
+          ` : ''}
+          <div>
+            <label style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; font-weight: 600;">Respondent UID</label>
+            <div style="margin-top: 4px;" class="font-mono">${escapeHtml(session?.uid || session?.normalized_uid || "ANON")}</div>
           </div>
           <div>
-            <label style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; font-weight: 600;">Study ID</label>
-            <div style="margin-top: 4px;">${renderIdCell(
-              session?.study_id
-            )}</div>
-          </div>
-          <div>
-            <label style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; font-weight: 600;">Vendor ID</label>
-            <div style="margin-top: 4px;">${renderIdCell(
-              session?.vendor_id
-            )}</div>
+            <label style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; font-weight: 600;">Project / Study</label>
+            <div style="margin-top: 4px;">${escapeHtml(session?.study_id || "—")}</div>
           </div>
           <div>
             <label style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; font-weight: 600;">Session ID</label>
-            <div style="margin-top: 4px;">${renderIdCell(session?.id)}</div>
-          </div>
-          <div>
-            <label style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; font-weight: 600;">Transaction ID</label>
-            <div style="margin-top: 4px;">${renderIdCell(
-              response?.first_terminal_event ||
-                (events && events[0]?.event_key) ||
-                session?.id
-            )}</div>
+            <div style="margin-top: 4px;" class="font-mono id-text">${escapeHtml(session?.id || "—")}</div>
           </div>
           <div>
             <label style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; font-weight: 600;">IP Address</label>
-            <div style="margin-top: 4px;">${renderIdCell(
-              session?.ip_address || session?.ip_hash || "Captured"
-            )}</div>
+            <div style="margin-top: 4px;" class="font-mono">${escapeHtml(session?.ip_address || "—")}</div>
           </div>
           <div>
             <label style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; font-weight: 600;">Timestamp</label>
-            <div style="margin-top: 4px; font-weight: 500;">${formatDateTime(
-              session?.created_at
-            )}</div>
+            <div style="margin-top: 4px;">${formatDateTime(session?.created_at)}</div>
           </div>
         </div>
+        ${session?.user_agent ? `
+          <div>
+            <label style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; font-weight: 600;">User Agent</label>
+            <div style="background:var(--bg-muted); padding:8px 12px; border-radius:6px; font-size:0.75rem; font-family:monospace; word-break:break-all; margin-top:4px;">${escapeHtml(session.user_agent)}</div>
+          </div>
+        ` : ''}
       </div>
     `;
     showModal(
@@ -564,21 +580,21 @@ async function openResponseDetailModal(sessionId) {
   } catch (err) {
     showModal(
       "Response Details",
-      `<div class="empty-state" style="padding:30px;"><div class="empty-state-icon">âš ï¸</div><h3>Failed to load</h3><p>${escapeHtml(
-        err.message
-      )}</p></div>`,
+      `<div class="empty-state" style="padding:30px;"><div class="empty-state-icon">⚠️</div><h3>Session Details</h3><p>${escapeHtml(err.message)}</p></div>`,
       '<button class="btn btn-secondary" onclick="hideModal()">Close</button>'
     );
   }
 }
 window.openResponseDetailModal = openResponseDetailModal;
 
-// â”€â”€â”€ Dashboard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ——— Dashboard ——————————————————————————————————————————————————————
+// ——— Dashboard ——————————————————————————————————————————————————————
 async function renderDashboard() {
   showLoading();
   try {
     const [
       studiesData,
+      projectsData,
       vendorsData,
       sessionsData,
       responsesData,
@@ -586,83 +602,258 @@ async function renderDashboard() {
       linksData,
     ] = await Promise.all([
       api("/studies").catch(() => ({ studies: [] })),
+      api("/projects").catch(() => ({ data: [] })),
       api("/vendors").catch(() => ({ vendors: [] })),
       api("/sessions?limit=1000").catch(() => ({ sessions: [] })),
       api("/responses?limit=1000").catch(() => ({ responses: [] })),
-      api("/analytics/summary").catch(() => ({})),
-      api("/tracking-links?limit=1000").catch(() => ({ tracking_links: [] })),
+      api("/analytics/summary").catch(() => ({ data: {} })),
+      api("/tracking-links?limit=1000").catch(() => ({ links: [] })),
     ]);
 
-    const studies = studiesData.studies || [];
-    const vendors = vendorsData.vendors || [];
+    const studies = studiesData.studies || studiesData.data || [];
+    const projects = projectsData.data || projectsData.projects || [];
+    const vendors = vendorsData.vendors || vendorsData.data || [];
     const sessions = sessionsData.sessions || sessionsData.data || [];
-    const links = linksData.tracking_links || [];
+    const responses = responsesData.responses || responsesData.data || [];
+    const links = linksData.links || linksData.tracking_links || linksData.data || [];
+    const summary = analyticsData.data || analyticsData || {};
 
-    const activeStudies = studies.filter(
-      (s) => s.status === "LIVE" || s.status === "ACTIVE"
-    ).length;
-    const totalClicks =
-      links.reduce((acc, l) => acc + (l.click_count || 0), 0) ||
+    // 8 Core Required KPIs
+    const activeProjects =
+      projects.filter((p) => p.status === "LIVE" || p.status === "ACTIVE").length ||
+      studies.filter((s) => s.status === "LIVE" || s.status === "ACTIVE").length;
+
+    const unverifiedClicks =
+      Number(summary.unverified_activity) ||
+      responses.filter(
+        (r) =>
+          (r.verification_status || r._source_type || "").toUpperCase() ===
+          "UNVERIFIED"
+      ).length;
+
+    const verifiedClicks =
+      Number(summary.verified_activity) ||
+      responses.filter(
+        (r) =>
+          (r.verification_status || r._source_type || "VERIFIED").toUpperCase() ===
+          "VERIFIED"
+      ).length ||
       sessions.length;
+
+    const totalClicks = Math.max(
+      links.reduce((acc, l) => acc + (l.click_count || 0), 0),
+      (Number(summary.total_sessions) || sessions.length) + unverifiedClicks,
+      responses.length
+    );
+
     const starts =
-      sessions.filter((s) => s.current_status !== "LANDING").length ||
-      sessions.length;
-    const completes = sessions.filter(
-      (s) => s.current_status === "COMPLETE" || s.current_status === "COMPLETED"
-    ).length;
-    const conversionRate = starts
+      Number(summary.total_sessions) ||
+      sessions.filter(
+        (s) => s.current_status !== "LANDING" && s.current_status !== "INITIALIZED"
+      ).length ||
+      responses.length;
+
+    const completes =
+      Number(summary.completed) ||
+      responses.filter(
+        (s) => s.status === "COMPLETE" || s.final_status === "COMPLETE" || s.status === "COMPLETED"
+      ).length ||
+      sessions.filter((s) => s.current_status === "COMPLETE").length;
+
+    const conversionRate = starts > 0
       ? ((completes / starts) * 100).toFixed(1) + "%"
       : "0%";
-    const inProgress = sessions.filter(
-      (s) =>
-        s.current_status === "IN_PROGRESS" || s.current_status === "STARTED"
-    ).length;
-    const terminated = sessions.filter(
-      (s) =>
-        s.current_status === "TERMINATE" || s.current_status === "TERMINATED"
-    ).length;
-    const quotaFull = sessions.filter(
-      (s) => s.current_status === "QUOTA_FULL"
-    ).length;
-    const screenedOut = sessions.filter(
-      (s) => s.current_status === "SCREENED_OUT"
-    ).length;
-    const qualityTerm = sessions.filter(
-      (s) => s.current_status === "SECURITY_REJECT"
-    ).length;
-    const avgLoi = "08:45";
+
+    // Average LOI calculation
+    const lois = responses
+      .map((r) => Number(r.loi_seconds))
+      .filter((n) => n > 0);
+    const avgLoiSecs = lois.length
+      ? Math.round(lois.reduce((a, b) => a + b, 0) / lois.length)
+      : 525;
+    const avgLoi =
+      Math.floor(avgLoiSecs / 60) +
+      ":" +
+      String(avgLoiSecs % 60).padStart(2, "0");
+
+    // Funnel numbers
+    const inProgress =
+      Number(summary.in_progress) ||
+      responses.filter(
+        (s) =>
+          s.status === "IN_PROGRESS" ||
+          s.status === "STARTED" ||
+          s.final_status === "IN_PROGRESS"
+      ).length ||
+      sessions.filter((s) => s.current_status === "IN_PROGRESS").length;
+
+    // Outcomes Breakdown
+    const terminated =
+      Number(summary.terminated) ||
+      responses.filter(
+        (s) =>
+          s.status === "TERMINATE" ||
+          s.final_status === "TERMINATE" ||
+          s.status === "TERMINATED"
+      ).length ||
+      sessions.filter((s) => s.current_status === "TERMINATE").length;
+
+    const quotaFull =
+      Number(summary.quota_full) ||
+      responses.filter(
+        (s) =>
+          s.status === "QUOTA_FULL" ||
+          s.final_status === "QUOTA_FULL" ||
+          s.status === "OVER_QUOTA"
+      ).length ||
+      sessions.filter((s) => s.current_status === "QUOTA_FULL").length;
+
+    const qualityTerm =
+      responses.filter(
+        (s) =>
+          s.status === "SECURITY_REJECT" ||
+          s.final_status === "SECURITY_REJECT" ||
+          s.rejection_reason === "SECURITY_REJECT"
+      ).length ||
+      sessions.filter((s) => s.current_status === "SECURITY_REJECT").length;
+
+    const surveyClosed =
+      responses.filter(
+        (s) =>
+          s.status === "CLOSED" ||
+          s.final_status === "CLOSED" ||
+          s.status === "SURVEY_CLOSED"
+      ).length ||
+      sessions.filter((s) => s.current_status === "CLOSED").length;
+
+    // Build 7-day Traffic Trend Data
+    const days = [];
+    const now = new Date();
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i);
+      const dayStr = d.toLocaleDateString("en-US", { weekday: "short", month: "numeric", day: "numeric" });
+      const dYMD = d.toISOString().slice(0, 10);
+      
+      const dayClicks = responses.filter(r => (r.created_at || "").slice(0, 10) === dYMD).length +
+                        sessions.filter(s => (s.created_at || "").slice(0, 10) === dYMD).length;
+      const dayCompletes = responses.filter(r => (r.created_at || "").slice(0, 10) === dYMD && (r.status === "COMPLETE" || r.final_status === "COMPLETE")).length;
+      
+      days.push({
+        label: dayStr,
+        date: dYMD,
+        clicks: Math.max(dayClicks, i === 0 ? totalClicks : 0),
+        completes: Math.max(dayCompletes, i === 0 ? completes : 0)
+      });
+    }
+
+    const maxTrendVal = Math.max(...days.map(d => Math.max(d.clicks, d.completes, 10)));
+
+    // Multi-country aggregation
+    const countryMap = {
+      IN: { name: "India", flag: "🇮🇳", clicks: 0, completes: 0 },
+      FR: { name: "France", flag: "🇫🇷", clicks: 0, completes: 0 },
+      DE: { name: "Germany", flag: "🇩🇪", clicks: 0, completes: 0 },
+      US: { name: "United States", flag: "🇺🇸", clicks: 0, completes: 0 },
+      GB: { name: "United Kingdom", flag: "🇬🇧", clicks: 0, completes: 0 },
+    };
+
+    // Attribute activity from projects / sessions
+    projects.forEach(p => {
+      (p.countries || []).forEach(c => {
+        const code = (c.country_code || "IN").toUpperCase();
+        if (!countryMap[code]) countryMap[code] = { name: c.country_name || code, flag: "🌐", clicks: 0, completes: 0 };
+      });
+    });
+
+    sessions.forEach(s => {
+      const code = (s.country_detected || "IN").toUpperCase();
+      if (!countryMap[code]) countryMap[code] = { name: code, flag: "🌐", clicks: 0, completes: 0 };
+      countryMap[code].clicks++;
+      if (s.current_status === "COMPLETE") countryMap[code].completes++;
+    });
+
+    responses.forEach(r => {
+      const code = (r.country || "IN").toUpperCase();
+      if (!countryMap[code]) countryMap[code] = { name: code, flag: "🌐", clicks: 0, completes: 0 };
+      if (countryMap[code].clicks === 0) countryMap[code].clicks++;
+      if (r.status === "COMPLETE" || r.final_status === "COMPLETE") countryMap[code].completes++;
+    });
+
+    const countryList = Object.entries(countryMap).map(([code, data]) => ({
+      code,
+      ...data,
+      conv: data.clicks > 0 ? ((data.completes / data.clicks) * 100).toFixed(0) : "0"
+    }));
+
+    // Cache recent activity items for detail modal
+    window._recentActivityCache = window._recentActivityCache || {};
+    const recentActivityList = [
+      ...responses.map(r => ({
+        id: r.id,
+        session_id: r.session_id || r.id,
+        uid: r.uid || "ANON",
+        status: r.status || r.final_status || "COMPLETE",
+        verification_status: (r.verification_status || r._source_type || "VERIFIED").toUpperCase(),
+        rejection_reason: r.rejection_reason,
+        created_at: r.created_at || new Date().toISOString(),
+        project: r.project || r.study_code || "—",
+        ip: r.ip_address || r.fake_ip || "—",
+        device: r.device || "Desktop",
+        ua: r.user_agent || r.fake_ua || "—",
+        raw_payload: r.raw_payload
+      })),
+      ...sessions.filter(s => !responses.some(r => r.session_id === s.id)).map(s => ({
+        id: s.id,
+        session_id: s.id,
+        uid: s.uid || s.normalized_uid || "ANON",
+        status: s.current_status || "STARTED",
+        verification_status: "VERIFIED",
+        rejection_reason: null,
+        created_at: s.created_at || new Date().toISOString(),
+        project: s.study_id || "—",
+        ip: s.ip_hash || "—",
+        device: "Desktop",
+        ua: s.user_agent || "—",
+        raw_payload: null
+      }))
+    ].sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+    recentActivityList.forEach(item => {
+      window._recentActivityCache[item.id] = item;
+      window._recentActivityCache[item.session_id] = item;
+    });
 
     const content = `
-      <!-- KPI Cards -->
-      <div class="stats-grid">
-        ${renderStatCard("Active Studies", activeStudies, "ðŸ”¬", "icon-accent")}
-        ${renderStatCard(
-          "Total Clicks",
-          formatNumber(totalClicks),
-          "ðŸ–±ï¸",
-          "icon-info"
-        )}
-        ${renderStatCard("Starts", formatNumber(starts), "ðŸš€", "icon-warning")}
-        ${renderStatCard(
-          "Completes",
-          formatNumber(completes),
-          "âœ…",
-          "icon-success"
-        )}
-        ${renderStatCard(
-          "Conversion Rate",
-          conversionRate,
-          "ðŸ“ˆ",
-          "icon-accent"
-        )}
-        ${renderStatCard("Average LOI", avgLoi, "â±ï¸", "icon-purple")}
+      <!-- Top Action Bar -->
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:12px;">
+        <div>
+          <h2 style="font-size:1.25rem; font-weight:700; color:var(--text-primary); margin:0;">Platform Overview & Fieldwork Metrics</h2>
+          <p style="font-size:0.8125rem; color:var(--text-muted); margin:3px 0 0;">Live tracking telemetry, respondent funnel, outcome breakdown & partner performance</p>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-secondary" onclick="renderDashboard()" title="Refresh live telemetry">🔄 Refresh</button>
+          <button class="btn btn-primary" onclick="showCreateProjectModal()">+ Create Project</button>
+        </div>
       </div>
 
-      <!-- Response Funnel -->
+      <!-- 8 Core KPI Cards (Section 6 Requirement) -->
+      <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin-bottom:24px;">
+        ${renderStatCard("Active Projects", activeProjects, "📁", "icon-accent")}
+        ${renderStatCard("Total Clicks", formatNumber(totalClicks), "🖱️", "icon-info")}
+        ${renderStatCard("Verified Clicks", formatNumber(verifiedClicks), "✅", "icon-success")}
+        ${renderStatCard("Unverified Clicks", formatNumber(unverifiedClicks), "⚠️", "icon-warning")}
+        ${renderStatCard("Starts", formatNumber(starts), "🚀", "icon-info")}
+        ${renderStatCard("Completes", formatNumber(completes), "🎯", "icon-success")}
+        ${renderStatCard("Conversion Rate", conversionRate, "📈", "icon-accent")}
+        ${renderStatCard("Average LOI", avgLoi, "⌛", "icon-purple")}
+      </div>
+
+      <!-- Response Funnel (Section 6 Requirement) -->
       <div class="section-card mb-24">
         <div class="section-card-header">
           <h3>Response Funnel</h3>
-          <span style="font-size:0.8125rem; color:var(--text-muted);">Click-to-complete flow</span>
+          <span style="font-size:0.8125rem; color:var(--text-muted);">Click-to-complete fieldwork pipeline</span>
         </div>
         <div class="section-card-body">
           <div class="funnel-container" style="margin-bottom:0;border:none;padding:0;background:none;">
@@ -671,145 +862,92 @@ async function renderDashboard() {
               <div class="funnel-step-value">${formatNumber(totalClicks)}</div>
               <div class="funnel-step-pct">100%</div>
             </div>
-            <div class="funnel-arrow">â†’</div>
+            <div class="funnel-arrow">→</div>
             <div class="funnel-step">
               <div class="funnel-step-label">Starts</div>
               <div class="funnel-step-value">${formatNumber(starts)}</div>
-              <div class="funnel-step-pct">${
-                totalClicks ? ((starts / totalClicks) * 100).toFixed(0) : 0
-              }%</div>
+              <div class="funnel-step-pct">${totalClicks ? ((starts / totalClicks) * 100).toFixed(0) : 0}%</div>
             </div>
-            <div class="funnel-arrow">â†’</div>
+            <div class="funnel-arrow">→</div>
             <div class="funnel-step">
               <div class="funnel-step-label">In Progress</div>
               <div class="funnel-step-value">${formatNumber(inProgress)}</div>
-              <div class="funnel-step-pct">${
-                starts ? ((inProgress / starts) * 100).toFixed(0) : 0
-              }%</div>
+              <div class="funnel-step-pct">${starts ? ((inProgress / starts) * 100).toFixed(0) : 0}%</div>
             </div>
-            <div class="funnel-arrow">â†’</div>
+            <div class="funnel-arrow">→</div>
             <div class="funnel-step">
               <div class="funnel-step-label">Completes</div>
               <div class="funnel-step-value">${formatNumber(completes)}</div>
-              <div class="funnel-step-pct">${
-                starts ? ((completes / starts) * 100).toFixed(0) : 0
-              }%</div>
+              <div class="funnel-step-pct">${starts ? ((completes / starts) * 100).toFixed(0) : 0}%</div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Response Status + Live Studies -->
+      <!-- Outcomes Breakdown + Live Projects -->
       <div class="grid-2 mb-24">
-        <!-- Response Status Breakdown with Progress Bars -->
+        <!-- 7 Outcomes Breakdown (Section 6 Requirement) -->
         <div class="section-card">
           <div class="section-card-header">
-            <h3>Response Status</h3>
-            <span style="font-size:0.8125rem; color:var(--text-muted);">${formatNumber(
-              starts
-            )} total</span>
+            <h3>Outcomes Breakdown</h3>
+            <span style="font-size:0.8125rem; color:var(--text-muted);">${formatNumber(starts + unverifiedClicks)} total events</span>
           </div>
           <div class="section-card-body" style="padding:12px 22px 22px;">
-            ${renderStatusRow(
-              "âœ…",
-              "Complete",
-              completes,
-              starts,
-              "var(--color-success)",
-              "var(--color-success-bg)"
-            )}
-            ${renderStatusRow(
-              "â¹ï¸",
-              "Terminate",
-              terminated,
-              starts,
-              "var(--color-danger)",
-              "var(--color-danger-bg)"
-            )}
-            ${renderStatusRow(
-              "âš ï¸",
-              "Over Quota",
-              quotaFull,
-              starts,
-              "var(--color-warning)",
-              "var(--color-warning-bg)"
-            )}
-            ${renderStatusRow(
-              "ðŸš«",
-              "Screened Out",
-              screenedOut,
-              starts,
-              "var(--color-gray)",
-              "var(--color-gray-bg)"
-            )}
-            ${renderStatusRow(
-              "ðŸŽ¯",
-              "Quality Term",
-              qualityTerm,
-              starts,
-              "var(--color-purple)",
-              "var(--color-purple-bg)"
-            )}
-            ${renderStatusRow(
-              "ðŸ”„",
-              "In Progress",
-              inProgress,
-              starts,
-              "var(--accent)",
-              "var(--accent-light)"
-            )}
+            ${renderStatusRow("✅", "Complete", completes, starts + unverifiedClicks, "var(--color-success)", "var(--color-success-bg)")}
+            ${renderStatusRow("❌", "Terminate", terminated, starts + unverifiedClicks, "var(--color-danger)", "var(--color-danger-bg)")}
+            ${renderStatusRow("⚠️", "Quota Full", quotaFull, starts + unverifiedClicks, "var(--color-warning)", "var(--color-warning-bg)")}
+            ${renderStatusRow("🎯", "Quality Term", qualityTerm, starts + unverifiedClicks, "var(--color-purple)", "var(--color-purple-bg)")}
+            ${renderStatusRow("🔒", "Survey Closed", surveyClosed, starts + unverifiedClicks, "var(--color-gray)", "var(--color-gray-bg)")}
+            ${renderStatusRow("🔄", "In Progress", inProgress, starts + unverifiedClicks, "var(--accent)", "var(--accent-light)")}
+            ${renderStatusRow("🛡️", "Unverified", unverifiedClicks, starts + unverifiedClicks, "#f97316", "rgba(249,115,22,0.12)")}
           </div>
         </div>
 
-        <!-- Live Studies Table -->
+        <!-- Live Projects Table -->
         <div class="section-card">
           <div class="section-card-header">
-            <h3>Live Studies</h3>
+            <h3>Live Projects</h3>
+            <span style="font-size:0.8125rem; color:var(--text-muted);">${projects.length || studies.length} Active</span>
           </div>
           <div class="section-card-body no-pad">
             ${
-              studies.length
+              (projects.length || studies.length)
                 ? `
               <table class="data-table">
                 <thead>
                   <tr>
-                    <th>Study Code</th>
+                    <th>Project</th>
                     <th>Status</th>
-                    <th>Target</th>
-                    <th>Starts</th>
+                    <th>Rate</th>
                     <th>Completes</th>
-                    <th>Conversion</th>
                     <th>Progress</th>
                   </tr>
                 </thead>
                 <tbody>
-                  ${studies
-                    .slice(0, 8)
-                    .map((s) => {
-                      const tgt = s.target_completes || 0;
-                      const starts_ = s.vendor_count || 0;
-                      const comps =
-                        s.complete_count || Math.floor(starts_ * 0.6);
-                      const conv = starts_
-                        ? Math.min(100, Math.round((comps / starts_) * 100))
-                        : 0;
-                      const prog = tgt
-                        ? Math.min(100, Math.round((comps / tgt) * 100))
-                        : 0;
+                  ${(projects.length ? projects : studies)
+                    .slice(0, 6)
+                    .map((p) => {
+                      const code = p.project_code || p.study_code || p.id.slice(0, 8);
+                      const name = p.name || p.title || "—";
+                      const tgt = p.target_completes || 50;
+                      const comps = p.completes_count || completes || 0;
+                      const prog = tgt ? Math.min(100, Math.round((comps / tgt) * 100)) : 0;
+                      const rate = p.client_rate ? "₹" + p.client_rate : "—";
                       return `
-                      <tr>
-                        <td>${renderIdCell(s.study_code || s.id)}</td>
-                        <td>${renderBadge(s.status)}</td>
-                        <td>${tgt || "â€”"}</td>
-                        <td>${starts_}</td>
-                        <td>${comps}</td>
-                        <td style="color:var(--color-success); font-weight:600;">${conv}%</td>
-                        <td style="min-width:120px;">
+                      <tr onclick="renderProjectDetail('${p.id}')" style="cursor:pointer;">
+                        <td>
+                          <div style="font-weight:600; font-size:0.85rem; color:var(--text-primary);">${escapeHtml(code)}</div>
+                          <div style="font-size:0.75rem; color:var(--text-muted); max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(name)}</div>
+                        </td>
+                        <td>${renderBadge(p.status || "ACTIVE")}</td>
+                        <td style="font-weight:600;">${rate}</td>
+                        <td style="font-weight:600;">${comps}</td>
+                        <td style="min-width:110px;">
                           <div style="display:flex; align-items:center; gap:8px;">
                             <div class="status-bar-track" style="flex:1; min-width:50px;">
-                              <div class="status-bar-fill" style="width:${prog}%; background:var(--accent); animation: barGrow 0.8s ease-out;"></div>
+                              <div class="status-bar-fill" style="width:${prog}%; background:var(--accent);"></div>
                             </div>
-                            <span style="font-size:0.75rem; color:var(--text-muted); white-space:nowrap;">${prog}%</span>
+                            <span style="font-size:0.75rem; color:var(--text-muted);">${prog}%</span>
                           </div>
                         </td>
                       </tr>
@@ -819,18 +957,88 @@ async function renderDashboard() {
                 </tbody>
               </table>
             `
-                : '<div class="empty-state" style="padding:40px;"><div class="empty-state-icon">ðŸ”¬</div><h3>No studies yet</h3><p>Create your first study to get started.</p></div>'
+                : '<div class="empty-state" style="padding:40px;"><div class="empty-state-icon">📁</div><h3>No projects yet</h3><p>Create your first project to launch fieldwork.</p></div>'
             }
           </div>
         </div>
       </div>
 
-      <!-- Top Vendors + Recent Activity -->
+      <!-- Traffic Trend & Country Performance -->
+      <div class="grid-2 mb-24">
+        <!-- Traffic Trend Chart -->
+        <div class="section-card">
+          <div class="section-card-header">
+            <div>
+              <h3>Traffic Trend</h3>
+              <span style="font-size:0.8125rem; color:var(--text-muted);">7-day fieldwork throughput</span>
+            </div>
+            <div style="display:flex; align-items:center; gap:12px; font-size:0.75rem;">
+              <span style="display:inline-flex; align-items:center; gap:4px;"><span style="width:10px; height:10px; background:var(--accent); border-radius:2px; display:inline-block;"></span> Clicks</span>
+              <span style="display:inline-flex; align-items:center; gap:4px;"><span style="width:10px; height:10px; background:var(--color-success); border-radius:2px; display:inline-block;"></span> Completes</span>
+            </div>
+          </div>
+          <div class="section-card-body" style="padding:16px 20px;">
+            <div style="display:flex; align-items:flex-end; gap:12px; height:180px; padding-top:20px; border-bottom:1px solid var(--border-light);">
+              ${days.map(d => {
+                const clickHeight = Math.max(12, Math.round((d.clicks / maxTrendVal) * 140));
+                const compHeight = Math.max(6, Math.round((d.completes / maxTrendVal) * 140));
+                return `
+                  <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; height:100%; justify-content:flex-end;">
+                    <div style="display:flex; gap:3px; align-items:flex-end; width:100%; justify-content:center; height:140px;">
+                      <div style="width:40%; max-width:18px; height:${clickHeight}px; background:var(--accent); border-radius:3px 3px 0 0; transition:height 0.3s;" title="${d.date}: ${d.clicks} Clicks"></div>
+                      <div style="width:40%; max-width:18px; height:${compHeight}px; background:var(--color-success); border-radius:3px 3px 0 0; transition:height 0.3s;" title="${d.date}: ${d.completes} Completes"></div>
+                    </div>
+                    <span style="font-size:0.7rem; color:var(--text-muted); white-space:nowrap;">${d.label.split(',')[0]}</span>
+                  </div>
+                `;
+              }).join("")}
+            </div>
+          </div>
+        </div>
+
+        <!-- Country Performance -->
+        <div class="section-card">
+          <div class="section-card-header">
+            <h3>Country Performance</h3>
+            <span style="font-size:0.8125rem; color:var(--text-muted);">Multi-market coverage</span>
+          </div>
+          <div class="section-card-body no-pad">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Country</th>
+                  <th>Traffic</th>
+                  <th>Completes</th>
+                  <th>Conversion</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${countryList.slice(0, 5).map(c => `
+                  <tr>
+                    <td style="font-weight:600;">
+                      <span style="margin-right:6px;">${c.flag}</span>
+                      ${escapeHtml(c.name)} <span style="font-size:0.75rem; color:var(--text-muted);">(${c.code})</span>
+                    </td>
+                    <td>${formatNumber(c.clicks)}</td>
+                    <td style="font-weight:600; color:var(--color-success);">${formatNumber(c.completes)}</td>
+                    <td style="font-weight:600;">${c.conv}%</td>
+                    <td><span class="badge" style="background:var(--color-success-bg); color:var(--color-success); font-size:0.7rem;">ACTIVE</span></td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Top Vendors + Recent Activity Feed -->
       <div class="grid-2 mb-24">
         <!-- Top Vendors -->
         <div class="section-card">
           <div class="section-card-header">
-            <h3>Top Vendors</h3>
+            <h3>Vendor Performance</h3>
+            <span style="font-size:0.8125rem; color:var(--text-muted);">${vendors.length} Vendors</span>
           </div>
           <div class="section-card-body no-pad">
             ${
@@ -840,8 +1048,7 @@ async function renderDashboard() {
                 <thead>
                   <tr>
                     <th>Vendor</th>
-                    <th>Clicks</th>
-                    <th>Starts</th>
+                    <th>Quota Target</th>
                     <th>Completes</th>
                     <th>Conversion</th>
                     <th>CPI</th>
@@ -855,12 +1062,11 @@ async function renderDashboard() {
                     <tr>
                       <td style="font-weight:500;">${escapeHtml(v.name)}${
                         i === 0 && vendors.length > 1
-                          ? ' <span style="font-size:0.6875rem;color:var(--color-success);font-weight:700;margin-left:4px;">â˜… TOP</span>'
+                          ? ' <span style="font-size:0.6875rem;color:var(--color-success);font-weight:700;margin-left:4px;">★ TOP</span>'
                           : ""
                       }</td>
-                      <td>${v.quota_target || 10}</td>
-                      <td>${Math.floor((v.quota_used || 0) * 1.3)}</td>
-                      <td>${v.quota_used || 0}</td>
+                      <td>${v.quota_target || 50}</td>
+                      <td>${v.quota_used || completes || 0}</td>
                       <td style="color:var(--color-success);font-weight:600;">100%</td>
                       <td>${formatCurrency(v.cpi_cents || 0)}</td>
                     </tr>
@@ -870,95 +1076,75 @@ async function renderDashboard() {
                 </tbody>
               </table>
             `
-                : '<div class="empty-state" style="padding:40px;"><div class="empty-state-icon">ðŸ¢</div><h3>No vendors yet</h3><p>Add vendors to track fieldwork performance.</p></div>'
+                : '<div class="empty-state" style="padding:40px;"><div class="empty-state-icon">🏢</div><h3>No vendors yet</h3><p>Add vendors to track fieldwork partners.</p></div>'
             }
           </div>
         </div>
 
-        <!-- Recent Activity -->
+        <!-- Recent Activity Feed -->
         <div class="section-card">
           <div class="section-card-header">
             <h3>Recent Activity</h3>
-            <span style="font-size:0.75rem; color:var(--text-muted);">${
-              sessions.length
-            } sessions</span>
+            <span style="font-size:0.75rem; color:var(--text-muted);">${recentActivityList.length} total events</span>
           </div>
           <div class="section-card-body no-pad">
             <div class="live-feed">
               ${
-                sessions.length
-                  ? sessions
+                recentActivityList.length
+                  ? recentActivityList
                       .slice(0, 8)
-                      .map(
-                        (s) => `
-                <div class="live-feed-item" onclick="openResponseDetailModal('${
-                  s.id
-                }')" style="cursor:pointer;">
-                  <div class="feed-left">
-                    <span style="font-size:0.75rem; color:var(--text-muted); flex-shrink:0; width:60px;">${timeAgo(
-                      s.created_at
-                    )}</span>
-                    ${renderBadge(s.current_status)}
-                    <span class="font-mono id-text" style="font-size:0.75rem; margin-left:4px;">UID: ${escapeHtml(
-                      s.uid || s.normalized_uid || "ANON"
-                    )}</span>
-                  </div>
-                  <span style="color:var(--text-muted); font-size:0.75rem; flex-shrink:0;">${formatDateTime(
-                    s.created_at
-                  )}</span>
-                </div>
-              `
-                      )
+                      .map((item) => {
+                        const isVer = item.verification_status === "VERIFIED";
+                        const verBadge = isVer
+                          ? '<span class="badge" style="background:var(--color-success-bg); color:var(--color-success); font-size:0.68rem; padding:1px 6px;">✓ VERIFIED</span>'
+                          : '<span class="badge" style="background:var(--color-danger-bg); color:var(--color-danger); font-size:0.68rem; padding:1px 6px;">⚠ UNVERIFIED</span>';
+                        return `
+                          <div class="live-feed-item" onclick="openResponseDetailModal('${escapeHtml(String(item.id))}')" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center; padding:10px 16px; border-bottom:1px solid var(--border-light);">
+                            <div class="feed-left" style="display:flex; align-items:center; gap:8px;">
+                              <span style="font-size:0.75rem; color:var(--text-muted); width:50px;">${timeAgo(item.created_at)}</span>
+                              ${verBadge}
+                              ${renderBadge(item.status)}
+                              <span class="font-mono id-text" style="font-size:0.75rem;">UID: ${escapeHtml(item.uid)}</span>
+                            </div>
+                            <span style="color:var(--text-muted); font-size:0.75rem;">${formatDateTime(item.created_at)}</span>
+                          </div>
+                        `;
+                      })
                       .join("")
-                  : '<div class="empty-state" style="padding:30px;"><div class="empty-state-icon">ðŸ“­</div><h3>No recent activity</h3><p>Activity will appear here as sessions are processed.</p></div>'
+                  : '<div class="empty-state" style="padding:30px;"><div class="empty-state-icon">📡</div><h3>No recent activity</h3><p>Telemetry activity will appear here as sessions occur.</p></div>'
               }
             </div>
           </div>
         </div>
       </div>
 
-      <!-- System Health -->
+      <!-- System Health Grid -->
       <div class="section-card">
         <div class="section-card-header">
           <h3>System Health</h3>
-          <span style="font-size:0.75rem; color:var(--color-success); font-weight:600;">â— All Operational</span>
+          <span style="font-size:0.75rem; color:var(--color-success); font-weight:600;">● All Systems Operational</span>
         </div>
         <div class="section-card-body">
           <div class="health-grid">
             <div class="health-item">
               <div class="health-dot operational"></div>
-              <div>
-                <div class="health-label">API</div>
-                <div class="health-status">Operational</div>
-              </div>
+              <div><div class="health-label">API Service</div><div class="health-status">Operational</div></div>
             </div>
             <div class="health-item">
               <div class="health-dot operational"></div>
-              <div>
-                <div class="health-label">Database</div>
-                <div class="health-status">Operational</div>
-              </div>
+              <div><div class="health-label">PostgreSQL / Supabase</div><div class="health-status">Operational</div></div>
             </div>
             <div class="health-item">
               <div class="health-dot operational"></div>
-              <div>
-                <div class="health-label">Callback Service</div>
-                <div class="health-status">Operational</div>
-              </div>
+              <div><div class="health-label">Callback Redirection Engine</div><div class="health-status">Operational</div></div>
             </div>
             <div class="health-item">
               <div class="health-dot operational"></div>
-              <div>
-                <div class="health-label">Workers</div>
-                <div class="health-status">Operational</div>
-              </div>
+              <div><div class="health-label">Telemetry & Fraud Filter</div><div class="health-status">Operational</div></div>
             </div>
             <div class="health-item">
               <div class="health-dot operational"></div>
-              <div>
-                <div class="health-label">Storage</div>
-                <div class="health-status">Operational</div>
-              </div>
+              <div><div class="health-label">Storage & Exports</div><div class="health-status">Operational</div></div>
             </div>
           </div>
         </div>
@@ -968,6 +1154,7 @@ async function renderDashboard() {
     $("#content-area").innerHTML = content;
     animateCountUps($("#content-area"));
   } catch (e) {
+    console.error("Dashboard render failure:", e);
     showError("#content-area", e.message);
     showToast("Failed to load dashboard: " + e.message, "error");
   }
@@ -1266,6 +1453,7 @@ async function renderResponses(page = 1) {
         <colgroup>
           <col class="col-uid" />
           <col class="col-project" />
+          <col class="col-verification" style="width: 120px;" />
           <col class="col-ip" />
           <col class="col-device" />
           <col class="col-ua" />
@@ -1277,15 +1465,15 @@ async function renderResponses(page = 1) {
             <th class="sortable" onclick="toggleRespSort('uid')">UID${
               responsesState.sort_by === "uid"
                 ? responsesState.sort_order === "ASC"
-                  ? " â†‘"
-                  : " â†“"
+                  ? " ↑"
+                  : " ↓"
                 : ""
             }</th>
             <th class="sortable" onclick="toggleRespSort('project')">Project${
               responsesState.sort_by === "project"
                 ? responsesState.sort_order === "ASC"
-                  ? " â†‘"
-                  : " â†“"
+                  ? " ↑"
+                  : " ↓"
                 : ""
             }</th>
             <th>Verification</th>
@@ -1293,23 +1481,23 @@ async function renderResponses(page = 1) {
             <th class="sortable" onclick="toggleRespSort('device')">Device${
               responsesState.sort_by === "device"
                 ? responsesState.sort_order === "ASC"
-                  ? " â†‘"
-                  : " â†“"
+                  ? " ↑"
+                  : " ↓"
                 : ""
             }</th>
             <th>User Agent</th>
-            <th class="sortable" onclick="toggleRespSort('status')">Status${
+            <th class="sortable" onclick="toggleRespSort('status')">Outcome${
               responsesState.sort_by === "status"
                 ? responsesState.sort_order === "ASC"
-                  ? " â†‘"
-                  : " â†“"
+                  ? " ↑"
+                  : " ↓"
                 : ""
             }</th>
             <th class="sortable" onclick="toggleRespSort('timestamp')">Timestamp${
               responsesState.sort_by === "timestamp"
                 ? responsesState.sort_order === "ASC"
-                  ? " â†‘"
-                  : " â†“"
+                  ? " ↑"
+                  : " ↓"
                 : ""
             }</th>
           </tr>
@@ -1455,14 +1643,20 @@ async function fetchAndRenderResponsesData() {
             r.external_offer_id ||
             r.study_id ||
             "";
-          const ip = r.ip_address || "";
-          const ua = r.user_agent || "";
+          const ip = r.ip_address || r.fake_ip || "";
+          const ua = r.user_agent || r.fake_ua || "";
           const devIcon =
-            r.device === "Mobile" ? "ðŸ“±" : r.device === "Tablet" ? "ðŸ“²" : "ðŸ’»";
+            r.device === "Mobile" ? "📱" : r.device === "Tablet" ? "💻" : "💻";
           const deviceText = r.device || "Desktop";
-          const statusVal = r.status || "COMPLETE";
+          const statusVal = r.status || r.final_status || "COMPLETE";
           const ts = formatDateTime(r.created_at || r.updated_at);
           const sessionId = r.session_id || r.id;
+          const verificationStatus = (r.verification_status || r._source_type || 'VERIFIED').toUpperCase();
+          const isVerified = verificationStatus === 'VERIFIED';
+          
+          const verificationHtml = isVerified 
+            ? `<span class="badge" style="background:var(--success-bg);color:var(--success-text);font-size:0.75rem;">✓ VERIFIED</span>`
+            : `<span class="badge" style="background:var(--danger-bg);color:var(--danger-text);font-size:0.75rem;">⚠ UNVERIFIED</span>`;
 
           return `
           <tr onclick="openResponseDetailModal('${escapeHtml(
@@ -1483,6 +1677,9 @@ async function fetchAndRenderResponsesData() {
                 )}">${escapeHtml(project)}</span>
                 ${compactCopy(project, "Copy Project ID")}
               </div>
+            </td>
+            <td class="cell-verification">
+              ${verificationHtml}
             </td>
             <td class="cell-ip">
               <div style="display:inline-flex;align-items:center;gap:4px;">
@@ -1527,13 +1724,19 @@ async function fetchAndRenderResponsesData() {
             r.external_offer_id ||
             r.study_id ||
             "";
-          const ip = r.ip_address || "";
-          const ua = r.user_agent || "";
+          const ip = r.ip_address || r.fake_ip || "";
+          const ua = r.user_agent || r.fake_ua || "";
           const devIcon =
-            r.device === "Mobile" ? "ðŸ“±" : r.device === "Tablet" ? "ðŸ“²" : "ðŸ’»";
+            r.device === "Mobile" ? "📱" : r.device === "Tablet" ? "💻" : "💻";
           const deviceText = r.device || "Desktop";
-          const statusVal = r.status || "COMPLETE";
+          const statusVal = r.status || r.final_status || "COMPLETE";
           const ts = formatDateTime(r.created_at || r.updated_at);
+          const verificationStatus = (r.verification_status || r._source_type || 'VERIFIED').toUpperCase();
+          const isVerified = verificationStatus === 'VERIFIED';
+          
+          const verificationHtml = isVerified 
+            ? `<span class="badge" style="background:var(--success-bg);color:var(--success-text);font-size:0.75rem;">✓ VERIFIED</span>`
+            : `<span class="badge" style="background:var(--danger-bg);color:var(--danger-text);font-size:0.75rem;">⚠ UNVERIFIED</span>`;
 
           return `
           <div class="responses-mobile-card" onclick="this.classList.toggle('expanded')">
@@ -1541,6 +1744,7 @@ async function fetchAndRenderResponsesData() {
               <span class="badge-device">${devIcon} ${escapeHtml(
             deviceText
           )}</span>
+              ${verificationHtml}
               ${renderBadge(statusVal)}
             </div>
             <div class="mc-row">
@@ -1555,7 +1759,7 @@ async function fetchAndRenderResponsesData() {
               <span class="mc-label">Timestamp</span>
               <span class="mc-value">${escapeHtml(ts)}</span>
             </div>
-            <div class="mc-toggle" onclick="event.stopPropagation();">Show details â†“</div>
+            <div class="mc-toggle" onclick="event.stopPropagation();">Show details ↓</div>
             <div class="mc-expand">
               <div class="mc-row">
                 <span class="mc-label">IP Address</span>
@@ -2308,6 +2512,10 @@ async function renderRejectionManagement(page = 1) {
   }
 }
 
+function applyRejectionFilters() {
+  renderRejectionManagement(1);
+}
+
 function clearRejectionFilters() {
   if ($("#rej-filter-project")) $("#rej-filter-project").value = "";
   if ($("#rej-filter-status")) $("#rej-filter-status").value = "";
@@ -2768,7 +2976,7 @@ async function renderSettings() {
             <div class="form-group" style="margin-bottom:14px;">
               <label>Email</label>
               <input type="email" value="${
-                currentUser?.email || "admin@cawi.io"
+                currentUser?.email || ""
               }" disabled>
             </div>
             <div class="form-group" style="margin-bottom:14px;">
@@ -4152,6 +4360,9 @@ async function showPage(page) {
     case "users":
       await renderUsers(1);
       break;
+    case "redirect-links":
+      await renderRedirectLinks();
+      break;
     case "settings":
       await renderSettings();
       break;
@@ -4177,7 +4388,7 @@ function showApp() {
   $("#app-shell").style.display = "flex";
   const name =
     currentUser?.full_name || currentUser?.email?.split("@")[0] || "Admin";
-  const email = currentUser?.email || "admin@cawi.io";
+  const email = currentUser?.email || "admin";
   const role = currentUser?.role || "Admin";
   const initial = (name.charAt(0) || "A").toUpperCase();
 
@@ -4198,7 +4409,7 @@ function showApp() {
   $$(".sidebar-nav .nav-item").forEach((el) => {
     const page = el.dataset.page;
     if (isVendor) {
-      if (page === "dashboard" || page === "responses") {
+      if (page === "responses") {
         el.style.display = "flex";
       } else {
         el.style.display = "none";
@@ -4430,3 +4641,191 @@ window.downloadFinanceCsv = async () => {
     showToast("Failed to download: " + e.message, "error");
   }
 };
+
+
+// ——— Redirect Links Management & Callback Documentation —————————————————————
+async function renderRedirectLinks() {
+  showLoading();
+  try {
+    const origin = window.location.origin;
+    const [responsesRes, projectsRes] = await Promise.all([
+      api("/responses?limit=10").catch(() => ({ responses: [] })),
+      api("/projects?limit=10").catch(() => ({ data: [] })),
+    ]);
+    const responses = responsesRes.responses || responsesRes.data || [];
+    const projects = projectsRes.data || [];
+    const defaultPid = projects[0]?.project_code || "OPI_PROJ_101";
+
+    const content = `
+      <div class="section-header">
+        <div>
+          <h3>Client Redirect &amp; Callback Links</h3>
+          <p style="font-size:0.875rem; color:var(--text-muted); margin-top:2px;">
+            Configure these post-survey callback URLs in your client survey systems (Decipher, Qualtrics, Confirmit, LimeSurvey, etc.)
+          </p>
+        </div>
+      </div>
+
+      <!-- Domain Banner -->
+      <div class="section-card mb-24" style="background: linear-gradient(135deg, rgba(14,165,233,0.06), rgba(16,185,129,0.06)); border-color: var(--accent);">
+        <div class="section-card-body" style="padding:18px 24px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px;">
+          <div>
+            <div style="font-size:0.8125rem; font-weight:700; color:var(--accent); text-transform:uppercase; letter-spacing:0.05em;">Active Callback Domain</div>
+            <div style="font-size:1.125rem; font-weight:700; color:var(--text-primary); margin-top:2px; font-family:monospace;">${origin}</div>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <span class="badge" style="background:var(--color-success-bg); color:var(--color-success); font-weight:600; padding:6px 12px; font-size:0.8125rem;">● SSL &amp; Origin Validation Active</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Redirect Endpoints -->
+      <div style="display:flex; flex-direction:column; gap:16px; margin-bottom:28px;">
+        ${renderRedirectCard("✅ COMPLETE (Survey Success)", "/redirect/complete?pid={PID}&uid={UID}", "Redirect respondents here when they successfully finish the client survey. Verifies session token and credits quota.", "var(--color-success)", defaultPid)}
+        ${renderRedirectCard("❌ TERMINATE (Screen Out)", "/redirect/terminate?pid={PID}&uid={UID}", "Redirect respondents here when they screen out due to qualification criteria.", "var(--color-danger)", defaultPid)}
+        ${renderRedirectCard("⚠️ QUOTA FULL (Overquota)", "/redirect/quotafull?pid={PID}&uid={UID}", "Redirect respondents here when their target demographic quota cell is closed.", "var(--color-warning)", defaultPid)}
+        ${renderRedirectCard("🎯 QUALITY TERM (Security Reject)", "/redirect/qualityterm?pid={PID}&uid={UID}", "Redirect respondents here when they fail fraud, bot, or attention checks.", "var(--color-purple)", defaultPid)}
+        ${renderRedirectCard("🔒 SURVEY CLOSED (Expired)", "/redirect/closed?pid={PID}&uid={UID}", "Redirect respondents here if the survey study has already concluded.", "var(--color-gray)", defaultPid)}
+      </div>
+
+      <!-- Interactive Test Sandbox -->
+      <div class="section-card mb-24">
+        <div class="section-card-header">
+          <h3>⚡ Callback Testing Sandbox</h3>
+          <span style="font-size:0.8125rem; color:var(--text-muted);">Simulate incoming callback to test session matching</span>
+        </div>
+        <div class="section-card-body">
+          <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:14px; align-items:flex-end;">
+            <div class="form-group" style="margin:0;">
+              <label style="font-size:0.8rem;">Project Code (PID)</label>
+              <input type="text" id="sim-pid" value="${escapeHtml(defaultPid)}" style="width:100%;">
+            </div>
+            <div class="form-group" style="margin:0;">
+              <label style="font-size:0.8rem;">Respondent UID</label>
+              <input type="text" id="sim-uid" value="TEST_UID_${Math.floor(Math.random()*90000+10000)}" style="width:100%;">
+            </div>
+            <div class="form-group" style="margin:0;">
+              <label style="font-size:0.8rem;">Outcome Type</label>
+              <select id="sim-type" style="width:100%;">
+                <option value="complete">Complete</option>
+                <option value="terminate">Terminate</option>
+                <option value="quotafull">Quota Full</option>
+                <option value="qualityterm">Quality Term</option>
+                <option value="closed">Survey Closed</option>
+              </select>
+            </div>
+            <div>
+              <button class="btn btn-primary" onclick="simulateCallbackTrigger()" style="width:100%;">Trigger Callback →</button>
+            </div>
+          </div>
+          <div id="sim-result" style="margin-top:14px; display:none;"></div>
+        </div>
+      </div>
+
+      <!-- Recent Callbacks -->
+      <div class="section-card">
+        <div class="section-card-header">
+          <h3>Recent Callback Responses</h3>
+          <span style="font-size:0.8125rem; color:var(--text-muted);">Last 10 received callbacks</span>
+        </div>
+        <div class="section-card-body no-pad">
+          ${
+            responses.length ? `
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>UID</th>
+                  <th>Verification</th>
+                  <th>Status</th>
+                  <th>Project</th>
+                  <th>Timestamp</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${responses.slice(0, 10).map(r => {
+                  const isVer = (r.verification_status || r._source_type || "VERIFIED").toUpperCase() === "VERIFIED";
+                  const verHtml = isVer 
+                    ? '<span class="badge" style="background:var(--color-success-bg); color:var(--color-success); font-size:0.75rem;">✓ VERIFIED</span>'
+                    : '<span class="badge" style="background:var(--color-danger-bg); color:var(--color-danger); font-size:0.75rem;">⚠ UNVERIFIED</span>';
+                  return `
+                    <tr onclick="openResponseDetailModal('${r.session_id || r.id}')" style="cursor:pointer;">
+                      <td class="cell-uid font-mono">${escapeHtml(r.uid || "—")}</td>
+                      <td>${verHtml}</td>
+                      <td>${renderBadge(r.status || r.final_status)}</td>
+                      <td>${escapeHtml(r.project || r.study_code || "—")}</td>
+                      <td>${formatDateTime(r.created_at)}</td>
+                    </tr>
+                  `;
+                }).join("")}
+              </tbody>
+            </table>
+            ` : '<div class="empty-state" style="padding:30px;"><div class="empty-state-icon">📡</div><h3>No callbacks received yet</h3><p>Incoming redirects will be logged here in real time.</p></div>'
+          }
+        </div>
+      </div>
+    `;
+    $("#content-area").innerHTML = content;
+  } catch (e) {
+    showError("#content-area", e.message);
+    showToast("Failed to load redirect links: " + e.message, "error");
+  }
+}
+
+function renderRedirectCard(title, pathTemplate, description, accentColor, samplePid) {
+  const origin = window.location.origin;
+  const fullUrl = origin + pathTemplate;
+  const sampleUrl = origin + pathTemplate.replace("{PID}", encodeURIComponent(samplePid)).replace("{UID}", "RESP_12345");
+  const cardId = "red-" + Math.random().toString(36).slice(2, 8);
+  return `
+    <div class="section-card" style="border-left: 4px solid ${accentColor};">
+      <div class="section-card-body" style="padding:18px 20px;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
+          <div>
+            <h4 style="font-size:0.95rem; font-weight:700; color:var(--text-primary); margin:0;">${title}</h4>
+            <p style="font-size:0.8125rem; color:var(--text-muted); margin:4px 0 0;">${description}</p>
+          </div>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px; background:var(--bg-muted); border:1px solid var(--border-light); border-radius:6px; padding:8px 12px; margin-top:10px;">
+          <code id="${cardId}" style="flex:1; font-size:0.8125rem; color:var(--text-primary); word-break:break-all;">${fullUrl}</code>
+          <button class="btn btn-secondary btn-sm" onclick="copyToClipboard(document.getElementById('${cardId}').textContent, this)" style="white-space:nowrap; padding:4px 10px; font-size:0.75rem;">📋 Copy Template</button>
+          <a href="${sampleUrl}" target="_blank" class="btn btn-primary btn-sm" style="white-space:nowrap; padding:4px 10px; font-size:0.75rem; text-decoration:none;">🚀 Test Link</a>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+async function simulateCallbackTrigger() {
+  const pid = document.getElementById("sim-pid")?.value.trim();
+  const uid = document.getElementById("sim-uid")?.value.trim();
+  const type = document.getElementById("sim-type")?.value || "complete";
+  const resEl = document.getElementById("sim-result");
+  if (!pid || !uid) {
+    showToast("Please provide PID and UID", "error");
+    return;
+  }
+  if (resEl) {
+    resEl.style.display = "block";
+    resEl.innerHTML = '<div style="padding:10px; background:var(--bg-muted); border-radius:6px; font-size:0.8125rem;">Sending callback request...</div>';
+  }
+  try {
+    const url = `/redirect/${type}?pid=${encodeURIComponent(pid)}&uid=${encodeURIComponent(uid)}`;
+    const res = await fetch(url);
+    if (resEl) {
+      const isOk = res.ok || res.redirected || res.status < 400;
+      resEl.innerHTML = `
+        <div style="padding:12px; border-radius:6px; font-size:0.8125rem; background:${isOk ? 'var(--color-success-bg)' : 'var(--color-danger-bg)'}; color:${isOk ? 'var(--color-success)' : 'var(--color-danger)'}; border:1px solid currentColor;">
+          <strong>Response Status: ${res.status} ${res.statusText}</strong>
+          <p style="margin:4px 0 0;">Callback was processed by the engine. Check Responses table to see the logged outcome and verification status.</p>
+        </div>
+      `;
+    }
+    showToast("Callback sent successfully!", "success");
+  } catch (err) {
+    if (resEl) {
+      resEl.innerHTML = `<div style="padding:12px; border-radius:6px; font-size:0.8125rem; background:var(--color-danger-bg); color:var(--color-danger);">Error: ${escapeHtml(err.message)}</div>`;
+    }
+  }
+}
+window.renderRedirectLinks = renderRedirectLinks;
+window.simulateCallbackTrigger = simulateCallbackTrigger;

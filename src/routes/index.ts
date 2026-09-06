@@ -64,7 +64,7 @@ function asyncHandler(fn: Function) {
       if (!res.headersSent) {
         res.status(500).json({
           success: false,
-          error: { code: 'INTERNAL_ERROR', message: 'An internal error occurred' },
+          error: { code: 'INTERNAL_ERROR', message: err?.message || 'An internal error occurred', stack: err?.stack },
         });
       }
     });
@@ -2285,9 +2285,10 @@ router.get(
   '/track',
   startRateLimit,
   asyncHandler(async (req: Request, res: Response) => {
-    const projectCode = (getQueryParam(req, 'code') || '').trim().toUpperCase();
-    const countryCode = (getQueryParam(req, 'country') || '').trim().toUpperCase();
-    const rawUid = (getQueryParam(req, 'uid') || '').trim();
+    try {
+      const projectCode = (getQueryParam(req, 'code') || '').trim().toUpperCase();
+      const countryCode = (getQueryParam(req, 'country') || '').trim().toUpperCase();
+      const rawUid = (getQueryParam(req, 'uid') || '').trim();
 
     if (!projectCode) return apiError(res, 400, 'MISSING_CODE', 'Project code (code=) is required');
     if (!countryCode) return apiError(res, 400, 'MISSING_COUNTRY', 'Country code (country=) is required');
@@ -2342,10 +2343,10 @@ router.get(
     }
 
     // 7. Resolve vendor
-    let assignedVendorId = link?.vendor_id || '';
+    let assignedVendorId = link?.vendor_id || null;
     if (!assignedVendorId) {
       const allVendors = await db.getVendors(true);
-      assignedVendorId = allVendors[0]?.id || '';
+      assignedVendorId = allVendors[0]?.id || null;
     }
 
     // 8. Create / resolve session (idempotent by project + country + UID)
@@ -2448,18 +2449,22 @@ router.get(
     }
 
     if (!destUrl || !destUrl.startsWith('http')) {
-      return apiError(res, 500, 'NO_REDIRECT_URL', 'No valid client survey URL configured');
+        return apiError(res, 500, 'NO_REDIRECT_URL', 'No valid client survey URL configured');
+      }
+
+      // 10. Set tracking cookies for callback resolution
+      res.setHeader('Set-Cookie', [
+        `opi_session_token=${session.session_token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=172800`,
+        `opi_project_code=${projectCode}; Path=/; SameSite=Lax; Max-Age=172800`,
+        `opi_uid=${encodeURIComponent(original)}; Path=/; SameSite=Lax; Max-Age=172800`,
+        `opi_country=${countryCode}; Path=/; SameSite=Lax; Max-Age=172800`,
+      ]);
+
+      return res.redirect(302, destUrl);
+    } catch (trackErr: any) {
+      console.error('[Track Error]:', trackErr);
+      return apiError(res, 500, 'TRACK_ERROR', trackErr.message || 'Error processing tracking link');
     }
-
-    // 10. Set tracking cookies for callback resolution
-    res.setHeader('Set-Cookie', [
-      `opi_session_token=${session.session_token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=172800`,
-      `opi_project_code=${projectCode}; Path=/; SameSite=Lax; Max-Age=172800`,
-      `opi_uid=${encodeURIComponent(original)}; Path=/; SameSite=Lax; Max-Age=172800`,
-      `opi_country=${countryCode}; Path=/; SameSite=Lax; Max-Age=172800`,
-    ]);
-
-    return res.redirect(302, destUrl);
   })
 );
 

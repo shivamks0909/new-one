@@ -95594,9 +95594,9 @@ var init_db = __esm({
        RETURNING *`,
           [
             session.session_token,
-            session.study_id,
-            session.vendor_id,
-            session.tracking_link_id,
+            session.study_id || null,
+            session.vendor_id || null,
+            session.tracking_link_id || null,
             session.uid,
             session.normalized_uid,
             session.external_uid ?? null,
@@ -95677,9 +95677,9 @@ var init_db = __esm({
        ON CONFLICT (event_key) DO NOTHING
        RETURNING *`,
           [
-            event.session_id,
-            event.study_id,
-            event.vendor_id,
+            event.session_id || null,
+            event.study_id || null,
+            event.vendor_id || null,
             event.uid,
             event.event_type,
             event.source ?? null,
@@ -96029,10 +96029,15 @@ var init_db = __esm({
           where += ` AND r.final_status = $${params.length}`;
         }
         const { rows } = await this.pool.query(
-          `SELECT r.*, s.title as study_title, s.study_code, v.name as vendor_name
-       FROM responses r
+          `WITH unified_responses AS (
+         SELECT id, session_id, study_id, vendor_id, uid, final_status, created_at, updated_at, terminal_at, first_terminal_event, NULL as rejection_reason, NULL as raw_payload, NULL as fake_ip, NULL as fake_ua, 'VERIFIED' as _source_type FROM responses
+         UNION ALL
+         SELECT id, NULL as session_id, study_id, vendor_id, uid, COALESCE(UPPER(raw_payload->>'outcome'), UPPER(raw_payload->>'status'), 'TERMINATE') as final_status, created_at, created_at as updated_at, created_at as terminal_at, 'fake_click' as first_terminal_event, rejection_reason, raw_payload, ip_address as fake_ip, user_agent as fake_ua, 'UNVERIFIED' as _source_type FROM fake_click_events
+       )
+       SELECT r.*, s.title as study_title, s.study_code, v.name as vendor_name, r._source_type as verification_status
+       FROM unified_responses r
        JOIN studies s ON s.id = r.study_id
-       JOIN vendors v ON v.id = r.vendor_id
+       LEFT JOIN vendors v ON v.id = r.vendor_id
        ${where}
        ORDER BY r.updated_at DESC
        LIMIT 5000`,
@@ -96192,7 +96197,7 @@ var init_db = __esm({
       WITH unified_responses AS (
         SELECT id, session_id, study_id, vendor_id, uid, final_status, created_at, updated_at, terminal_at, first_terminal_event, NULL as rejection_reason, NULL as raw_payload, NULL as fake_ip, NULL as fake_ua, 'VERIFIED' as _source_type FROM responses
         UNION ALL
-        SELECT id, NULL as session_id, study_id, vendor_id, uid, 'TERMINATE' as final_status, created_at, created_at as updated_at, created_at as terminal_at, 'fake_click' as first_terminal_event, rejection_reason, raw_payload, ip_address as fake_ip, user_agent as fake_ua, 'UNVERIFIED' as _source_type FROM fake_click_events
+        SELECT id, NULL as session_id, study_id, vendor_id, uid, COALESCE(UPPER(raw_payload->>'outcome'), UPPER(raw_payload->>'status'), 'TERMINATE') as final_status, created_at, created_at as updated_at, created_at as terminal_at, 'fake_click' as first_terminal_event, rejection_reason, raw_payload, ip_address as fake_ip, user_agent as fake_ua, 'UNVERIFIED' as _source_type FROM fake_click_events
       )
       SELECT 
         r.id,
@@ -96248,7 +96253,7 @@ var init_db = __esm({
       WITH unified_responses AS (
         SELECT id, session_id, study_id, vendor_id, uid, final_status, created_at, updated_at, terminal_at, first_terminal_event, NULL as rejection_reason, NULL as raw_payload, NULL as fake_ip, NULL as fake_ua, 'VERIFIED' as _source_type FROM responses
         UNION ALL
-        SELECT id, NULL as session_id, study_id, vendor_id, uid, 'TERMINATE' as final_status, created_at, created_at as updated_at, created_at as terminal_at, 'fake_click' as first_terminal_event, rejection_reason, raw_payload, ip_address as fake_ip, user_agent as fake_ua, 'UNVERIFIED' as _source_type FROM fake_click_events
+        SELECT id, NULL as session_id, study_id, vendor_id, uid, COALESCE(UPPER(raw_payload->>'outcome'), UPPER(raw_payload->>'status'), 'TERMINATE') as final_status, created_at, created_at as updated_at, created_at as terminal_at, 'fake_click' as first_terminal_event, rejection_reason, raw_payload, ip_address as fake_ip, user_agent as fake_ua, 'UNVERIFIED' as _source_type FROM fake_click_events
       )
       SELECT COUNT(*) 
       FROM unified_responses r
@@ -117659,7 +117664,7 @@ function asyncHandler(fn) {
       if (!res.headersSent) {
         res.status(500).json({
           success: false,
-          error: { code: "INTERNAL_ERROR", message: "An internal error occurred" }
+          error: { code: "INTERNAL_ERROR", message: err?.message || "An internal error occurred", stack: err?.stack }
         });
       }
     });
@@ -118056,7 +118061,7 @@ router2.post(
     const ip = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.socket?.remoteAddress || "unknown";
     const userAgent = req.headers["user-agent"] || "unknown";
     const rawIdentifier = (v.data.email || "").trim();
-    const emailToLookup = rawIdentifier.toLowerCase() === "admin" ? "admin@cawi.io" : rawIdentifier.toLowerCase() === "vendor" ? "vendor@test.com" : rawIdentifier;
+    const emailToLookup = rawIdentifier;
     const user = await db.getUserByEmail(emailToLookup);
     if (!user) {
       await db.recordLoginAudit({
@@ -118104,9 +118109,7 @@ router2.post(
     }
     const crypto8 = require("crypto");
     const passwordHash = crypto8.createHmac("sha256", config.authSecret).update(v.data.password).digest("hex");
-    const isAdminTestPass = user.email === "admin@cawi.io" && (v.data.password === "admin" || v.data.password === "Admin@1234" || v.data.password === "admin123");
-    const isVendorTestPass = user.email === "vendor@test.com" && (v.data.password === "vendor123" || v.data.password === "Vendor@1234" || v.data.password === "vendor");
-    if (user.password_hash && user.password_hash !== passwordHash && !isAdminTestPass && !isVendorTestPass) {
+    if (user.password_hash && user.password_hash !== passwordHash) {
       const { failedAttempts, lockedUntil } = await db.recordFailedLogin(user.id, ip, userAgent);
       await db.recordLoginAudit({
         userId: user.id,
@@ -119546,154 +119549,159 @@ router2.get(
   "/track",
   startRateLimit,
   asyncHandler(async (req, res) => {
-    const projectCode = (getQueryParam(req, "code") || "").trim().toUpperCase();
-    const countryCode = (getQueryParam(req, "country") || "").trim().toUpperCase();
-    const rawUid = (getQueryParam(req, "uid") || "").trim();
-    if (!projectCode) return apiError(res, 400, "MISSING_CODE", "Project code (code=) is required");
-    if (!countryCode) return apiError(res, 400, "MISSING_COUNTRY", "Country code (country=) is required");
-    if (!rawUid) return apiError(res, 400, "MISSING_UID", "Respondent UID (uid=) is required");
-    const { rows: projRows } = await db.pool.query(
-      "SELECT * FROM projects WHERE UPPER(project_code) = $1",
-      [projectCode]
-    );
-    const project = projRows[0];
-    if (!project) return apiError(res, 404, "INVALID_PROJECT", `Project '${projectCode}' not found`);
-    const { rows: countryRows } = await db.pool.query(
-      `SELECT * FROM project_countries
+    try {
+      const projectCode = (getQueryParam(req, "code") || "").trim().toUpperCase();
+      const countryCode = (getQueryParam(req, "country") || "").trim().toUpperCase();
+      const rawUid = (getQueryParam(req, "uid") || "").trim();
+      if (!projectCode) return apiError(res, 400, "MISSING_CODE", "Project code (code=) is required");
+      if (!countryCode) return apiError(res, 400, "MISSING_COUNTRY", "Country code (country=) is required");
+      if (!rawUid) return apiError(res, 400, "MISSING_UID", "Respondent UID (uid=) is required");
+      const { rows: projRows } = await db.pool.query(
+        "SELECT * FROM projects WHERE UPPER(project_code) = $1",
+        [projectCode]
+      );
+      const project = projRows[0];
+      if (!project) return apiError(res, 404, "INVALID_PROJECT", `Project '${projectCode}' not found`);
+      const { rows: countryRows } = await db.pool.query(
+        `SELECT * FROM project_countries
        WHERE project_id = $1 AND UPPER(country_code) = $2
        AND (status IS NULL OR status = 'ACTIVE')`,
-      [project.id, countryCode]
-    );
-    const country = countryRows[0];
-    if (!country) return apiError(res, 400, "INVALID_COUNTRY", `Country '${countryCode}' is not active in project ${project.project_code}`);
-    const { rows: linkRows } = await db.pool.query(
-      `SELECT * FROM project_links WHERE country_id = $1 AND (status IS NULL OR status = 'ACTIVE')
+        [project.id, countryCode]
+      );
+      const country = countryRows[0];
+      if (!country) return apiError(res, 400, "INVALID_COUNTRY", `Country '${countryCode}' is not active in project ${project.project_code}`);
+      const { rows: linkRows } = await db.pool.query(
+        `SELECT * FROM project_links WHERE country_id = $1 AND (status IS NULL OR status = 'ACTIVE')
        ORDER BY created_at ASC LIMIT 1`,
-      [country.id]
-    );
-    const link = linkRows[0];
-    if (!link && !project.survey_url) {
-      return apiError(res, 400, "NO_SURVEY_LINK", `No active survey link for country ${countryCode} in project ${projectCode}`);
-    }
-    const uidValidation = normalizeUid(rawUid);
-    if (uidValidation.error) return apiError(res, 400, "INVALID_UID", uidValidation.error);
-    const { normalized, original } = uidValidation;
-    const xff = req.headers["x-forwarded-for"];
-    const ipAddress = ((Array.isArray(xff) ? String(xff[0]) : String(xff || ""))?.split(",")[0] || req.ip || "127.0.0.1").trim();
-    const userAgent = req.get("User-Agent") || null;
-    const referrer = req.get("Referer") || req.get("Referrer") || null;
-    const landingUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
-    const { rows: studyRows } = await db.pool.query("SELECT id FROM studies WHERE study_code = $1", [project.project_code]);
-    let studyId = studyRows[0]?.id;
-    if (!studyId) {
-      const newStudy = await db.createStudy({ study_code: project.project_code, title: project.name, client_id: project.client_id, status: "LIVE" });
-      studyId = newStudy.id;
-    }
-    let assignedVendorId = link?.vendor_id || "";
-    if (!assignedVendorId) {
-      const allVendors = await db.getVendors(true);
-      assignedVendorId = allVendors[0]?.id || "";
-    }
-    const crypto8 = require("crypto");
-    const { rows: existingSess } = await db.pool.query(
-      `SELECT * FROM sessions
+        [country.id]
+      );
+      const link = linkRows[0];
+      if (!link && !project.survey_url) {
+        return apiError(res, 400, "NO_SURVEY_LINK", `No active survey link for country ${countryCode} in project ${projectCode}`);
+      }
+      const uidValidation = normalizeUid(rawUid);
+      if (uidValidation.error) return apiError(res, 400, "INVALID_UID", uidValidation.error);
+      const { normalized, original } = uidValidation;
+      const xff = req.headers["x-forwarded-for"];
+      const ipAddress = ((Array.isArray(xff) ? String(xff[0]) : String(xff || ""))?.split(",")[0] || req.ip || "127.0.0.1").trim();
+      const userAgent = req.get("User-Agent") || null;
+      const referrer = req.get("Referer") || req.get("Referrer") || null;
+      const landingUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
+      const { rows: studyRows } = await db.pool.query("SELECT id FROM studies WHERE study_code = $1", [project.project_code]);
+      let studyId = studyRows[0]?.id;
+      if (!studyId) {
+        const newStudy = await db.createStudy({ study_code: project.project_code, title: project.name, client_id: project.client_id, status: "LIVE" });
+        studyId = newStudy.id;
+      }
+      let assignedVendorId = link?.vendor_id || null;
+      if (!assignedVendorId) {
+        const allVendors = await db.getVendors(true);
+        assignedVendorId = allVendors[0]?.id || null;
+      }
+      const crypto8 = require("crypto");
+      const { rows: existingSess } = await db.pool.query(
+        `SELECT * FROM sessions
        WHERE metadata_json->>'project_id' = $1
          AND metadata_json->>'country_id' = $2
          AND normalized_uid = $3
        ORDER BY created_at DESC LIMIT 1`,
-      [project.id, country.id, normalized]
-    );
-    let session = existingSess[0];
-    if (!session) {
-      const sessionToken = "trk_" + crypto8.randomBytes(20).toString("hex");
-      const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1e3);
-      const ipHash = crypto8.createHash("sha256").update(ipAddress + config.authSecret).digest("hex");
-      session = await db.createSession({
-        session_token: sessionToken,
-        study_id: studyId,
-        vendor_id: assignedVendorId,
-        tracking_link_id: null,
-        // project_links.id ≠ tracking_links.id; store link info in metadata_json
-        uid: original,
-        normalized_uid: normalized,
-        external_uid: null,
-        ip_hash: ipHash,
-        ip_address_encrypted_or_restricted_storage: true,
-        user_agent: userAgent,
-        country_detected: country.country_code,
-        referrer,
-        landing_url: landingUrl,
-        initial_status: "STARTED",
-        current_status: "STARTED",
-        expires_at: expiresAt,
-        metadata_json: {
-          project_id: project.id,
-          project_code: project.project_code,
-          country_id: country.id,
-          country_code: country.country_code,
-          link_id: link?.id || null,
-          link_code: link?.link_code || null,
+        [project.id, country.id, normalized]
+      );
+      let session = existingSess[0];
+      if (!session) {
+        const sessionToken = "trk_" + crypto8.randomBytes(20).toString("hex");
+        const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1e3);
+        const ipHash = crypto8.createHash("sha256").update(ipAddress + config.authSecret).digest("hex");
+        session = await db.createSession({
+          session_token: sessionToken,
+          study_id: studyId,
           vendor_id: assignedVendorId,
-          tracking_type: "OPI_TRACK"
-        }
-      });
-      const landingKey = crypto8.createHash("sha256").update(`${project.id}|${country.id}|${normalized}|LANDING`).digest("hex");
-      await db.createResponseEvent({
-        session_id: session.id,
-        study_id: studyId,
-        vendor_id: assignedVendorId,
-        uid: original,
-        event_type: "LANDING",
-        source: "opi_track",
-        raw_payload: { project_code: project.project_code, country: country.country_code, uid: original },
-        normalized_payload: { event_type: "LANDING", uid: normalized, provider: "opi_track" },
-        event_key: landingKey,
-        ip_address: ipAddress,
-        user_agent: userAgent
-      });
-      await db.pool.query(
-        `INSERT INTO responses
+          tracking_link_id: null,
+          // project_links.id ≠ tracking_links.id; store link info in metadata_json
+          uid: original,
+          normalized_uid: normalized,
+          external_uid: null,
+          ip_hash: ipHash,
+          ip_address_encrypted_or_restricted_storage: true,
+          user_agent: userAgent,
+          country_detected: country.country_code,
+          referrer,
+          landing_url: landingUrl,
+          initial_status: "STARTED",
+          current_status: "STARTED",
+          expires_at: expiresAt,
+          metadata_json: {
+            project_id: project.id,
+            project_code: project.project_code,
+            country_id: country.id,
+            country_code: country.country_code,
+            link_id: link?.id || null,
+            link_code: link?.link_code || null,
+            vendor_id: assignedVendorId,
+            tracking_type: "OPI_TRACK"
+          }
+        });
+        const landingKey = crypto8.createHash("sha256").update(`${project.id}|${country.id}|${normalized}|LANDING`).digest("hex");
+        await db.createResponseEvent({
+          session_id: session.id,
+          study_id: studyId,
+          vendor_id: assignedVendorId,
+          uid: original,
+          event_type: "LANDING",
+          source: "opi_track",
+          raw_payload: { project_code: project.project_code, country: country.country_code, uid: original },
+          normalized_payload: { event_type: "LANDING", uid: normalized, provider: "opi_track" },
+          event_key: landingKey,
+          ip_address: ipAddress,
+          user_agent: userAgent
+        });
+        await db.pool.query(
+          `INSERT INTO responses
            (session_id, study_id, project_id, vendor_id, uid,
             final_status, is_counted, client_billing_status, vendor_acceptance_status, created_at, updated_at)
          VALUES ($1, $2, $3, $4, $5, 'IN_PROGRESS', false, 'PENDING', 'PENDING', NOW(), NOW())
          ON CONFLICT (session_id) DO NOTHING`,
-        [session.id, studyId, project.id, assignedVendorId, original]
-      );
-      console.log(`[Track] NEW session ${session.session_token} | ${projectCode}/${countryCode} uid=${original}`);
-    } else {
-      await db.updateSession(session.id, { last_seen_at: /* @__PURE__ */ new Date() });
-      console.log(`[Track] EXISTING session | ${projectCode}/${countryCode} uid=${original}`);
-    }
-    const surveyUrlTemplate = link?.url || project.survey_url || "";
-    let destUrl = surveyUrlTemplate;
-    const uidPlaceholder = link?.uid_placeholder || project.uid_placeholder || "";
-    const uidParam = link?.uid_param || project.uid_param || "uid";
-    if (uidPlaceholder && destUrl.includes(uidPlaceholder)) {
-      destUrl = destUrl.split(uidPlaceholder).join(encodeURIComponent(original));
-    } else {
-      const knownPH = ["[identifier]", "{identifier}", "[UID]", "{UID}", "[uid]", "{uid}", "{{UID}}", "{{uid}}", "[RESPONDENT_ID]", "{RESPONDENT_ID}"];
-      let replaced = false;
-      for (const ph of knownPH) {
-        if (destUrl.includes(ph)) {
-          destUrl = destUrl.split(ph).join(encodeURIComponent(original));
-          replaced = true;
-          break;
+          [session.id, studyId, project.id, assignedVendorId, original]
+        );
+        console.log(`[Track] NEW session ${session.session_token} | ${projectCode}/${countryCode} uid=${original}`);
+      } else {
+        await db.updateSession(session.id, { last_seen_at: /* @__PURE__ */ new Date() });
+        console.log(`[Track] EXISTING session | ${projectCode}/${countryCode} uid=${original}`);
+      }
+      const surveyUrlTemplate = link?.url || project.survey_url || "";
+      let destUrl = surveyUrlTemplate;
+      const uidPlaceholder = link?.uid_placeholder || project.uid_placeholder || "";
+      const uidParam = link?.uid_param || project.uid_param || "uid";
+      if (uidPlaceholder && destUrl.includes(uidPlaceholder)) {
+        destUrl = destUrl.split(uidPlaceholder).join(encodeURIComponent(original));
+      } else {
+        const knownPH = ["[identifier]", "{identifier}", "[UID]", "{UID}", "[uid]", "{uid}", "{{UID}}", "{{uid}}", "[RESPONDENT_ID]", "{RESPONDENT_ID}"];
+        let replaced = false;
+        for (const ph of knownPH) {
+          if (destUrl.includes(ph)) {
+            destUrl = destUrl.split(ph).join(encodeURIComponent(original));
+            replaced = true;
+            break;
+          }
+        }
+        if (!replaced && !destUrl.includes(encodeURIComponent(original))) {
+          destUrl = `${destUrl}${destUrl.includes("?") ? "&" : "?"}${uidParam}=${encodeURIComponent(original)}`;
         }
       }
-      if (!replaced && !destUrl.includes(encodeURIComponent(original))) {
-        destUrl = `${destUrl}${destUrl.includes("?") ? "&" : "?"}${uidParam}=${encodeURIComponent(original)}`;
+      if (!destUrl || !destUrl.startsWith("http")) {
+        return apiError(res, 500, "NO_REDIRECT_URL", "No valid client survey URL configured");
       }
+      res.setHeader("Set-Cookie", [
+        `opi_session_token=${session.session_token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=172800`,
+        `opi_project_code=${projectCode}; Path=/; SameSite=Lax; Max-Age=172800`,
+        `opi_uid=${encodeURIComponent(original)}; Path=/; SameSite=Lax; Max-Age=172800`,
+        `opi_country=${countryCode}; Path=/; SameSite=Lax; Max-Age=172800`
+      ]);
+      return res.redirect(302, destUrl);
+    } catch (trackErr) {
+      console.error("[Track Error]:", trackErr);
+      return apiError(res, 500, "TRACK_ERROR", trackErr.message || "Error processing tracking link");
     }
-    if (!destUrl || !destUrl.startsWith("http")) {
-      return apiError(res, 500, "NO_REDIRECT_URL", "No valid client survey URL configured");
-    }
-    res.setHeader("Set-Cookie", [
-      `opi_session_token=${session.session_token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=172800`,
-      `opi_project_code=${projectCode}; Path=/; SameSite=Lax; Max-Age=172800`,
-      `opi_uid=${encodeURIComponent(original)}; Path=/; SameSite=Lax; Max-Age=172800`,
-      `opi_country=${countryCode}; Path=/; SameSite=Lax; Max-Age=172800`
-    ]);
-    return res.redirect(302, destUrl);
   })
 );
 router2.get("/redirect/complete", callbackRateLimit, asyncHandler(async (req, res) => {
@@ -123201,6 +123209,9 @@ function resolveDashboardFile() {
   return candidates[0];
 }
 var dashboardFile = resolveDashboardFile();
+app.get("/login", (_req, res) => {
+  res.sendFile(resolveDashboardFile());
+});
 app.get("/dashboard", (_req, res) => {
   res.sendFile(resolveDashboardFile());
 });

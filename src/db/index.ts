@@ -532,9 +532,9 @@ export class Database {
        RETURNING *`,
       [
         session.session_token,
-        session.study_id,
-        session.vendor_id,
-        session.tracking_link_id,
+        session.study_id || null,
+        session.vendor_id || null,
+        session.tracking_link_id || null,
         session.uid,
         session.normalized_uid,
         session.external_uid ?? null,
@@ -616,9 +616,9 @@ export class Database {
        ON CONFLICT (event_key) DO NOTHING
        RETURNING *`,
       [
-        event.session_id,
-        event.study_id,
-        event.vendor_id,
+        event.session_id || null,
+        event.study_id || null,
+        event.vendor_id || null,
         event.uid,
         event.event_type,
         event.source ?? null,
