@@ -4069,12 +4069,12 @@ function cpRenderCards() {
 
 function cpUrlInfoHtml(c) {
   if (!c.survey_url) return '';
-  if (c._analyzing) return '<span style="color:var(--text-muted);">Analyzingâ€¦</span>';
+  if (c._analyzing) return '<span style="color:var(--text-muted);">Analyzing…</span>';
   if (c.uid_param) {
-    return 'âœ… UID param: <strong style="color:var(--color-success)">' + escapeHtml(c.uid_param) + '</strong>'
-      + (c.uid_placeholder ? ' Â· Placeholder: <code style="color:var(--color-warning)">' + escapeHtml(c.uid_placeholder) + '</code>' : '');
+    return '✅ UID param: <strong style="color:var(--color-success)">' + escapeHtml(c.uid_param) + '</strong>'
+      + (c.uid_placeholder ? ' · Placeholder: <code style="color:var(--color-warning)">' + escapeHtml(c.uid_placeholder) + '</code>' : '');
   }
-  return '<span style="color:var(--color-warning);">âš ï¸ No placeholder â€” UID will be appended as <code>uid=</code></span>';
+  return '<span style="color:var(--color-warning);">⚠️ No placeholder — UID will be appended as <code>uid=</code></span>';
 }
 
 var _cpUrlTimers = {};
@@ -4084,7 +4084,7 @@ function cpUrlChanged(i, url) {
   _cpCountries[i].uid_placeholder = null;
   _cpCountries[i]._analyzing = url && url.length > 10;
   var infoEl = document.getElementById('cp-url-info-' + i);
-  if (infoEl) infoEl.innerHTML = _cpCountries[i]._analyzing ? '<span style="color:var(--text-muted);">Analyzingâ€¦</span>' : '';
+  if (infoEl) infoEl.innerHTML = _cpCountries[i]._analyzing ? '<span style="color:var(--text-muted);">Analyzing…</span>' : '';
   clearTimeout(_cpUrlTimers[i]);
   if (!url || url.length < 10) return;
   _cpUrlTimers[i] = setTimeout(function() { cpAnalyzeUrl(i, url); }, 600);
@@ -4305,10 +4305,14 @@ async function submitCreateVendor() {
 
 // â”€â”€â”€ Page Router â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 async function showPage(page) {
-  const cleanPage =
+  const isVendor = (currentUser?.role || "").toUpperCase() === "VENDOR";
+  let cleanPage =
     String(page || "")
       .replace(/^#\/?/, "")
-      .replace(/^\//, "") || "dashboard";
+      .replace(/^\//, "") || (isVendor ? "responses" : "dashboard");
+  if (isVendor && cleanPage === "dashboard") {
+    cleanPage = "responses";
+  }
   currentPage = cleanPage;
 
   $$(".nav-item").forEach((n) =>
@@ -4432,7 +4436,7 @@ function showApp() {
   });
 
   const initialPage =
-    window.location.hash.replace(/^#\/?/, "").replace(/^\//, "") || "dashboard";
+    window.location.hash.replace(/^#\/?/, "").replace(/^\//, "") || (isVendor ? "responses" : "dashboard");
   showPage(initialPage);
 }
 

@@ -3158,7 +3158,7 @@ router.patch(
 
 router.get(
   '/studies',
-  authenticate, authorize(OPS_ROLES),
+  authenticate, authorize([...OPS_ROLES, ...VENDOR_ROLES]),
   asyncHandler(async (req: Request, res: Response) => {
     const client_id = req.query.client_id !== undefined ? (Array.isArray(req.query.client_id) ? String(req.query.client_id[0]) : String(req.query.client_id)) : undefined;
     const status = req.query.status !== undefined ? (Array.isArray(req.query.status) ? String(req.query.status[0]) : String(req.query.status)) : undefined;
@@ -3397,7 +3397,7 @@ router.get(
 
 router.get(
   '/sessions/:id',
-  authenticate, authorize(OPS_ROLES),
+  authenticate, authorize([...OPS_ROLES, ...VENDOR_ROLES]),
   asyncHandler(async (req: Request, res: Response) => {
     const byToken = await db.getSessionByToken(req.params.id);
     const session = byToken || await db.getSessionById(req.params.id);
@@ -3436,11 +3436,7 @@ router.get(
     const sort_by = getQueryParam(req, 'sort_by');
     const sort_order = getQueryParam(req, 'sort_order');
 
-    // Auto-filter by vendor_id for VENDOR role users
-    if (req.user?.role === 'VENDOR' && req.user?.vendor_id) {
-      vendor_id = req.user.vendor_id;
-    }
-
+    // Allow VENDOR to see the exact same response table as ADMIN unless filtered by query param
     const { rows, total } = await db.getResponses({
       study_id: study_id ? String(study_id) : undefined,
       vendor_id: vendor_id ? String(vendor_id) : undefined,
@@ -3472,9 +3468,6 @@ router.get(
     const export_type = getQueryParam(req, 'export_type') || 'filtered';
 
     let vendor_id = getQueryParam(req, 'vendor_id');
-    if (req.user?.role === 'VENDOR' && req.user?.vendor_id) {
-      vendor_id = req.user.vendor_id;
-    }
 
     const filterObj = export_type === 'all' ? { limit: 10000 } : {
       search: search ? String(search) : undefined,
