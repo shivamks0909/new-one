@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Opinion Insights â€” Premium Enterprise SPA Dashboard
  * Clean light theme with teal accent, skeleton loading, health cards, progress bars
  */
@@ -1266,6 +1266,7 @@ async function renderResponses(page = 1) {
         <colgroup>
           <col class="col-uid" />
           <col class="col-project" />
+          <col class="col-verification" style="width: 120px;" />
           <col class="col-ip" />
           <col class="col-device" />
           <col class="col-ua" />
@@ -1277,15 +1278,15 @@ async function renderResponses(page = 1) {
             <th class="sortable" onclick="toggleRespSort('uid')">UID${
               responsesState.sort_by === "uid"
                 ? responsesState.sort_order === "ASC"
-                  ? " â†‘"
-                  : " â†“"
+                  ? " ↑"
+                  : " ↓"
                 : ""
             }</th>
             <th class="sortable" onclick="toggleRespSort('project')">Project${
               responsesState.sort_by === "project"
                 ? responsesState.sort_order === "ASC"
-                  ? " â†‘"
-                  : " â†“"
+                  ? " ↑"
+                  : " ↓"
                 : ""
             }</th>
             <th>Verification</th>
@@ -1293,23 +1294,23 @@ async function renderResponses(page = 1) {
             <th class="sortable" onclick="toggleRespSort('device')">Device${
               responsesState.sort_by === "device"
                 ? responsesState.sort_order === "ASC"
-                  ? " â†‘"
-                  : " â†“"
+                  ? " ↑"
+                  : " ↓"
                 : ""
             }</th>
             <th>User Agent</th>
-            <th class="sortable" onclick="toggleRespSort('status')">Status${
+            <th class="sortable" onclick="toggleRespSort('status')">Outcome${
               responsesState.sort_by === "status"
                 ? responsesState.sort_order === "ASC"
-                  ? " â†‘"
-                  : " â†“"
+                  ? " ↑"
+                  : " ↓"
                 : ""
             }</th>
             <th class="sortable" onclick="toggleRespSort('timestamp')">Timestamp${
               responsesState.sort_by === "timestamp"
                 ? responsesState.sort_order === "ASC"
-                  ? " â†‘"
-                  : " â†“"
+                  ? " ↑"
+                  : " ↓"
                 : ""
             }</th>
           </tr>
@@ -1455,14 +1456,20 @@ async function fetchAndRenderResponsesData() {
             r.external_offer_id ||
             r.study_id ||
             "";
-          const ip = r.ip_address || "";
-          const ua = r.user_agent || "";
+          const ip = r.ip_address || r.fake_ip || "";
+          const ua = r.user_agent || r.fake_ua || "";
           const devIcon =
-            r.device === "Mobile" ? "ðŸ“±" : r.device === "Tablet" ? "ðŸ“²" : "ðŸ’»";
+            r.device === "Mobile" ? "📱" : r.device === "Tablet" ? "💻" : "💻";
           const deviceText = r.device || "Desktop";
-          const statusVal = r.status || "COMPLETE";
+          const statusVal = r.status || r.final_status || "COMPLETE";
           const ts = formatDateTime(r.created_at || r.updated_at);
           const sessionId = r.session_id || r.id;
+          const verificationStatus = (r.verification_status || r._source_type || 'VERIFIED').toUpperCase();
+          const isVerified = verificationStatus === 'VERIFIED';
+          
+          const verificationHtml = isVerified 
+            ? `<span class="badge" style="background:var(--success-bg);color:var(--success-text);font-size:0.75rem;">✓ VERIFIED</span>`
+            : `<span class="badge" style="background:var(--danger-bg);color:var(--danger-text);font-size:0.75rem;">⚠ UNVERIFIED</span>`;
 
           return `
           <tr onclick="openResponseDetailModal('${escapeHtml(
@@ -1483,6 +1490,9 @@ async function fetchAndRenderResponsesData() {
                 )}">${escapeHtml(project)}</span>
                 ${compactCopy(project, "Copy Project ID")}
               </div>
+            </td>
+            <td class="cell-verification">
+              ${verificationHtml}
             </td>
             <td class="cell-ip">
               <div style="display:inline-flex;align-items:center;gap:4px;">
@@ -1527,13 +1537,19 @@ async function fetchAndRenderResponsesData() {
             r.external_offer_id ||
             r.study_id ||
             "";
-          const ip = r.ip_address || "";
-          const ua = r.user_agent || "";
+          const ip = r.ip_address || r.fake_ip || "";
+          const ua = r.user_agent || r.fake_ua || "";
           const devIcon =
-            r.device === "Mobile" ? "ðŸ“±" : r.device === "Tablet" ? "ðŸ“²" : "ðŸ’»";
+            r.device === "Mobile" ? "📱" : r.device === "Tablet" ? "💻" : "💻";
           const deviceText = r.device || "Desktop";
-          const statusVal = r.status || "COMPLETE";
+          const statusVal = r.status || r.final_status || "COMPLETE";
           const ts = formatDateTime(r.created_at || r.updated_at);
+          const verificationStatus = (r.verification_status || r._source_type || 'VERIFIED').toUpperCase();
+          const isVerified = verificationStatus === 'VERIFIED';
+          
+          const verificationHtml = isVerified 
+            ? `<span class="badge" style="background:var(--success-bg);color:var(--success-text);font-size:0.75rem;">✓ VERIFIED</span>`
+            : `<span class="badge" style="background:var(--danger-bg);color:var(--danger-text);font-size:0.75rem;">⚠ UNVERIFIED</span>`;
 
           return `
           <div class="responses-mobile-card" onclick="this.classList.toggle('expanded')">
@@ -1541,6 +1557,7 @@ async function fetchAndRenderResponsesData() {
               <span class="badge-device">${devIcon} ${escapeHtml(
             deviceText
           )}</span>
+              ${verificationHtml}
               ${renderBadge(statusVal)}
             </div>
             <div class="mc-row">
@@ -1555,7 +1572,7 @@ async function fetchAndRenderResponsesData() {
               <span class="mc-label">Timestamp</span>
               <span class="mc-value">${escapeHtml(ts)}</span>
             </div>
-            <div class="mc-toggle" onclick="event.stopPropagation();">Show details â†“</div>
+            <div class="mc-toggle" onclick="event.stopPropagation();">Show details ↓</div>
             <div class="mc-expand">
               <div class="mc-row">
                 <span class="mc-label">IP Address</span>
@@ -2768,7 +2785,7 @@ async function renderSettings() {
             <div class="form-group" style="margin-bottom:14px;">
               <label>Email</label>
               <input type="email" value="${
-                currentUser?.email || "admin@cawi.io"
+                currentUser?.email || ""
               }" disabled>
             </div>
             <div class="form-group" style="margin-bottom:14px;">
@@ -4177,7 +4194,7 @@ function showApp() {
   $("#app-shell").style.display = "flex";
   const name =
     currentUser?.full_name || currentUser?.email?.split("@")[0] || "Admin";
-  const email = currentUser?.email || "admin@cawi.io";
+  const email = currentUser?.email || "admin";
   const role = currentUser?.role || "Admin";
   const initial = (name.charAt(0) || "A").toUpperCase();
 

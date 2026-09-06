@@ -548,9 +548,7 @@ router.post(
     const userAgent = (req.headers['user-agent'] as string) || 'unknown';
 
     const rawIdentifier = (v.data.email || '').trim();
-    const emailToLookup = rawIdentifier.toLowerCase() === 'admin' 
-      ? 'admin@cawi.io' 
-      : (rawIdentifier.toLowerCase() === 'vendor' ? 'vendor@test.com' : rawIdentifier);
+    const emailToLookup = rawIdentifier;
 
     const user = await db.getUserByEmail(emailToLookup);
     if (!user) {
@@ -605,10 +603,8 @@ router.post(
 
     const crypto = require('crypto');
     const passwordHash = crypto.createHmac('sha256', config.authSecret).update(v.data.password).digest('hex');
-    const isAdminTestPass = (user.email === 'admin@cawi.io' && (v.data.password === 'admin' || v.data.password === 'Admin@1234' || v.data.password === 'admin123'));
-    const isVendorTestPass = (user.email === 'vendor@test.com' && (v.data.password === 'vendor123' || v.data.password === 'Vendor@1234' || v.data.password === 'vendor'));
 
-    if (user.password_hash && user.password_hash !== passwordHash && !isAdminTestPass && !isVendorTestPass) {
+    if (user.password_hash && user.password_hash !== passwordHash) {
       const { failedAttempts, lockedUntil } = await db.recordFailedLogin(user.id, ip, userAgent);
       await db.recordLoginAudit({
         userId: user.id,

@@ -141,7 +141,7 @@ async function runVendorAcceptanceTest() {
     assert(analyticsJson.data.unverified_activity > 0, `Unverified activity logged: ${analyticsJson.data.unverified_activity}`);
 
     // Admin check Responses API includes UNVERIFIED
-    const adminRespRes = await fetch(`${baseUrl}/api/responses/review?project_id=${project.id}`, {
+    const adminRespRes = await fetch(`${baseUrl}/api/responses?project_id=${project.id}`, {
       headers: { Authorization: `Bearer ${adminToken}` }
     });
     const adminRespJson = await adminRespRes.json();

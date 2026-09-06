@@ -74,7 +74,11 @@ function resolveDashboardFile(): string {
 
 const dashboardFile = resolveDashboardFile();
 
-// Serve dashboard on /dashboard and fallback for direct browser loads
+// Serve dashboard on /login, /dashboard and fallback for direct browser loads
+app.get('/login', (_req, res) => {
+  res.sendFile(resolveDashboardFile());
+});
+
 app.get('/dashboard', (_req, res) => {
   res.sendFile(resolveDashboardFile());
 });

@@ -975,10 +975,15 @@ export class Database {
     if (filters.status) { params.push(filters.status); where += ` AND r.final_status = $${params.length}`; }
 
     const { rows } = await this.pool.query(
-      `SELECT r.*, s.title as study_title, s.study_code, v.name as vendor_name
-       FROM responses r
+      `WITH unified_responses AS (
+         SELECT id, session_id, study_id, vendor_id, uid, final_status, created_at, updated_at, terminal_at, first_terminal_event, NULL as rejection_reason, NULL as raw_payload, NULL as fake_ip, NULL as fake_ua, 'VERIFIED' as _source_type FROM responses
+         UNION ALL
+         SELECT id, NULL as session_id, study_id, vendor_id, uid, COALESCE(UPPER(raw_payload->>'outcome'), UPPER(raw_payload->>'status'), 'TERMINATE') as final_status, created_at, created_at as updated_at, created_at as terminal_at, 'fake_click' as first_terminal_event, rejection_reason, raw_payload, ip_address as fake_ip, user_agent as fake_ua, 'UNVERIFIED' as _source_type FROM fake_click_events
+       )
+       SELECT r.*, s.title as study_title, s.study_code, v.name as vendor_name, r._source_type as verification_status
+       FROM unified_responses r
        JOIN studies s ON s.id = r.study_id
-       JOIN vendors v ON v.id = r.vendor_id
+       LEFT JOIN vendors v ON v.id = r.vendor_id
        ${where}
        ORDER BY r.updated_at DESC
        LIMIT 5000`,
@@ -1162,7 +1167,7 @@ export class Database {
       WITH unified_responses AS (
         SELECT id, session_id, study_id, vendor_id, uid, final_status, created_at, updated_at, terminal_at, first_terminal_event, NULL as rejection_reason, NULL as raw_payload, NULL as fake_ip, NULL as fake_ua, 'VERIFIED' as _source_type FROM responses
         UNION ALL
-        SELECT id, NULL as session_id, study_id, vendor_id, uid, 'TERMINATE' as final_status, created_at, created_at as updated_at, created_at as terminal_at, 'fake_click' as first_terminal_event, rejection_reason, raw_payload, ip_address as fake_ip, user_agent as fake_ua, 'UNVERIFIED' as _source_type FROM fake_click_events
+        SELECT id, NULL as session_id, study_id, vendor_id, uid, COALESCE(UPPER(raw_payload->>'outcome'), UPPER(raw_payload->>'status'), 'TERMINATE') as final_status, created_at, created_at as updated_at, created_at as terminal_at, 'fake_click' as first_terminal_event, rejection_reason, raw_payload, ip_address as fake_ip, user_agent as fake_ua, 'UNVERIFIED' as _source_type FROM fake_click_events
       )
       SELECT 
         r.id,
@@ -1219,7 +1224,7 @@ export class Database {
       WITH unified_responses AS (
         SELECT id, session_id, study_id, vendor_id, uid, final_status, created_at, updated_at, terminal_at, first_terminal_event, NULL as rejection_reason, NULL as raw_payload, NULL as fake_ip, NULL as fake_ua, 'VERIFIED' as _source_type FROM responses
         UNION ALL
-        SELECT id, NULL as session_id, study_id, vendor_id, uid, 'TERMINATE' as final_status, created_at, created_at as updated_at, created_at as terminal_at, 'fake_click' as first_terminal_event, rejection_reason, raw_payload, ip_address as fake_ip, user_agent as fake_ua, 'UNVERIFIED' as _source_type FROM fake_click_events
+        SELECT id, NULL as session_id, study_id, vendor_id, uid, COALESCE(UPPER(raw_payload->>'outcome'), UPPER(raw_payload->>'status'), 'TERMINATE') as final_status, created_at, created_at as updated_at, created_at as terminal_at, 'fake_click' as first_terminal_event, rejection_reason, raw_payload, ip_address as fake_ip, user_agent as fake_ua, 'UNVERIFIED' as _source_type FROM fake_click_events
       )
       SELECT COUNT(*) 
       FROM unified_responses r
