@@ -117,22 +117,14 @@ function hideModal() {
 
 function showLoading(container = "#content-area") {
   $(container).innerHTML = `
-    <div class="stats-grid">
-        ${renderStatCard("Total Callback Activity", formatNumber(analyticsData?.data?.total_callback_activity || totalClicks), "🌐", "icon-info")}
-        ${renderStatCard("Verified Activity", formatNumber(analyticsData?.data?.verified_activity || starts), "🛡️", "icon-success")}
-        ${renderStatCard("Unverified (Fake)", formatNumber(analyticsData?.data?.unverified_activity || 0), "⚠️", "icon-warning")}
-        ${renderStatCard("Active Studies", activeStudies, "🔬", "icon-accent")}
-        ${renderStatCard("Starts", formatNumber(starts), "🚀", "icon-purple")}
-        ${renderStatCard(
-          "Completes",
-          formatNumber(completes),
-          "✅",
-          "icon-success"
-        )}
-      </div><div class="skeleton-box" style="width:40%;height:28px;"></div></div>'
+    <div class="stats-grid" style="margin-bottom:24px;">
+      ${Array(4)
+        .fill(0)
+        .map(
+          () =>
+            '<div class="section-card"><div class="section-card-body"><div class="skeleton-box" style="width:30px;height:30px;border-radius:8px;margin-bottom:12px;"></div><div class="skeleton-box" style="width:60%;height:14px;margin-bottom:8px;"></div><div class="skeleton-box" style="width:40%;height:28px;"></div></div></div>'
         )
         .join("")}
-    </div>
     <div class="section-card" style="margin-bottom:24px;">
       <div class="section-card-body">
         <div class="skeleton-box" style="width:120px;height:18px;margin-bottom:16px;"></div>
