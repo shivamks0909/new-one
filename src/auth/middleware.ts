@@ -37,7 +37,7 @@ function rateLimit(key: string, maxRequests: number, windowMs: number): boolean 
 export function rateLimitMiddleware(maxRequests: number, windowMs?: number) {
   const ms = windowMs ?? config.rateLimitWindowMs;
   return (req: Request, res: Response, next: NextFunction) => {
-    const ip = req.ip || req.socket?.remoteAddress || 'unknown';
+    const ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.ip || req.socket?.remoteAddress || 'unknown';
     const key = `rl:${req.path}:${ip}`;
     if (!rateLimit(key, maxRequests, ms)) {
       return res.status(429).json({

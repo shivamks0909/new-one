@@ -4655,7 +4655,7 @@ async function showPage(page) {
     String(page || "")
       .replace(/^#\/?/, "")
       .replace(/^\//, "") || (isVendor ? "responses" : "dashboard");
-  if (isVendor && cleanPage === "dashboard") {
+  if (isVendor && cleanPage !== "responses") {
     cleanPage = "responses";
   }
   currentPage = cleanPage;

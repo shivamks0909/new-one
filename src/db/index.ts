@@ -916,9 +916,46 @@ export class Database {
 
   async unlockUser(userId: string): Promise<void> {
     await this.pool.query(
-      `UPDATE users SET failed_login_attempts = 0, locked_until = NULL, last_failed_login_at = NULL WHERE id = $1`,
+      `UPDATE users SET failed_login_attempts = 0, locked_until = NULL, last_failed_login_at = NULL, temp_unlock_until = NULL WHERE id = $1`,
       [userId]
     );
+  }
+
+  async setRecoverySecret(userId: string, secretHash: string): Promise<void> {
+    await this.pool.query(
+      `UPDATE users SET recovery_secret_hash = $2, recovery_attempts = 0, recovery_locked_until = NULL, updated_at = NOW() WHERE id = $1`,
+      [userId, secretHash]
+    );
+  }
+
+  async recordFailedRecovery(userId: string): Promise<{ attempts: number; lockedUntil: Date | null }> {
+    const { rows } = await this.pool.query(
+      `UPDATE users 
+       SET recovery_attempts = recovery_attempts + 1,
+           recovery_locked_until = CASE WHEN recovery_attempts + 1 >= 5 THEN NOW() + INTERVAL '15 minutes' ELSE recovery_locked_until END
+       WHERE id = $1
+       RETURNING recovery_attempts, recovery_locked_until`,
+      [userId]
+    );
+    return {
+      attempts: rows[0]?.recovery_attempts || 0,
+      lockedUntil: rows[0]?.recovery_locked_until ? new Date(rows[0].recovery_locked_until) : null,
+    };
+  }
+
+  async setTempUnlock(userId: string, durationMinutes: number = 10): Promise<Date> {
+    const { rows } = await this.pool.query(
+      `UPDATE users 
+       SET temp_unlock_until = NOW() + ($2 || ' minutes')::INTERVAL,
+           recovery_attempts = 0,
+           recovery_locked_until = NULL,
+           failed_login_attempts = 0,
+           locked_until = NULL
+       WHERE id = $1
+       RETURNING temp_unlock_until`,
+      [userId, durationMinutes]
+    );
+    return new Date(rows[0].temp_unlock_until);
   }
 
   async unassignVendorFromStudy(studyId: string, vendorId: string): Promise<any | null> {
@@ -1769,7 +1806,7 @@ export class Database {
 
   async updateLink(id: string, fields: Partial<any>): Promise<any | null> {
     const allowed = ['link_name', 'url', 'provider_id', 'uid_mode', 'status',
-                     'uid_param', 'uid_placeholder', 'vendor_id', 'target_completes'];
+      'uid_param', 'uid_placeholder', 'vendor_id', 'target_completes'];
     const sets: string[] = []; const params: any[] = [];
     for (const key of allowed) {
       if (fields[key] !== undefined) { params.push(fields[key]); sets.push(`${key} = $${params.length}`); }

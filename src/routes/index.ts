@@ -582,8 +582,9 @@ router.post(
       );
     }
 
-    // Check if account is locked
-    if (user.locked_until && new Date(user.locked_until) > new Date()) {
+    // Check if account is locked (unless temporarily unlocked via recovery secret)
+    const isTempUnlocked = user.temp_unlock_until && new Date(user.temp_unlock_until) > new Date();
+    if (!isTempUnlocked && user.locked_until && new Date(user.locked_until) > new Date()) {
       const minutes = Math.ceil((new Date(user.locked_until).getTime() - Date.now()) / 60000);
       await db.recordLoginAudit({
         userId: user.id,
@@ -601,10 +602,25 @@ router.post(
       );
     }
 
-    const crypto = require('crypto');
-    const passwordHash = crypto.createHmac('sha256', config.authSecret).update(v.data.password).digest('hex');
+    const bcrypt = require('bcryptjs');
+    let isPasswordValid = false;
 
-    if (user.password_hash && user.password_hash !== passwordHash) {
+    if (user.password_hash) {
+      if (user.password_hash.startsWith('$2a$') || user.password_hash.startsWith('$2b$')) {
+        isPasswordValid = await bcrypt.compare(v.data.password, user.password_hash);
+      } else {
+        const crypto = require('crypto');
+        const legacyHash = crypto.createHmac('sha256', config.authSecret).update(v.data.password).digest('hex');
+        if (user.password_hash === legacyHash) {
+          isPasswordValid = true;
+          // Auto-upgrade legacy hash to Bcrypt
+          const newBcryptHash = await bcrypt.hash(v.data.password, 10);
+          await db.updateUserPassword(user.id, newBcryptHash);
+        }
+      }
+    }
+
+    if (!isPasswordValid) {
       const { failedAttempts, lockedUntil } = await db.recordFailedLogin(user.id, ip, userAgent);
       await db.recordLoginAudit({
         userId: user.id,
@@ -700,13 +716,23 @@ router.post(
     const user = await db.getUserById(req.user!.id);
     if (!user) return apiError(res, 404, 'USER_NOT_FOUND', 'User not found');
 
-    const crypto = require('crypto');
-    const currentHash = crypto.createHmac('sha256', config.authSecret).update(currentPassword).digest('hex');
-    if (user.password_hash !== currentHash) {
+    const bcrypt = require('bcryptjs');
+    let isCurrentValid = false;
+    if (user.password_hash) {
+      if (user.password_hash.startsWith('$2a$') || user.password_hash.startsWith('$2b$')) {
+        isCurrentValid = await bcrypt.compare(currentPassword, user.password_hash);
+      } else {
+        const crypto = require('crypto');
+        const legacyHash = crypto.createHmac('sha256', config.authSecret).update(currentPassword).digest('hex');
+        isCurrentValid = (user.password_hash === legacyHash);
+      }
+    }
+
+    if (!isCurrentValid) {
       return apiError(res, 401, 'INVALID_CURRENT_PASSWORD', 'Current password is incorrect');
     }
 
-    const newHash = crypto.createHmac('sha256', config.authSecret).update(newPassword).digest('hex');
+    const newHash = await bcrypt.hash(newPassword, 10);
     await db.updateUserPassword(user.id, newHash);
 
     // Audit
@@ -724,6 +750,165 @@ router.post(
     res.json({ success: true, data: { message: 'Password changed successfully. Please log in again.' } });
   }),
 );
+
+// ── Admin Recovery Secret Setup & Recovery ──────────────────────────────────────
+
+router.post(
+  '/auth/admin/recovery-secret/setup',
+  authenticate,
+  authorize(['SUPER_ADMIN', 'ADMIN']),
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { recoverySecret } = req.body || {};
+    if (!recoverySecret || typeof recoverySecret !== 'string' || recoverySecret.length < 8) {
+      return validationError(res, ['recoverySecret must be at least 8 characters']);
+    }
+
+    const crypto = require('crypto');
+    const secretHash = crypto.createHmac('sha256', config.authSecret).update(recoverySecret).digest('hex');
+
+    await db.setRecoverySecret(req.user!.id, secretHash);
+
+    const ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.socket?.remoteAddress || 'unknown';
+    await db.createAuditLog({
+      user: req.user?.email || 'admin',
+      action: 'RECOVERY_SECRET_UPDATED',
+      entity: 'user',
+      entity_id: req.user!.id,
+      ip,
+    });
+
+    res.json({ success: true, message: 'Recovery secret configured successfully.' });
+  }),
+);
+
+router.post(
+  '/auth/admin/recovery/verify',
+  authRateLimit,
+  asyncHandler(async (req: Request, res: Response) => {
+    const { email, recoverySecret } = req.body || {};
+    if (!email || !recoverySecret) {
+      return validationError(res, ['email and recoverySecret are required']);
+    }
+
+    const user = await db.getUserByEmail(String(email).trim().toLowerCase());
+    if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
+      return apiError(res, 404, 'ADMIN_NOT_FOUND', 'Admin user not found');
+    }
+
+    if (!user.recovery_secret_hash) {
+      return apiError(res, 400, 'RECOVERY_NOT_CONFIGURED', 'Admin recovery secret has not been configured');
+    }
+
+    // Auto-expire recovery lockout if 15 minutes passed
+    if (user.recovery_locked_until) {
+      if (new Date(user.recovery_locked_until) > new Date()) {
+        const waitMinutes = Math.ceil((new Date(user.recovery_locked_until).getTime() - Date.now()) / 60000);
+        return apiError(res, 429, 'RECOVERY_LOCKED', `Too many failed recovery attempts. Locked for ${waitMinutes} minutes.`);
+      } else {
+        // Expired lockout: reset recovery_attempts
+        await db.pool.query('UPDATE users SET recovery_attempts = 0, recovery_locked_until = NULL WHERE id = $1', [user.id]);
+      }
+    }
+
+    const crypto = require('crypto');
+    const inputHash = crypto.createHmac('sha256', config.authSecret).update(String(recoverySecret)).digest('hex');
+
+    if (user.recovery_secret_hash !== inputHash) {
+      const { attempts, lockedUntil } = await db.recordFailedRecovery(user.id);
+      if (lockedUntil) {
+        return apiError(res, 429, 'RECOVERY_LOCKED', '5 failed recovery attempts. Account recovery locked for 15 minutes.');
+      }
+      return apiError(res, 401, 'INVALID_RECOVERY_SECRET', `Invalid recovery secret. ${5 - attempts} attempts remaining.`);
+    }
+
+    const tempUnlockUntil = await db.setTempUnlock(user.id, 10);
+
+    const ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.socket?.remoteAddress || 'unknown';
+    await db.createAuditLog({
+      user: user.email,
+      action: 'ADMIN_RECOVERY_SUCCESS',
+      entity: 'user',
+      entity_id: user.id,
+      ip,
+    });
+
+    res.json({
+      success: true,
+      message: 'Recovery secret verified. Account temporarily unlocked for 10 minutes.',
+      data: {
+        email: user.email,
+        temp_unlock_until: tempUnlockUntil,
+      },
+    });
+  }),
+);
+
+router.post(
+  '/auth/admin/recovery/reset-password',
+  authRateLimit,
+  asyncHandler(async (req: Request, res: Response) => {
+    const { email, recoverySecret, newPassword } = req.body || {};
+    if (!email || !recoverySecret || !newPassword) {
+      return validationError(res, ['email, recoverySecret, and newPassword are required']);
+    }
+    if (String(newPassword).length < 8) {
+      return validationError(res, ['newPassword must be at least 8 characters']);
+    }
+
+    const user = await db.getUserByEmail(String(email).trim().toLowerCase());
+    if (!user || !['ADMIN', 'SUPER_ADMIN'].includes(user.role)) {
+      return apiError(res, 404, 'ADMIN_NOT_FOUND', 'Admin user not found');
+    }
+
+    if (!user.recovery_secret_hash) {
+      return apiError(res, 400, 'RECOVERY_NOT_CONFIGURED', 'Admin recovery secret has not been configured');
+    }
+
+    if (user.recovery_locked_until && new Date(user.recovery_locked_until) > new Date()) {
+      return apiError(res, 429, 'RECOVERY_LOCKED', 'Account recovery is currently locked due to multiple failed attempts');
+    }
+
+    if (!user.temp_unlock_until || new Date(user.temp_unlock_until) < new Date()) {
+      return apiError(res, 403, 'RECOVERY_EXPIRED', 'Recovery window has expired or is invalid. Please verify recovery secret again.');
+    }
+
+    const crypto = require('crypto');
+    const inputHash = crypto.createHmac('sha256', config.authSecret).update(String(recoverySecret)).digest('hex');
+
+    if (user.recovery_secret_hash !== inputHash) {
+      await db.recordFailedRecovery(user.id);
+      return apiError(res, 401, 'INVALID_RECOVERY_SECRET', 'Invalid recovery secret');
+    }
+
+    const bcrypt = require('bcryptjs');
+    const newPasswordHash = await bcrypt.hash(String(newPassword), 10);
+    await db.updateUserPassword(user.id, newPasswordHash);
+    await db.unlockUser(user.id);
+
+    // Invalidate temporary unlock window & reset recovery state immediately after password reset
+    await db.pool.query(
+      `UPDATE users 
+       SET temp_unlock_until = NULL, recovery_attempts = 0, recovery_locked_until = NULL, failed_login_attempts = 0, locked_until = NULL 
+       WHERE id = $1`,
+      [user.id]
+    );
+
+    const ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.socket?.remoteAddress || 'unknown';
+    await db.createAuditLog({
+      user: user.email,
+      action: 'ADMIN_RECOVERY_PASSWORD_RESET',
+      entity: 'user',
+      entity_id: user.id,
+      ip,
+    });
+
+    res.json({
+      success: true,
+      message: 'Password reset successfully via verified recovery secret.',
+    });
+  }),
+);
+
 
 // ———————————————————————————————————————————————————————— Get current user —
 
@@ -960,8 +1145,9 @@ router.post(
       return apiError(res, 409, 'USER_EXISTS', 'A user with this email or login ID already exists');
     }
 
+    const bcrypt = require('bcryptjs');
     const crypto = require('crypto');
-    const passwordHash = crypto.createHmac('sha256', config.authSecret).update(password).digest('hex');
+    const passwordHash = await bcrypt.hash(password, 10);
 
     const user = await db.createUser({
       auth_user_id: crypto.randomUUID(),
@@ -1187,8 +1373,8 @@ router.post(
     const user = await db.getUserById(id);
     if (!user) return apiError(res, 404, 'USER_NOT_FOUND', 'User not found');
 
-    const crypto = require('crypto');
-    const passwordHash = crypto.createHmac('sha256', config.authSecret).update(password).digest('hex');
+    const bcrypt = require('bcryptjs');
+    const passwordHash = await bcrypt.hash(password, 10);
     await db.updateUserPassword(id, passwordHash);
 
     if (force_password_change !== undefined || forcePasswordChange !== undefined) {
@@ -1438,11 +1624,9 @@ router.post(
 
     // Generate invoice number
     const date = new Date();
-    const invoiceNumber = `INV-${date.getFullYear()}${
-      date.getMonth() + 1 < 10 ? '0' : ''
-    }${date.getMonth() + 1}${
-      date.getDate() < 10 ? '0' : ''
-    }${date.getDate()}-${String(approvedCompletes).padStart(4, '0')}`;
+    const invoiceNumber = `INV-${date.getFullYear()}${date.getMonth() + 1 < 10 ? '0' : ''
+      }${date.getMonth() + 1}${date.getDate() < 10 ? '0' : ''
+      }${date.getDate()}-${String(approvedCompletes).padStart(4, '0')}`;
 
     // Create invoice
     const { rows: invoiceRows } = await db.pool.query(`
@@ -1461,7 +1645,7 @@ router.post(
                                        status, completion_date, rate, line_amount)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
       `, [invoiceRows[0].id, r.id, r.uid, r.country || null,
-        r.survey_link || null, r.final_status, r.terminal_at || null, rate, rate]);
+      r.survey_link || null, r.final_status, r.terminal_at || null, rate, rate]);
     }
 
     res.json({ success: true, data: invoiceRows, invoice: invoiceRows[0], lineItems: rows, approvedCompletes, totalAmount });
@@ -2466,184 +2650,184 @@ router.get(
       const countryCode = (getQueryParam(req, 'country') || '').trim().toUpperCase();
       const rawUid = (getQueryParam(req, 'uid') || '').trim();
 
-    if (!projectCode) return apiError(res, 400, 'MISSING_CODE', 'Project code (code=) is required');
-    if (!countryCode) return apiError(res, 400, 'MISSING_COUNTRY', 'Country code (country=) is required');
-    if (!rawUid) return apiError(res, 400, 'MISSING_UID', 'Respondent UID (uid=) is required');
+      if (!projectCode) return apiError(res, 400, 'MISSING_CODE', 'Project code (code=) is required');
+      if (!countryCode) return apiError(res, 400, 'MISSING_COUNTRY', 'Country code (country=) is required');
+      if (!rawUid) return apiError(res, 400, 'MISSING_UID', 'Respondent UID (uid=) is required');
 
-    // 1. Validate project
-    const { rows: projRows } = await db.pool.query(
-      'SELECT * FROM projects WHERE UPPER(project_code) = $1', [projectCode]
-    );
-    const project = projRows[0];
-    if (!project) return apiError(res, 404, 'INVALID_PROJECT', `Project '${projectCode}' not found`);
+      // 1. Validate project
+      const { rows: projRows } = await db.pool.query(
+        'SELECT * FROM projects WHERE UPPER(project_code) = $1', [projectCode]
+      );
+      const project = projRows[0];
+      if (!project) return apiError(res, 404, 'INVALID_PROJECT', `Project '${projectCode}' not found`);
 
-    // 1.1 Check if project is paused — block new respondent launch safely
-    if (project.status === 'PAUSED') {
-      res.setHeader('X-Project-Status', 'PAUSED');
-      res.setHeader('X-Survey-Paused', 'true');
+      // 1.1 Check if project is paused — block new respondent launch safely
+      if (project.status === 'PAUSED') {
+        res.setHeader('X-Project-Status', 'PAUSED');
+        res.setHeader('X-Survey-Paused', 'true');
 
-      const wantsJson = (req.headers.accept && req.headers.accept.includes('application/json')) ||
-                        req.query.format === 'json';
-      if (wantsJson) {
-        return res.status(423).json({
-          success: false,
-          status: 'PAUSED',
-          code: 'PROJECT_PAUSED',
-          message: `Project '${projectCode}' is currently paused. New survey sessions cannot be created.`,
-        });
+        const wantsJson = (req.headers.accept && req.headers.accept.includes('application/json')) ||
+          req.query.format === 'json';
+        if (wantsJson) {
+          return res.status(423).json({
+            success: false,
+            status: 'PAUSED',
+            code: 'PROJECT_PAUSED',
+            message: `Project '${projectCode}' is currently paused. New survey sessions cannot be created.`,
+          });
+        }
+
+        return res.status(200).send(renderProjectPausedPage(project, countryCode));
       }
 
-      return res.status(200).send(renderProjectPausedPage(project, countryCode));
-    }
-
-    // 2. Validate country (must belong to project and be active)
-    const { rows: countryRows } = await db.pool.query(
-      `SELECT * FROM project_countries
+      // 2. Validate country (must belong to project and be active)
+      const { rows: countryRows } = await db.pool.query(
+        `SELECT * FROM project_countries
        WHERE project_id = $1 AND UPPER(country_code) = $2
        AND (status IS NULL OR status = 'ACTIVE')`,
-      [project.id, countryCode]
-    );
-    const country = countryRows[0];
-    if (!country) return apiError(res, 400, 'INVALID_COUNTRY', `Country '${countryCode}' is not active in project ${project.project_code}`);
+        [project.id, countryCode]
+      );
+      const country = countryRows[0];
+      if (!country) return apiError(res, 400, 'INVALID_COUNTRY', `Country '${countryCode}' is not active in project ${project.project_code}`);
 
-    // 3. Get survey link for this country
-    const { rows: linkRows } = await db.pool.query(
-      `SELECT * FROM project_links WHERE country_id = $1 AND (status IS NULL OR status = 'ACTIVE')
+      // 3. Get survey link for this country
+      const { rows: linkRows } = await db.pool.query(
+        `SELECT * FROM project_links WHERE country_id = $1 AND (status IS NULL OR status = 'ACTIVE')
        ORDER BY created_at ASC LIMIT 1`,
-      [country.id]
-    );
-    const link = linkRows[0];
-    if (!link && !project.survey_url) {
-      return apiError(res, 400, 'NO_SURVEY_LINK', `No active survey link for country ${countryCode} in project ${projectCode}`);
-    }
+        [country.id]
+      );
+      const link = linkRows[0];
+      if (!link && !project.survey_url) {
+        return apiError(res, 400, 'NO_SURVEY_LINK', `No active survey link for country ${countryCode} in project ${projectCode}`);
+      }
 
-    // 4. Validate & normalize UID
-    const uidValidation = normalizeUid(rawUid);
-    if (uidValidation.error) return apiError(res, 400, 'INVALID_UID', uidValidation.error);
-    const { normalized, original } = uidValidation;
+      // 4. Validate & normalize UID
+      const uidValidation = normalizeUid(rawUid);
+      if (uidValidation.error) return apiError(res, 400, 'INVALID_UID', uidValidation.error);
+      const { normalized, original } = uidValidation;
 
-    // 5. Request metadata
-    const xff = req.headers['x-forwarded-for'];
-    const ipAddress = ((Array.isArray(xff) ? String(xff[0]) : String(xff || ''))?.split(',')[0] || req.ip || '127.0.0.1').trim();
-    const userAgent = req.get('User-Agent') || null;
-    const referrer = req.get('Referer') || req.get('Referrer') || null;
-    const landingUrl = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
+      // 5. Request metadata
+      const xff = req.headers['x-forwarded-for'];
+      const ipAddress = ((Array.isArray(xff) ? String(xff[0]) : String(xff || ''))?.split(',')[0] || req.ip || '127.0.0.1').trim();
+      const userAgent = req.get('User-Agent') || null;
+      const referrer = req.get('Referer') || req.get('Referrer') || null;
+      const landingUrl = `${req.protocol}://${req.get('host')}${req.originalUrl}`;
 
-    // 6. Resolve backing study
-    const { rows: studyRows } = await db.pool.query('SELECT id FROM studies WHERE study_code = $1', [project.project_code]);
-    let studyId = studyRows[0]?.id;
-    if (!studyId) {
-      const newStudy = await db.createStudy({ study_code: project.project_code, title: project.name, client_id: project.client_id, status: 'LIVE' });
-      studyId = newStudy.id;
-    }
+      // 6. Resolve backing study
+      const { rows: studyRows } = await db.pool.query('SELECT id FROM studies WHERE study_code = $1', [project.project_code]);
+      let studyId = studyRows[0]?.id;
+      if (!studyId) {
+        const newStudy = await db.createStudy({ study_code: project.project_code, title: project.name, client_id: project.client_id, status: 'LIVE' });
+        studyId = newStudy.id;
+      }
 
-    // 7. Resolve vendor
-    let assignedVendorId = link?.vendor_id || null;
-    if (!assignedVendorId) {
-      const allVendors = await db.getVendors(true);
-      assignedVendorId = allVendors[0]?.id || null;
-    }
+      // 7. Resolve vendor
+      let assignedVendorId = link?.vendor_id || null;
+      if (!assignedVendorId) {
+        const allVendors = await db.getVendors(true);
+        assignedVendorId = allVendors[0]?.id || null;
+      }
 
-    // 8. Create / resolve session (idempotent by project + country + UID)
-    const crypto = require('crypto');
-    const { rows: existingSess } = await db.pool.query(
-      `SELECT * FROM sessions
+      // 8. Create / resolve session (idempotent by project + country + UID)
+      const crypto = require('crypto');
+      const { rows: existingSess } = await db.pool.query(
+        `SELECT * FROM sessions
        WHERE metadata_json->>'project_id' = $1
          AND metadata_json->>'country_id' = $2
          AND normalized_uid = $3
        ORDER BY created_at DESC LIMIT 1`,
-      [project.id, country.id, normalized]
-    );
+        [project.id, country.id, normalized]
+      );
 
-    let session = existingSess[0];
-    if (!session) {
-      const sessionToken = 'trk_' + crypto.randomBytes(20).toString('hex');
-      const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000);
-      const ipHash = crypto.createHash('sha256').update(ipAddress + config.authSecret).digest('hex');
+      let session = existingSess[0];
+      if (!session) {
+        const sessionToken = 'trk_' + crypto.randomBytes(20).toString('hex');
+        const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000);
+        const ipHash = crypto.createHash('sha256').update(ipAddress + config.authSecret).digest('hex');
 
-      session = await db.createSession({
-        session_token: sessionToken,
-        study_id: studyId,
-        vendor_id: assignedVendorId,
-        tracking_link_id: null,  // project_links.id ≠ tracking_links.id; store link info in metadata_json
-        uid: original,
-        normalized_uid: normalized,
-        external_uid: null,
-        ip_hash: ipHash,
-        ip_address_encrypted_or_restricted_storage: true,
-        user_agent: userAgent,
-        country_detected: country.country_code,
-        referrer,
-        landing_url: landingUrl,
-        initial_status: 'STARTED',
-        current_status: 'STARTED',
-        expires_at: expiresAt,
-        metadata_json: {
-          project_id: project.id,
-          project_code: project.project_code,
-          country_id: country.id,
-          country_code: country.country_code,
-          link_id: link?.id || null,
-          link_code: link?.link_code || null,
+        session = await db.createSession({
+          session_token: sessionToken,
+          study_id: studyId,
           vendor_id: assignedVendorId,
-          tracking_type: 'OPI_TRACK',
-        },
-      });
+          tracking_link_id: null,  // project_links.id ≠ tracking_links.id; store link info in metadata_json
+          uid: original,
+          normalized_uid: normalized,
+          external_uid: null,
+          ip_hash: ipHash,
+          ip_address_encrypted_or_restricted_storage: true,
+          user_agent: userAgent,
+          country_detected: country.country_code,
+          referrer,
+          landing_url: landingUrl,
+          initial_status: 'STARTED',
+          current_status: 'STARTED',
+          expires_at: expiresAt,
+          metadata_json: {
+            project_id: project.id,
+            project_code: project.project_code,
+            country_id: country.id,
+            country_code: country.country_code,
+            link_id: link?.id || null,
+            link_code: link?.link_code || null,
+            vendor_id: assignedVendorId,
+            tracking_type: 'OPI_TRACK',
+          },
+        });
 
-      // LANDING event — required by genuine callback gate
-      const landingKey = crypto.createHash('sha256')
-        .update(`${project.id}|${country.id}|${normalized}|LANDING`).digest('hex');
-      await db.createResponseEvent({
-        session_id: session.id,
-        study_id: studyId,
-        vendor_id: assignedVendorId,
-        uid: original,
-        event_type: 'LANDING',
-        source: 'opi_track',
-        raw_payload: { project_code: project.project_code, country: country.country_code, uid: original },
-        normalized_payload: { event_type: 'LANDING', uid: normalized, provider: 'opi_track' },
-        event_key: landingKey,
-        ip_address: ipAddress,
-        user_agent: userAgent,
-      });
+        // LANDING event — required by genuine callback gate
+        const landingKey = crypto.createHash('sha256')
+          .update(`${project.id}|${country.id}|${normalized}|LANDING`).digest('hex');
+        await db.createResponseEvent({
+          session_id: session.id,
+          study_id: studyId,
+          vendor_id: assignedVendorId,
+          uid: original,
+          event_type: 'LANDING',
+          source: 'opi_track',
+          raw_payload: { project_code: project.project_code, country: country.country_code, uid: original },
+          normalized_payload: { event_type: 'LANDING', uid: normalized, provider: 'opi_track' },
+          event_key: landingKey,
+          ip_address: ipAddress,
+          user_agent: userAgent,
+        });
 
-      // Initial IN_PROGRESS response record
-      await db.pool.query(
-        `INSERT INTO responses
+        // Initial IN_PROGRESS response record
+        await db.pool.query(
+          `INSERT INTO responses
            (session_id, study_id, project_id, vendor_id, uid,
             final_status, is_counted, client_billing_status, vendor_acceptance_status, created_at, updated_at)
          VALUES ($1, $2, $3, $4, $5, 'IN_PROGRESS', false, 'PENDING', 'PENDING', NOW(), NOW())
          ON CONFLICT (session_id) DO NOTHING`,
-        [session.id, studyId, project.id, assignedVendorId, original]
-      );
-      console.log(`[Track] NEW session ${session.session_token} | ${projectCode}/${countryCode} uid=${original}`);
-    } else {
-      await db.updateSession(session.id, { last_seen_at: new Date() });
-      console.log(`[Track] EXISTING session | ${projectCode}/${countryCode} uid=${original}`);
-    }
-
-    // 9. Build client survey redirect URL — substitute UID into placeholder
-    const surveyUrlTemplate = link?.url || project.survey_url || '';
-    let destUrl = surveyUrlTemplate;
-
-    // Use stored uid_placeholder from project_link if available, else project-level, else auto-detect
-    const uidPlaceholder = link?.uid_placeholder || project.uid_placeholder || '';
-    const uidParam = link?.uid_param || project.uid_param || 'uid';
-
-    if (uidPlaceholder && destUrl.includes(uidPlaceholder)) {
-      destUrl = destUrl.split(uidPlaceholder).join(encodeURIComponent(original));
-    } else {
-      const knownPH = ['[identifier]', '{identifier}', '[UID]', '{UID}', '[uid]', '{uid}', '{{UID}}', '{{uid}}', '[RESPONDENT_ID]', '{RESPONDENT_ID}'];
-      let replaced = false;
-      for (const ph of knownPH) {
-        if (destUrl.includes(ph)) { destUrl = destUrl.split(ph).join(encodeURIComponent(original)); replaced = true; break; }
+          [session.id, studyId, project.id, assignedVendorId, original]
+        );
+        console.log(`[Track] NEW session ${session.session_token} | ${projectCode}/${countryCode} uid=${original}`);
+      } else {
+        await db.updateSession(session.id, { last_seen_at: new Date() });
+        console.log(`[Track] EXISTING session | ${projectCode}/${countryCode} uid=${original}`);
       }
-      if (!replaced && !destUrl.includes(encodeURIComponent(original))) {
-        destUrl = `${destUrl}${destUrl.includes('?') ? '&' : '?'}${uidParam}=${encodeURIComponent(original)}`;
-      }
-    }
 
-    if (!destUrl || !destUrl.startsWith('http')) {
+      // 9. Build client survey redirect URL — substitute UID into placeholder
+      const surveyUrlTemplate = link?.url || project.survey_url || '';
+      let destUrl = surveyUrlTemplate;
+
+      // Use stored uid_placeholder from project_link if available, else project-level, else auto-detect
+      const uidPlaceholder = link?.uid_placeholder || project.uid_placeholder || '';
+      const uidParam = link?.uid_param || project.uid_param || 'uid';
+
+      if (uidPlaceholder && destUrl.includes(uidPlaceholder)) {
+        destUrl = destUrl.split(uidPlaceholder).join(encodeURIComponent(original));
+      } else {
+        const knownPH = ['[identifier]', '{identifier}', '[UID]', '{UID}', '[uid]', '{uid}', '{{UID}}', '{{uid}}', '[RESPONDENT_ID]', '{RESPONDENT_ID}'];
+        let replaced = false;
+        for (const ph of knownPH) {
+          if (destUrl.includes(ph)) { destUrl = destUrl.split(ph).join(encodeURIComponent(original)); replaced = true; break; }
+        }
+        if (!replaced && !destUrl.includes(encodeURIComponent(original))) {
+          destUrl = `${destUrl}${destUrl.includes('?') ? '&' : '?'}${uidParam}=${encodeURIComponent(original)}`;
+        }
+      }
+
+      if (!destUrl || !destUrl.startsWith('http')) {
         return apiError(res, 500, 'NO_REDIRECT_URL', 'No valid client survey URL configured');
       }
 
@@ -2810,7 +2994,7 @@ router.get(
         // Verify session exists with LANDING event before processing
         if (vendorIdForCb) {
           const verification = await callbackService.verifySession(studyId, vendorIdForCb, rawUid);
-          
+
           // Also verify HMAC signature if provided (signed URL approach)
           let sigValid = true;
           if (sig) {
@@ -2824,18 +3008,22 @@ router.get(
 
           if (!verification.valid) {
             console.warn(`[r/:outcome] Session verification failed for pid=${rawOfferId} uid=${rawUid}: ${verification.error}`);
-            await recordFakeClick({ study_id: studyId, vendor_id: vendorIdForCb, uid: rawUid,
+            await recordFakeClick({
+              study_id: studyId, vendor_id: vendorIdForCb, uid: rawUid,
               normalized_uid: rawUid.toUpperCase().trim(),
               rejection_reason: verification.error && verification.error.includes('expired') ? 'EXPIRED_SESSION'
                 : verification.error && verification.error.includes('landing') ? 'NO_LANDING_EVENT' : 'NO_SESSION',
               raw_payload: { pid: rawOfferId, uid: rawUid, outcome }, ip_address: rawIp,
-              user_agent: req.get('User-Agent'), provider: 'external_redirect' });
+              user_agent: req.get('User-Agent'), provider: 'external_redirect'
+            });
           } else if (!sigValid) {
             console.warn(`[r/:outcome] Signature verification failed for pid=${rawOfferId} uid=${rawUid}`);
-            await recordFakeClick({ study_id: studyId, vendor_id: vendorIdForCb, uid: rawUid,
+            await recordFakeClick({
+              study_id: studyId, vendor_id: vendorIdForCb, uid: rawUid,
               normalized_uid: rawUid.toUpperCase().trim(), rejection_reason: 'INVALID_SIGNATURE',
               raw_payload: { pid: rawOfferId, uid: rawUid, outcome }, ip_address: rawIp,
-              user_agent: req.get('User-Agent'), provider: 'external_redirect' });
+              user_agent: req.get('User-Agent'), provider: 'external_redirect'
+            });
           } else {
             await callbackService.processCallback(
               'external_redirect',
@@ -3258,9 +3446,11 @@ async function handleCallback(req: AuthRequest, res: Response) {
       console.warn(`[Callback] Session verification failed for study=${v.data.study_id} uid=${v.data.uid}: ${verification.error}`);
       const rejReason = verification.error && verification.error.includes('expired') ? 'EXPIRED_SESSION'
         : verification.error && verification.error.includes('landing') ? 'NO_LANDING_EVENT' : 'NO_SESSION';
-      await recordFakeClick({ study_id: v.data.study_id, vendor_id: v.data.vendor_id, uid: v.data.uid,
+      await recordFakeClick({
+        study_id: v.data.study_id, vendor_id: v.data.vendor_id, uid: v.data.uid,
         normalized_uid: (v.data.uid || '').toUpperCase().trim(), rejection_reason: rejReason,
-        raw_payload: v.data, ip_address: req.ip || '', user_agent: req.get('User-Agent'), provider: v.data.provider });
+        raw_payload: v.data, ip_address: req.ip || '', user_agent: req.get('User-Agent'), provider: v.data.provider
+      });
       return apiError(res, 400, 'NO_VALID_SESSION', verification.error || 'No valid session â€” respondent must complete landing first');
     }
   }
@@ -4126,7 +4316,7 @@ router.get(
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const vendorId = req.user?.vendor_id;
     if (!vendorId) return apiError(res, 403, 'FORBIDDEN', 'Vendor ID not found');
-    
+
     const vendors = await db.getStudyVendorsByVendor(vendorId);
     const studyIds = vendors.map(v => v.study_id);
     const studies = await db.getStudies({ study_ids: studyIds });
@@ -4140,7 +4330,7 @@ router.get(
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const vendorId = req.user?.vendor_id;
     if (!vendorId) return apiError(res, 403, 'FORBIDDEN', 'Vendor ID not found');
-    
+
     const page = parseInt(getQueryParam(req, 'page') || '1', 10);
     const limit = parseInt(getQueryParam(req, 'limit') || '25', 10);
     const study_id = getQueryParam(req, 'study_id');
@@ -4152,7 +4342,7 @@ router.get(
     const end_date = getQueryParam(req, 'end_date');
     const sort_by = getQueryParam(req, 'sort_by');
     const sort_order = getQueryParam(req, 'sort_order');
-    
+
     const { rows, total } = await db.getResponses({
       vendor_id: vendorId,
       study_id: study_id ? String(study_id) : undefined,
@@ -4177,13 +4367,13 @@ router.get(
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const vendorId = req.user?.vendor_id;
     if (!vendorId) return apiError(res, 43, 'FORBIDDEN', 'Vendor ID not found');
-    
+
     const vendors = await db.getStudyVendorsByVendor(vendorId);
     const studyIds = vendors.map(v => v.study_id);
-    
+
     let totalSessions = 0;
     let completedSessions = 0;
-    
+
     for (const studyId of studyIds) {
       const agg = await db.getStudyAnalytics(studyId);
       if (agg) {
@@ -4191,7 +4381,7 @@ router.get(
         completedSessions += parseInt(agg.counted_completes || '0', 10);
       }
     }
-    
+
     res.json({
       success: true,
       total_sessions: totalSessions,
@@ -4207,7 +4397,7 @@ router.get(
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const vendorId = req.user?.vendor_id;
     if (!vendorId) return apiError(res, 403, 'FORBIDDEN', 'Vendor ID not found');
-    
+
     const study_id = getQueryParam(req, 'study_id');
     const links = await db.getTrackingLinks({
       study_id: study_id ? String(study_id) : undefined,
@@ -4960,7 +5150,7 @@ router.post('/finance/rejection-reasons', authenticate, authorize(['ADMIN']), as
   if (!code || !label) return validationError(res, ['code and label are required']);
   const { rows } = await db.pool.query(
     `INSERT INTO rejection_reasons (code, label, sort_order) VALUES ($1,$2,$3) ON CONFLICT(code) DO UPDATE SET label=$2, is_active=TRUE RETURNING *`,
-    [code.toUpperCase().replace(/\s+/g,'_'), label, sort_order || 99]
+    [code.toUpperCase().replace(/\s+/g, '_'), label, sort_order || 99]
   );
   res.status(201).json({ success: true, data: rows[0] });
 }));
@@ -5029,13 +5219,13 @@ router.patch('/finance/projects/:id/rates', authenticate, authorize(['ADMIN']), 
     await db.pool.query(
       `INSERT INTO rate_audit (project_id, field, old_value, new_value, changed_by) VALUES ($1,'client_rate',$2,$3,$4)`,
       [projectId, current[0].client_rate, client_rate, userId]
-    ).catch(() => {});
+    ).catch(() => { });
   }
   if (vendor_rate !== undefined && current[0].vendor_rate != vendor_rate) {
     await db.pool.query(
       `INSERT INTO rate_audit (project_id, field, old_value, new_value, changed_by) VALUES ($1,'vendor_rate',$2,$3,$4)`,
       [projectId, current[0].vendor_rate, vendor_rate, userId]
-    ).catch(() => {});
+    ).catch(() => { });
   }
 
   res.json({ success: true, data: rows[0], message: 'Rates updated successfully' });
@@ -5142,10 +5332,10 @@ router.get('/finance/responses', authenticate, authorize(OPS_FINANCE_ROLES), asy
     LEFT JOIN users u ON u.id=r.reviewed_by
     ${where}
     ORDER BY r.terminal_at DESC NULLS LAST, r.created_at DESC
-    LIMIT $${params.length-1} OFFSET $${params.length}
+    LIMIT $${params.length - 1} OFFSET $${params.length}
   `, params);
 
-  res.json({ success: true, data: rows, pagination: { page, limit, total, pages: Math.ceil(total/limit) } });
+  res.json({ success: true, data: rows, pagination: { page, limit, total, pages: Math.ceil(total / limit) } });
 }));
 
 router.patch('/finance/responses/:id/review', authenticate, authorize(['ADMIN']), asyncHandler(async (req: AuthRequest, res: Response) => {
@@ -5265,10 +5455,10 @@ router.get('/finance/invoices', authenticate, authorize(OPS_FINANCE_ROLES), asyn
     LEFT JOIN users u ON u.id=i.generated_by
     ${where}
     ORDER BY i.generated_at DESC
-    LIMIT $${params.length-1} OFFSET $${params.length}
+    LIMIT $${params.length - 1} OFFSET $${params.length}
   `, params);
 
-  res.json({ success: true, data: rows, pagination: { page, limit, total, pages: Math.ceil(total/limit) } });
+  res.json({ success: true, data: rows, pagination: { page, limit, total, pages: Math.ceil(total / limit) } });
 }));
 
 // Invoice Pre-flight Preview (Shows Verified, Unverified, Approved, Deductions & UID-level items before raising)
@@ -5600,11 +5790,11 @@ router.get('/finance/invoices/:id/export', authenticate, authorize(OPS_FINANCE_R
 
   const trafficData = [
     ['Total Field Activity', totalAct, '100.0%', 'All traffic received for this project period'],
-    ['Verified IDs (Origin Validated)', totalVer, `${totalAct > 0 ? ((totalVer/totalAct)*100).toFixed(1) : 0}%`, 'Tracked sessions with valid landing & completion'],
-    ['Unverified IDs (Audit Trail)', totalUnv, `${totalAct > 0 ? ((totalUnv/totalAct)*100).toFixed(1) : 0}%`, 'Direct callbacks / fake clicks — EXCLUDED FROM BILLING'],
-    ['Approved Completes (Billable)', inv.total_approved_completes, `${totalVer > 0 ? ((inv.total_approved_completes/totalVer)*100).toFixed(1) : 0}%`, 'Admin reviewed & commercially accepted completes'],
-    ['Rejected Completes', totalRej, `${totalVer > 0 ? ((totalRej/totalVer)*100).toFixed(1) : 0}%`, 'Flagged for quality, duplicates or speeding — NOT BILLED'],
-    ['Pending Review', totalPend, `${totalVer > 0 ? ((totalPend/totalVer)*100).toFixed(1) : 0}%`, 'Awaiting QA audit before commercial acceptance'],
+    ['Verified IDs (Origin Validated)', totalVer, `${totalAct > 0 ? ((totalVer / totalAct) * 100).toFixed(1) : 0}%`, 'Tracked sessions with valid landing & completion'],
+    ['Unverified IDs (Audit Trail)', totalUnv, `${totalAct > 0 ? ((totalUnv / totalAct) * 100).toFixed(1) : 0}%`, 'Direct callbacks / fake clicks — EXCLUDED FROM BILLING'],
+    ['Approved Completes (Billable)', inv.total_approved_completes, `${totalVer > 0 ? ((inv.total_approved_completes / totalVer) * 100).toFixed(1) : 0}%`, 'Admin reviewed & commercially accepted completes'],
+    ['Rejected Completes', totalRej, `${totalVer > 0 ? ((totalRej / totalVer) * 100).toFixed(1) : 0}%`, 'Flagged for quality, duplicates or speeding — NOT BILLED'],
+    ['Pending Review', totalPend, `${totalVer > 0 ? ((totalPend / totalVer) * 100).toFixed(1) : 0}%`, 'Awaiting QA audit before commercial acceptance'],
   ];
 
   for (const [label, cnt, pct, note] of trafficData) {
@@ -6090,10 +6280,10 @@ router.get('/finance/settlements/:id/export', authenticate, authorize(OPS_FINANC
 
   const summaryRows = [
     ['Total Activity / Submitted', subCnt, '100.0%', 'All respondent traffic recorded'],
-    ['Verified Submissions', verCnt, `${subCnt > 0 ? ((verCnt/subCnt)*100).toFixed(1) : 0}%`, 'Tracked respondents with legitimate session origin'],
-    ['Unverified Activity', unvCnt, `${subCnt > 0 ? ((unvCnt/subCnt)*100).toFixed(1) : 0}%`, 'Direct callbacks / fake clicks — Strictly non-billable'],
-    ['Accepted Submissions', accCnt, `${verCnt > 0 ? ((accCnt/verCnt)*100).toFixed(1) : 0}%`, 'Quality verified & business approved completes'],
-    ['Rejected Submissions', rejCnt, `${verCnt > 0 ? ((rejCnt/verCnt)*100).toFixed(1) : 0}%`, 'Deducted for quality, speed, or duplication'],
+    ['Verified Submissions', verCnt, `${subCnt > 0 ? ((verCnt / subCnt) * 100).toFixed(1) : 0}%`, 'Tracked respondents with legitimate session origin'],
+    ['Unverified Activity', unvCnt, `${subCnt > 0 ? ((unvCnt / subCnt) * 100).toFixed(1) : 0}%`, 'Direct callbacks / fake clicks — Strictly non-billable'],
+    ['Accepted Submissions', accCnt, `${verCnt > 0 ? ((accCnt / verCnt) * 100).toFixed(1) : 0}%`, 'Quality verified & business approved completes'],
+    ['Rejected Submissions', rejCnt, `${verCnt > 0 ? ((rejCnt / verCnt) * 100).toFixed(1) : 0}%`, 'Deducted for quality, speed, or duplication'],
     ['Rejection Percentage', `${rejPct}%`, '', 'Calculated over verified submissions'],
   ];
 
@@ -6348,7 +6538,7 @@ router.get('/finance/export', authenticate, authorize(OPS_FINANCE_ROLES), asyncH
       [r.project_code, r.name, r.client_name, r.status, r.client_rate, r.vendor_rate, r.currency, r.client_approved, r.vendor_accepted, r.vendor_rejected, r.client_revenue, r.vendor_cost, (Number(r.client_revenue) - Number(r.vendor_cost)).toFixed(2)].join(',')
     ).join('\n');
     res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', `attachment; filename="finance-export-${new Date().toISOString().slice(0,10)}.csv"`);
+    res.setHeader('Content-Disposition', `attachment; filename="finance-export-${new Date().toISOString().slice(0, 10)}.csv"`);
     return res.send(header + csvRows);
   }
 
@@ -6393,7 +6583,7 @@ router.get('/finance/export', authenticate, authorize(OPS_FINANCE_ROLES), asyncH
   ws.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: 13 } };
 
   res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-  res.setHeader('Content-Disposition', `attachment; filename="Finance-Report-${new Date().toISOString().slice(0,10)}.xlsx"`);
+  res.setHeader('Content-Disposition', `attachment; filename="Finance-Report-${new Date().toISOString().slice(0, 10)}.xlsx"`);
   await wb.xlsx.write(res);
 }));
 

@@ -19120,14 +19120,14 @@ var require_etag = __commonJS({
   "node_modules/etag/index.js"(exports2, module2) {
     "use strict";
     module2.exports = etag;
-    var crypto8 = require("crypto");
+    var crypto9 = require("crypto");
     var Stats = require("fs").Stats;
     var toString = Object.prototype.toString;
     function entitytag(entity) {
       if (entity.length === 0) {
         return '"0-2jmj7l5rSw0yVb/vlWAYkK/YBwk"';
       }
-      var hash2 = crypto8.createHash("sha1").update(entity, "utf8").digest("base64").substring(0, 27);
+      var hash2 = crypto9.createHash("sha1").update(entity, "utf8").digest("base64").substring(0, 27);
       var len = typeof entity === "string" ? Buffer.byteLength(entity, "utf8") : entity.length;
       return '"' + len.toString(16) + "-" + hash2 + '"';
     }
@@ -22677,17 +22677,17 @@ var require_content_disposition = __commonJS({
 // node_modules/cookie-signature/index.js
 var require_cookie_signature = __commonJS({
   "node_modules/cookie-signature/index.js"(exports2) {
-    var crypto8 = require("crypto");
+    var crypto9 = require("crypto");
     exports2.sign = function(val, secret) {
       if ("string" != typeof val) throw new TypeError("Cookie value must be provided as a string.");
       if (null == secret) throw new TypeError("Secret key must be provided.");
-      return val + "." + crypto8.createHmac("sha256", secret).update(val).digest("base64").replace(/\=+$/, "");
+      return val + "." + crypto9.createHmac("sha256", secret).update(val).digest("base64").replace(/\=+$/, "");
     };
     exports2.unsign = function(input2, secret) {
       if ("string" != typeof input2) throw new TypeError("Signed cookie string must be provided.");
       if (null == secret) throw new TypeError("Secret key must be provided.");
       var tentativeValue = input2.slice(0, input2.lastIndexOf(".")), expectedInput = exports2.sign(tentativeValue, secret), expectedBuffer = Buffer.from(expectedInput), inputBuffer = Buffer.from(input2);
-      return expectedBuffer.length === inputBuffer.length && crypto8.timingSafeEqual(expectedBuffer, inputBuffer) ? tentativeValue : false;
+      return expectedBuffer.length === inputBuffer.length && crypto9.timingSafeEqual(expectedBuffer, inputBuffer) ? tentativeValue : false;
     };
   }
 });
@@ -24320,7 +24320,7 @@ var require_main = __commonJS({
     var fs2 = require("fs");
     var path3 = require("path");
     var os = require("os");
-    var crypto8 = require("crypto");
+    var crypto9 = require("crypto");
     var TIPS = [
       "\u25C8 encrypted .env [www.dotenvx.com]",
       "\u25C8 secrets for agents [www.dotenvx.com]",
@@ -24564,7 +24564,7 @@ var require_main = __commonJS({
       const authTag = ciphertext.subarray(-16);
       ciphertext = ciphertext.subarray(12, -16);
       try {
-        const aesgcm = crypto8.createDecipheriv("aes-256-gcm", key, nonce);
+        const aesgcm = crypto9.createDecipheriv("aes-256-gcm", key, nonce);
         aesgcm.setAuthTag(authTag);
         return `${aesgcm.update(ciphertext)}${aesgcm.final()}`;
       } catch (error61) {
@@ -27563,7 +27563,7 @@ var require_data_validations = __commonJS({
 var require_encryptor = __commonJS({
   "node_modules/exceljs/lib/utils/encryptor.js"(exports2, module2) {
     "use strict";
-    var crypto8 = require("crypto");
+    var crypto9 = require("crypto");
     var Encryptor = {
       /**
        * Calculate a hash of the concatenated buffers with the given algorithm.
@@ -27571,7 +27571,7 @@ var require_encryptor = __commonJS({
        * @returns {Buffer} The hash
        */
       hash(algorithm, ...buffers) {
-        const hash2 = crypto8.createHash(algorithm);
+        const hash2 = crypto9.createHash(algorithm);
         hash2.update(Buffer.concat(buffers));
         return hash2.digest();
       },
@@ -27587,7 +27587,7 @@ var require_encryptor = __commonJS({
        */
       convertPasswordToHash(password, hashAlgorithm, saltValue, spinCount) {
         hashAlgorithm = hashAlgorithm.toLowerCase();
-        const hashes = crypto8.getHashes();
+        const hashes = crypto9.getHashes();
         if (hashes.indexOf(hashAlgorithm) < 0) {
           throw new Error(`Hash algorithm '${hashAlgorithm}' not supported!`);
         }
@@ -27605,7 +27605,7 @@ var require_encryptor = __commonJS({
        * @param size The size argument is a number indicating the number of bytes to generate.
        */
       randomBytes(size) {
-        return crypto8.randomBytes(size);
+        return crypto9.randomBytes(size);
       }
     };
     module2.exports = Encryptor;
@@ -88006,7 +88006,7 @@ var require_tmp = __commonJS({
     var fs2 = require("fs");
     var os = require("os");
     var path3 = require("path");
-    var crypto8 = require("crypto");
+    var crypto9 = require("crypto");
     var _c = { fs: fs2.constants, os: os.constants };
     var RANDOM_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
     var TEMPLATE_PATTERN = /XXXXXX/;
@@ -88186,9 +88186,9 @@ var require_tmp = __commonJS({
     function _randomChars(howMany) {
       let value = [], rnd = null;
       try {
-        rnd = crypto8.randomBytes(howMany);
+        rnd = crypto9.randomBytes(howMany);
       } catch (e) {
-        rnd = crypto8.pseudoRandomBytes(howMany);
+        rnd = crypto9.pseudoRandomBytes(howMany);
       }
       for (let i = 0; i < howMany; i++) {
         value.push(RANDOM_CHARS[rnd[i] % RANDOM_CHARS.length]);
@@ -90490,7 +90490,7 @@ var require_cert_signatures = __commonJS({
 var require_sasl = __commonJS({
   "node_modules/pg/lib/crypto/sasl.js"(exports2, module2) {
     "use strict";
-    var crypto8 = require_utils7();
+    var crypto9 = require_utils7();
     var { signatureAlgorithmHashFromCertificate } = require_cert_signatures();
     function saslprep(password) {
       const nonAsciiSpace = /[\u00A0\u1680\u2000-\u200B\u202F\u205F\u3000]/g;
@@ -90508,7 +90508,7 @@ var require_sasl = __commonJS({
       if (mechanism === "SCRAM-SHA-256-PLUS" && typeof stream.getPeerCertificate !== "function") {
         throw new Error("SASL: Mechanism SCRAM-SHA-256-PLUS requires a certificate");
       }
-      const clientNonce = crypto8.randomBytes(18).toString("base64");
+      const clientNonce = crypto9.randomBytes(18).toString("base64");
       const gs2Header = mechanism === "SCRAM-SHA-256-PLUS" ? "p=tls-server-end-point" : stream ? "y" : "n";
       return {
         mechanism,
@@ -90550,20 +90550,20 @@ var require_sasl = __commonJS({
         const peerCert = stream.getPeerCertificate().raw;
         let hashName = signatureAlgorithmHashFromCertificate(peerCert);
         if (hashName === "MD5" || hashName === "SHA-1") hashName = "SHA-256";
-        const certHash = await crypto8.hashByName(hashName, peerCert);
+        const certHash = await crypto9.hashByName(hashName, peerCert);
         const bindingData = Buffer.concat([Buffer.from("p=tls-server-end-point,,"), Buffer.from(certHash)]);
         channelBinding = bindingData.toString("base64");
       }
       const clientFinalMessageWithoutProof = "c=" + channelBinding + ",r=" + sv.nonce;
       const authMessage = clientFirstMessageBare + "," + serverFirstMessage + "," + clientFinalMessageWithoutProof;
       const saltBytes = Buffer.from(sv.salt, "base64");
-      const saltedPassword = await crypto8.deriveKey(saslprep(password), saltBytes, sv.iteration);
-      const clientKey = await crypto8.hmacSha256(saltedPassword, "Client Key");
-      const storedKey = await crypto8.sha256(clientKey);
-      const clientSignature = await crypto8.hmacSha256(storedKey, authMessage);
+      const saltedPassword = await crypto9.deriveKey(saslprep(password), saltBytes, sv.iteration);
+      const clientKey = await crypto9.hmacSha256(saltedPassword, "Client Key");
+      const storedKey = await crypto9.sha256(clientKey);
+      const clientSignature = await crypto9.hmacSha256(storedKey, authMessage);
       const clientProof = xorBuffers(Buffer.from(clientKey), Buffer.from(clientSignature)).toString("base64");
-      const serverKey = await crypto8.hmacSha256(saltedPassword, "Server Key");
-      const serverSignatureBytes = await crypto8.hmacSha256(serverKey, authMessage);
+      const serverKey = await crypto9.hmacSha256(saltedPassword, "Server Key");
+      const serverSignatureBytes = await crypto9.hmacSha256(serverKey, authMessage);
       session.message = "SASLResponse";
       session.serverSignature = Buffer.from(serverSignatureBytes).toString("base64");
       session.response = clientFinalMessageWithoutProof + ",p=" + clientProof;
@@ -92797,7 +92797,7 @@ var require_client = __commonJS({
     var Query2 = require_query();
     var defaults2 = require_defaults2();
     var Connection2 = require_connection();
-    var crypto8 = require_utils7();
+    var crypto9 = require_utils7();
     var activeQueryDeprecationNotice = nodeUtils.deprecate(
       () => {
       },
@@ -93052,7 +93052,7 @@ var require_client = __commonJS({
       _handleAuthMD5Password(msg) {
         this._getPassword(async () => {
           try {
-            const hashedPassword = await crypto8.postgresMd5PasswordHash(this.user, this.password, msg.salt);
+            const hashedPassword = await crypto9.postgresMd5PasswordHash(this.user, this.password, msg.salt);
             this.connection.password(hashedPassword);
           } catch (e) {
             this.emit("error", e);
@@ -95966,9 +95966,43 @@ var init_db = __esm({
       }
       async unlockUser(userId) {
         await this.pool.query(
-          `UPDATE users SET failed_login_attempts = 0, locked_until = NULL, last_failed_login_at = NULL WHERE id = $1`,
+          `UPDATE users SET failed_login_attempts = 0, locked_until = NULL, last_failed_login_at = NULL, temp_unlock_until = NULL WHERE id = $1`,
           [userId]
         );
+      }
+      async setRecoverySecret(userId, secretHash) {
+        await this.pool.query(
+          `UPDATE users SET recovery_secret_hash = $2, recovery_attempts = 0, recovery_locked_until = NULL, updated_at = NOW() WHERE id = $1`,
+          [userId, secretHash]
+        );
+      }
+      async recordFailedRecovery(userId) {
+        const { rows } = await this.pool.query(
+          `UPDATE users 
+       SET recovery_attempts = recovery_attempts + 1,
+           recovery_locked_until = CASE WHEN recovery_attempts + 1 >= 5 THEN NOW() + INTERVAL '15 minutes' ELSE recovery_locked_until END
+       WHERE id = $1
+       RETURNING recovery_attempts, recovery_locked_until`,
+          [userId]
+        );
+        return {
+          attempts: rows[0]?.recovery_attempts || 0,
+          lockedUntil: rows[0]?.recovery_locked_until ? new Date(rows[0].recovery_locked_until) : null
+        };
+      }
+      async setTempUnlock(userId, durationMinutes = 10) {
+        const { rows } = await this.pool.query(
+          `UPDATE users 
+       SET temp_unlock_until = NOW() + ($2 || ' minutes')::INTERVAL,
+           recovery_attempts = 0,
+           recovery_locked_until = NULL,
+           failed_login_attempts = 0,
+           locked_until = NULL
+       WHERE id = $1
+       RETURNING temp_unlock_until`,
+          [userId, durationMinutes]
+        );
+        return new Date(rows[0].temp_unlock_until);
       }
       async unassignVendorFromStudy(studyId, vendorId) {
         const { rows } = await this.pool.query(
@@ -97209,13 +97243,13 @@ function applyStateTransition(currentStatus, newStatus) {
 function generateIdempotencyKey(studyId, vendorId, normalizedUid, normalizedStatus, externalTransactionId) {
   const parts = [studyId, vendorId, normalizedUid, normalizedStatus];
   if (externalTransactionId) parts.push(externalTransactionId);
-  return crypto5.createHash("sha256").update(parts.join("|")).digest("hex");
+  return crypto6.createHash("sha256").update(parts.join("|")).digest("hex");
 }
 function validateCallbackSignature(payload, receivedSignature, secret) {
   if (!receivedSignature) return false;
-  const expected = crypto5.createHmac("sha256", secret).update(payload).digest("hex");
+  const expected = crypto6.createHmac("sha256", secret).update(payload).digest("hex");
   try {
-    return crypto5.timingSafeEqual(
+    return crypto6.timingSafeEqual(
       Buffer.from(receivedSignature.replace(/^sha256=/, ""), "hex"),
       Buffer.from(expected, "hex")
     );
@@ -97224,14 +97258,14 @@ function validateCallbackSignature(payload, receivedSignature, secret) {
   }
 }
 function generateNonce() {
-  return crypto5.randomBytes(8).toString("hex");
+  return crypto6.randomBytes(8).toString("hex");
 }
 function signRedirectUrl(params) {
   const ts = Math.floor(Date.now() / 1e3);
   const nonce = generateNonce();
   const payload = { pid: params.pid, uid: params.uid, ts, nonce, outcome: params.outcome };
   const payloadStr = JSON.stringify(payload);
-  const sig = crypto5.createHmac("sha256", config.redirectHmacSecret).update(payloadStr).digest("hex");
+  const sig = crypto6.createHmac("sha256", config.redirectHmacSecret).update(payloadStr).digest("hex");
   const encoded = Buffer.from(payloadStr).toString("base64url");
   return `${encoded}.${sig}`;
 }
@@ -97246,9 +97280,9 @@ function verifyRedirectSignature(sigParam) {
   } catch {
     return null;
   }
-  const expectedSig = crypto5.createHmac("sha256", config.redirectHmacSecret).update(payloadStr).digest("hex");
+  const expectedSig = crypto6.createHmac("sha256", config.redirectHmacSecret).update(payloadStr).digest("hex");
   try {
-    if (!crypto5.timingSafeEqual(Buffer.from(receivedSig, "hex"), Buffer.from(expectedSig, "hex"))) {
+    if (!crypto6.timingSafeEqual(Buffer.from(receivedSig, "hex"), Buffer.from(expectedSig, "hex"))) {
       return null;
     }
   } catch {
@@ -97274,13 +97308,13 @@ function verifyRedirectSignature(sigParam) {
   return payload;
 }
 function generateSessionToken() {
-  return "SES_" + crypto5.randomBytes(16).toString("hex");
+  return "SES_" + crypto6.randomBytes(16).toString("hex");
 }
 function generateLinkCode() {
-  return "lnk_" + crypto5.randomBytes(6).toString("hex");
+  return "lnk_" + crypto6.randomBytes(6).toString("hex");
 }
 function hashIp(ip) {
-  return crypto5.createHmac("sha256", config.authSecret).update(ip).digest("hex");
+  return crypto6.createHmac("sha256", config.authSecret).update(ip).digest("hex");
 }
 function isSessionExpired(session) {
   return /* @__PURE__ */ new Date() > new Date(session.expires_at);
@@ -97468,7 +97502,7 @@ async function resolveOrCreateSession(studyId, vendorId, trackingLinkId, rawUid,
     after: { session_token: sessionToken, uid: original, study_id: studyId, vendor_id: vendorId },
     ip: ipAddress
   });
-  const landingKey = crypto5.createHash("sha256").update(`${studyId}|${vendorId}|${normalized}|LANDING`).digest("hex");
+  const landingKey = crypto6.createHash("sha256").update(`${studyId}|${vendorId}|${normalized}|LANDING`).digest("hex");
   await db.createResponseEvent({
     session_id: session.id,
     study_id: studyId,
@@ -97504,7 +97538,7 @@ async function verifySessionExists(studyId, vendorId, rawUid) {
   return { valid: true, session };
 }
 async function processCallback(provider, studyId, vendorId, rawUid, rawStatus, transactionId, rawPayload, requestMeta) {
-  const requestId = crypto5.randomBytes(8).toString("hex");
+  const requestId = crypto6.randomBytes(8).toString("hex");
   const normalizedStatus = normalizeStatus(rawStatus);
   const { normalized: normalizedUid, original: uid, error: uidError } = normalizeUid(rawUid);
   if (uidError) {
@@ -97668,11 +97702,11 @@ async function processCallback(provider, studyId, vendorId, rawUid, rawStatus, t
     ip_mismatch_reason: ipMismatchReason
   };
 }
-var crypto5, MAX_UID_LENGTH, STATUS_MAP, TERMINAL_STATES, USED_NONCES, NONCE_CLEANUP_INTERVAL_MS, NONCE_MAX_AGE_MS, TrackingService, trackingService;
+var crypto6, MAX_UID_LENGTH, STATUS_MAP, TERMINAL_STATES, USED_NONCES, NONCE_CLEANUP_INTERVAL_MS, NONCE_MAX_AGE_MS, TrackingService, trackingService;
 var init_trackingService = __esm({
   "src/services/trackingService.ts"() {
     "use strict";
-    crypto5 = __toESM(require("crypto"));
+    crypto6 = __toESM(require("crypto"));
     init_db();
     init_config2();
     MAX_UID_LENGTH = 255;
@@ -97741,6 +97775,1792 @@ var init_trackingService = __esm({
       }
     };
     trackingService = new TrackingService();
+  }
+});
+
+// node_modules/bcryptjs/umd/index.js
+var require_umd = __commonJS({
+  "node_modules/bcryptjs/umd/index.js"(exports2, module2) {
+    (function(global2, factory) {
+      function preferDefault(exports3) {
+        return exports3.default || exports3;
+      }
+      if (typeof define === "function" && define.amd) {
+        define(["crypto"], function(_crypto) {
+          var exports3 = {};
+          factory(exports3, _crypto);
+          return preferDefault(exports3);
+        });
+      } else if (typeof exports2 === "object") {
+        factory(exports2, require("crypto"));
+        if (typeof module2 === "object") module2.exports = preferDefault(exports2);
+      } else {
+        (function() {
+          var exports3 = {};
+          factory(exports3, global2.crypto);
+          global2.bcrypt = preferDefault(exports3);
+        })();
+      }
+    })(
+      typeof globalThis !== "undefined" ? globalThis : typeof self !== "undefined" ? self : exports2,
+      function(_exports, _crypto) {
+        "use strict";
+        Object.defineProperty(_exports, "__esModule", {
+          value: true
+        });
+        _exports.compare = compare;
+        _exports.compareSync = compareSync;
+        _exports.decodeBase64 = decodeBase64;
+        _exports.default = void 0;
+        _exports.encodeBase64 = encodeBase64;
+        _exports.genSalt = genSalt;
+        _exports.genSaltSync = genSaltSync;
+        _exports.getRounds = getRounds;
+        _exports.getSalt = getSalt;
+        _exports.hash = hash2;
+        _exports.hashSync = hashSync;
+        _exports.setRandomFallback = setRandomFallback;
+        _exports.truncates = truncates;
+        _crypto = _interopRequireDefault(_crypto);
+        function _interopRequireDefault(e) {
+          return e && e.__esModule ? e : { default: e };
+        }
+        var randomFallback = null;
+        function randomBytes3(len) {
+          try {
+            return crypto.getRandomValues(new Uint8Array(len));
+          } catch {
+          }
+          try {
+            return _crypto.default.randomBytes(len);
+          } catch {
+          }
+          if (!randomFallback) {
+            throw Error(
+              "Neither WebCryptoAPI nor a crypto module is available. Use bcrypt.setRandomFallback to set an alternative"
+            );
+          }
+          return randomFallback(len);
+        }
+        function setRandomFallback(random) {
+          randomFallback = random;
+        }
+        function genSaltSync(rounds, seed_length) {
+          rounds = rounds || GENSALT_DEFAULT_LOG2_ROUNDS;
+          if (typeof rounds !== "number")
+            throw Error(
+              "Illegal arguments: " + typeof rounds + ", " + typeof seed_length
+            );
+          if (rounds < 4) rounds = 4;
+          else if (rounds > 31) rounds = 31;
+          var salt = [];
+          salt.push("$2b$");
+          if (rounds < 10) salt.push("0");
+          salt.push(rounds.toString());
+          salt.push("$");
+          salt.push(base64_encode(randomBytes3(BCRYPT_SALT_LEN), BCRYPT_SALT_LEN));
+          return salt.join("");
+        }
+        function genSalt(rounds, seed_length, callback) {
+          if (typeof seed_length === "function")
+            callback = seed_length, seed_length = void 0;
+          if (typeof rounds === "function")
+            callback = rounds, rounds = void 0;
+          if (typeof rounds === "undefined") rounds = GENSALT_DEFAULT_LOG2_ROUNDS;
+          else if (typeof rounds !== "number")
+            throw Error("illegal arguments: " + typeof rounds);
+          function _async(callback2) {
+            nextTick(function() {
+              try {
+                callback2(null, genSaltSync(rounds));
+              } catch (err) {
+                callback2(err);
+              }
+            });
+          }
+          if (callback) {
+            if (typeof callback !== "function")
+              throw Error("Illegal callback: " + typeof callback);
+            _async(callback);
+          } else
+            return new Promise(function(resolve, reject) {
+              _async(function(err, res) {
+                if (err) {
+                  reject(err);
+                  return;
+                }
+                resolve(res);
+              });
+            });
+        }
+        function hashSync(password, salt) {
+          if (typeof salt === "undefined") salt = GENSALT_DEFAULT_LOG2_ROUNDS;
+          if (typeof salt === "number") salt = genSaltSync(salt);
+          if (typeof password !== "string" || typeof salt !== "string")
+            throw Error(
+              "Illegal arguments: " + typeof password + ", " + typeof salt
+            );
+          return _hash(password, salt);
+        }
+        function hash2(password, salt, callback, progressCallback) {
+          function _async(callback2) {
+            if (typeof password === "string" && typeof salt === "number")
+              genSalt(salt, function(err, salt2) {
+                _hash(password, salt2, callback2, progressCallback);
+              });
+            else if (typeof password === "string" && typeof salt === "string")
+              _hash(password, salt, callback2, progressCallback);
+            else
+              nextTick(
+                callback2.bind(
+                  this,
+                  Error(
+                    "Illegal arguments: " + typeof password + ", " + typeof salt
+                  )
+                )
+              );
+          }
+          if (callback) {
+            if (typeof callback !== "function")
+              throw Error("Illegal callback: " + typeof callback);
+            _async(callback);
+          } else
+            return new Promise(function(resolve, reject) {
+              _async(function(err, res) {
+                if (err) {
+                  reject(err);
+                  return;
+                }
+                resolve(res);
+              });
+            });
+        }
+        function safeStringCompare(known, unknown2) {
+          var diff = known.length ^ unknown2.length;
+          for (var i = 0; i < known.length; ++i) {
+            diff |= known.charCodeAt(i) ^ unknown2.charCodeAt(i);
+          }
+          return diff === 0;
+        }
+        function compareSync(password, hash3) {
+          if (typeof password !== "string" || typeof hash3 !== "string")
+            throw Error(
+              "Illegal arguments: " + typeof password + ", " + typeof hash3
+            );
+          if (hash3.length !== 60) return false;
+          return safeStringCompare(
+            hashSync(password, hash3.substring(0, hash3.length - 31)),
+            hash3
+          );
+        }
+        function compare(password, hashValue, callback, progressCallback) {
+          function _async(callback2) {
+            if (typeof password !== "string" || typeof hashValue !== "string") {
+              nextTick(
+                callback2.bind(
+                  this,
+                  Error(
+                    "Illegal arguments: " + typeof password + ", " + typeof hashValue
+                  )
+                )
+              );
+              return;
+            }
+            if (hashValue.length !== 60) {
+              nextTick(callback2.bind(this, null, false));
+              return;
+            }
+            hash2(
+              password,
+              hashValue.substring(0, 29),
+              function(err, comp) {
+                if (err) callback2(err);
+                else callback2(null, safeStringCompare(comp, hashValue));
+              },
+              progressCallback
+            );
+          }
+          if (callback) {
+            if (typeof callback !== "function")
+              throw Error("Illegal callback: " + typeof callback);
+            _async(callback);
+          } else
+            return new Promise(function(resolve, reject) {
+              _async(function(err, res) {
+                if (err) {
+                  reject(err);
+                  return;
+                }
+                resolve(res);
+              });
+            });
+        }
+        function getRounds(hash3) {
+          if (typeof hash3 !== "string")
+            throw Error("Illegal arguments: " + typeof hash3);
+          return parseInt(hash3.split("$")[2], 10);
+        }
+        function getSalt(hash3) {
+          if (typeof hash3 !== "string")
+            throw Error("Illegal arguments: " + typeof hash3);
+          if (hash3.length !== 60)
+            throw Error("Illegal hash length: " + hash3.length + " != 60");
+          return hash3.substring(0, 29);
+        }
+        function truncates(password) {
+          if (typeof password !== "string")
+            throw Error("Illegal arguments: " + typeof password);
+          return utf8Length(password) > 72;
+        }
+        var nextTick = typeof setImmediate === "function" ? setImmediate : typeof scheduler === "object" && typeof scheduler.postTask === "function" ? scheduler.postTask.bind(scheduler) : setTimeout;
+        function utf8Length(string4) {
+          var len = 0, c = 0;
+          for (var i = 0; i < string4.length; ++i) {
+            c = string4.charCodeAt(i);
+            if (c < 128) len += 1;
+            else if (c < 2048) len += 2;
+            else if ((c & 64512) === 55296 && (string4.charCodeAt(i + 1) & 64512) === 56320) {
+              ++i;
+              len += 4;
+            } else len += 3;
+          }
+          return len;
+        }
+        function utf8Array(string4) {
+          var offset = 0, c1, c2;
+          var buffer = new Array(utf8Length(string4));
+          for (var i = 0, k = string4.length; i < k; ++i) {
+            c1 = string4.charCodeAt(i);
+            if (c1 < 128) {
+              buffer[offset++] = c1;
+            } else if (c1 < 2048) {
+              buffer[offset++] = c1 >> 6 | 192;
+              buffer[offset++] = c1 & 63 | 128;
+            } else if ((c1 & 64512) === 55296 && ((c2 = string4.charCodeAt(i + 1)) & 64512) === 56320) {
+              c1 = 65536 + ((c1 & 1023) << 10) + (c2 & 1023);
+              ++i;
+              buffer[offset++] = c1 >> 18 | 240;
+              buffer[offset++] = c1 >> 12 & 63 | 128;
+              buffer[offset++] = c1 >> 6 & 63 | 128;
+              buffer[offset++] = c1 & 63 | 128;
+            } else {
+              buffer[offset++] = c1 >> 12 | 224;
+              buffer[offset++] = c1 >> 6 & 63 | 128;
+              buffer[offset++] = c1 & 63 | 128;
+            }
+          }
+          return buffer;
+        }
+        var BASE64_CODE = "./ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".split(
+          ""
+        );
+        var BASE64_INDEX = [
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          0,
+          1,
+          54,
+          55,
+          56,
+          57,
+          58,
+          59,
+          60,
+          61,
+          62,
+          63,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1,
+          28,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34,
+          35,
+          36,
+          37,
+          38,
+          39,
+          40,
+          41,
+          42,
+          43,
+          44,
+          45,
+          46,
+          47,
+          48,
+          49,
+          50,
+          51,
+          52,
+          53,
+          -1,
+          -1,
+          -1,
+          -1,
+          -1
+        ];
+        function base64_encode(b, len) {
+          var off = 0, rs = [], c1, c2;
+          if (len <= 0 || len > b.length) throw Error("Illegal len: " + len);
+          while (off < len) {
+            c1 = b[off++] & 255;
+            rs.push(BASE64_CODE[c1 >> 2 & 63]);
+            c1 = (c1 & 3) << 4;
+            if (off >= len) {
+              rs.push(BASE64_CODE[c1 & 63]);
+              break;
+            }
+            c2 = b[off++] & 255;
+            c1 |= c2 >> 4 & 15;
+            rs.push(BASE64_CODE[c1 & 63]);
+            c1 = (c2 & 15) << 2;
+            if (off >= len) {
+              rs.push(BASE64_CODE[c1 & 63]);
+              break;
+            }
+            c2 = b[off++] & 255;
+            c1 |= c2 >> 6 & 3;
+            rs.push(BASE64_CODE[c1 & 63]);
+            rs.push(BASE64_CODE[c2 & 63]);
+          }
+          return rs.join("");
+        }
+        function base64_decode(s, len) {
+          var off = 0, slen = s.length, olen = 0, rs = [], c1, c2, c3, c4, o, code;
+          if (len <= 0) throw Error("Illegal len: " + len);
+          while (off < slen - 1 && olen < len) {
+            code = s.charCodeAt(off++);
+            c1 = code < BASE64_INDEX.length ? BASE64_INDEX[code] : -1;
+            code = s.charCodeAt(off++);
+            c2 = code < BASE64_INDEX.length ? BASE64_INDEX[code] : -1;
+            if (c1 == -1 || c2 == -1) break;
+            o = c1 << 2 >>> 0;
+            o |= (c2 & 48) >> 4;
+            rs.push(String.fromCharCode(o));
+            if (++olen >= len || off >= slen) break;
+            code = s.charCodeAt(off++);
+            c3 = code < BASE64_INDEX.length ? BASE64_INDEX[code] : -1;
+            if (c3 == -1) break;
+            o = (c2 & 15) << 4 >>> 0;
+            o |= (c3 & 60) >> 2;
+            rs.push(String.fromCharCode(o));
+            if (++olen >= len || off >= slen) break;
+            code = s.charCodeAt(off++);
+            c4 = code < BASE64_INDEX.length ? BASE64_INDEX[code] : -1;
+            o = (c3 & 3) << 6 >>> 0;
+            o |= c4;
+            rs.push(String.fromCharCode(o));
+            ++olen;
+          }
+          var res = [];
+          for (off = 0; off < olen; off++) res.push(rs[off].charCodeAt(0));
+          return res;
+        }
+        var BCRYPT_SALT_LEN = 16;
+        var GENSALT_DEFAULT_LOG2_ROUNDS = 10;
+        var BLOWFISH_NUM_ROUNDS = 16;
+        var MAX_EXECUTION_TIME = 100;
+        var P_ORIG = [
+          608135816,
+          2242054355,
+          320440878,
+          57701188,
+          2752067618,
+          698298832,
+          137296536,
+          3964562569,
+          1160258022,
+          953160567,
+          3193202383,
+          887688300,
+          3232508343,
+          3380367581,
+          1065670069,
+          3041331479,
+          2450970073,
+          2306472731
+        ];
+        var S_ORIG = [
+          3509652390,
+          2564797868,
+          805139163,
+          3491422135,
+          3101798381,
+          1780907670,
+          3128725573,
+          4046225305,
+          614570311,
+          3012652279,
+          134345442,
+          2240740374,
+          1667834072,
+          1901547113,
+          2757295779,
+          4103290238,
+          227898511,
+          1921955416,
+          1904987480,
+          2182433518,
+          2069144605,
+          3260701109,
+          2620446009,
+          720527379,
+          3318853667,
+          677414384,
+          3393288472,
+          3101374703,
+          2390351024,
+          1614419982,
+          1822297739,
+          2954791486,
+          3608508353,
+          3174124327,
+          2024746970,
+          1432378464,
+          3864339955,
+          2857741204,
+          1464375394,
+          1676153920,
+          1439316330,
+          715854006,
+          3033291828,
+          289532110,
+          2706671279,
+          2087905683,
+          3018724369,
+          1668267050,
+          732546397,
+          1947742710,
+          3462151702,
+          2609353502,
+          2950085171,
+          1814351708,
+          2050118529,
+          680887927,
+          999245976,
+          1800124847,
+          3300911131,
+          1713906067,
+          1641548236,
+          4213287313,
+          1216130144,
+          1575780402,
+          4018429277,
+          3917837745,
+          3693486850,
+          3949271944,
+          596196993,
+          3549867205,
+          258830323,
+          2213823033,
+          772490370,
+          2760122372,
+          1774776394,
+          2652871518,
+          566650946,
+          4142492826,
+          1728879713,
+          2882767088,
+          1783734482,
+          3629395816,
+          2517608232,
+          2874225571,
+          1861159788,
+          326777828,
+          3124490320,
+          2130389656,
+          2716951837,
+          967770486,
+          1724537150,
+          2185432712,
+          2364442137,
+          1164943284,
+          2105845187,
+          998989502,
+          3765401048,
+          2244026483,
+          1075463327,
+          1455516326,
+          1322494562,
+          910128902,
+          469688178,
+          1117454909,
+          936433444,
+          3490320968,
+          3675253459,
+          1240580251,
+          122909385,
+          2157517691,
+          634681816,
+          4142456567,
+          3825094682,
+          3061402683,
+          2540495037,
+          79693498,
+          3249098678,
+          1084186820,
+          1583128258,
+          426386531,
+          1761308591,
+          1047286709,
+          322548459,
+          995290223,
+          1845252383,
+          2603652396,
+          3431023940,
+          2942221577,
+          3202600964,
+          3727903485,
+          1712269319,
+          422464435,
+          3234572375,
+          1170764815,
+          3523960633,
+          3117677531,
+          1434042557,
+          442511882,
+          3600875718,
+          1076654713,
+          1738483198,
+          4213154764,
+          2393238008,
+          3677496056,
+          1014306527,
+          4251020053,
+          793779912,
+          2902807211,
+          842905082,
+          4246964064,
+          1395751752,
+          1040244610,
+          2656851899,
+          3396308128,
+          445077038,
+          3742853595,
+          3577915638,
+          679411651,
+          2892444358,
+          2354009459,
+          1767581616,
+          3150600392,
+          3791627101,
+          3102740896,
+          284835224,
+          4246832056,
+          1258075500,
+          768725851,
+          2589189241,
+          3069724005,
+          3532540348,
+          1274779536,
+          3789419226,
+          2764799539,
+          1660621633,
+          3471099624,
+          4011903706,
+          913787905,
+          3497959166,
+          737222580,
+          2514213453,
+          2928710040,
+          3937242737,
+          1804850592,
+          3499020752,
+          2949064160,
+          2386320175,
+          2390070455,
+          2415321851,
+          4061277028,
+          2290661394,
+          2416832540,
+          1336762016,
+          1754252060,
+          3520065937,
+          3014181293,
+          791618072,
+          3188594551,
+          3933548030,
+          2332172193,
+          3852520463,
+          3043980520,
+          413987798,
+          3465142937,
+          3030929376,
+          4245938359,
+          2093235073,
+          3534596313,
+          375366246,
+          2157278981,
+          2479649556,
+          555357303,
+          3870105701,
+          2008414854,
+          3344188149,
+          4221384143,
+          3956125452,
+          2067696032,
+          3594591187,
+          2921233993,
+          2428461,
+          544322398,
+          577241275,
+          1471733935,
+          610547355,
+          4027169054,
+          1432588573,
+          1507829418,
+          2025931657,
+          3646575487,
+          545086370,
+          48609733,
+          2200306550,
+          1653985193,
+          298326376,
+          1316178497,
+          3007786442,
+          2064951626,
+          458293330,
+          2589141269,
+          3591329599,
+          3164325604,
+          727753846,
+          2179363840,
+          146436021,
+          1461446943,
+          4069977195,
+          705550613,
+          3059967265,
+          3887724982,
+          4281599278,
+          3313849956,
+          1404054877,
+          2845806497,
+          146425753,
+          1854211946,
+          1266315497,
+          3048417604,
+          3681880366,
+          3289982499,
+          290971e4,
+          1235738493,
+          2632868024,
+          2414719590,
+          3970600049,
+          1771706367,
+          1449415276,
+          3266420449,
+          422970021,
+          1963543593,
+          2690192192,
+          3826793022,
+          1062508698,
+          1531092325,
+          1804592342,
+          2583117782,
+          2714934279,
+          4024971509,
+          1294809318,
+          4028980673,
+          1289560198,
+          2221992742,
+          1669523910,
+          35572830,
+          157838143,
+          1052438473,
+          1016535060,
+          1802137761,
+          1753167236,
+          1386275462,
+          3080475397,
+          2857371447,
+          1040679964,
+          2145300060,
+          2390574316,
+          1461121720,
+          2956646967,
+          4031777805,
+          4028374788,
+          33600511,
+          2920084762,
+          1018524850,
+          629373528,
+          3691585981,
+          3515945977,
+          2091462646,
+          2486323059,
+          586499841,
+          988145025,
+          935516892,
+          3367335476,
+          2599673255,
+          2839830854,
+          265290510,
+          3972581182,
+          2759138881,
+          3795373465,
+          1005194799,
+          847297441,
+          406762289,
+          1314163512,
+          1332590856,
+          1866599683,
+          4127851711,
+          750260880,
+          613907577,
+          1450815602,
+          3165620655,
+          3734664991,
+          3650291728,
+          3012275730,
+          3704569646,
+          1427272223,
+          778793252,
+          1343938022,
+          2676280711,
+          2052605720,
+          1946737175,
+          3164576444,
+          3914038668,
+          3967478842,
+          3682934266,
+          1661551462,
+          3294938066,
+          4011595847,
+          840292616,
+          3712170807,
+          616741398,
+          312560963,
+          711312465,
+          1351876610,
+          322626781,
+          1910503582,
+          271666773,
+          2175563734,
+          1594956187,
+          70604529,
+          3617834859,
+          1007753275,
+          1495573769,
+          4069517037,
+          2549218298,
+          2663038764,
+          504708206,
+          2263041392,
+          3941167025,
+          2249088522,
+          1514023603,
+          1998579484,
+          1312622330,
+          694541497,
+          2582060303,
+          2151582166,
+          1382467621,
+          776784248,
+          2618340202,
+          3323268794,
+          2497899128,
+          2784771155,
+          503983604,
+          4076293799,
+          907881277,
+          423175695,
+          432175456,
+          1378068232,
+          4145222326,
+          3954048622,
+          3938656102,
+          3820766613,
+          2793130115,
+          2977904593,
+          26017576,
+          3274890735,
+          3194772133,
+          1700274565,
+          1756076034,
+          4006520079,
+          3677328699,
+          720338349,
+          1533947780,
+          354530856,
+          688349552,
+          3973924725,
+          1637815568,
+          332179504,
+          3949051286,
+          53804574,
+          2852348879,
+          3044236432,
+          1282449977,
+          3583942155,
+          3416972820,
+          4006381244,
+          1617046695,
+          2628476075,
+          3002303598,
+          1686838959,
+          431878346,
+          2686675385,
+          1700445008,
+          1080580658,
+          1009431731,
+          832498133,
+          3223435511,
+          2605976345,
+          2271191193,
+          2516031870,
+          1648197032,
+          4164389018,
+          2548247927,
+          300782431,
+          375919233,
+          238389289,
+          3353747414,
+          2531188641,
+          2019080857,
+          1475708069,
+          455242339,
+          2609103871,
+          448939670,
+          3451063019,
+          1395535956,
+          2413381860,
+          1841049896,
+          1491858159,
+          885456874,
+          4264095073,
+          4001119347,
+          1565136089,
+          3898914787,
+          1108368660,
+          540939232,
+          1173283510,
+          2745871338,
+          3681308437,
+          4207628240,
+          3343053890,
+          4016749493,
+          1699691293,
+          1103962373,
+          3625875870,
+          2256883143,
+          3830138730,
+          1031889488,
+          3479347698,
+          1535977030,
+          4236805024,
+          3251091107,
+          2132092099,
+          1774941330,
+          1199868427,
+          1452454533,
+          157007616,
+          2904115357,
+          342012276,
+          595725824,
+          1480756522,
+          206960106,
+          497939518,
+          591360097,
+          863170706,
+          2375253569,
+          3596610801,
+          1814182875,
+          2094937945,
+          3421402208,
+          1082520231,
+          3463918190,
+          2785509508,
+          435703966,
+          3908032597,
+          1641649973,
+          2842273706,
+          3305899714,
+          1510255612,
+          2148256476,
+          2655287854,
+          3276092548,
+          4258621189,
+          236887753,
+          3681803219,
+          274041037,
+          1734335097,
+          3815195456,
+          3317970021,
+          1899903192,
+          1026095262,
+          4050517792,
+          356393447,
+          2410691914,
+          3873677099,
+          3682840055,
+          3913112168,
+          2491498743,
+          4132185628,
+          2489919796,
+          1091903735,
+          1979897079,
+          3170134830,
+          3567386728,
+          3557303409,
+          857797738,
+          1136121015,
+          1342202287,
+          507115054,
+          2535736646,
+          337727348,
+          3213592640,
+          1301675037,
+          2528481711,
+          1895095763,
+          1721773893,
+          3216771564,
+          62756741,
+          2142006736,
+          835421444,
+          2531993523,
+          1442658625,
+          3659876326,
+          2882144922,
+          676362277,
+          1392781812,
+          170690266,
+          3921047035,
+          1759253602,
+          3611846912,
+          1745797284,
+          664899054,
+          1329594018,
+          3901205900,
+          3045908486,
+          2062866102,
+          2865634940,
+          3543621612,
+          3464012697,
+          1080764994,
+          553557557,
+          3656615353,
+          3996768171,
+          991055499,
+          499776247,
+          1265440854,
+          648242737,
+          3940784050,
+          980351604,
+          3713745714,
+          1749149687,
+          3396870395,
+          4211799374,
+          3640570775,
+          1161844396,
+          3125318951,
+          1431517754,
+          545492359,
+          4268468663,
+          3499529547,
+          1437099964,
+          2702547544,
+          3433638243,
+          2581715763,
+          2787789398,
+          1060185593,
+          1593081372,
+          2418618748,
+          4260947970,
+          69676912,
+          2159744348,
+          86519011,
+          2512459080,
+          3838209314,
+          1220612927,
+          3339683548,
+          133810670,
+          1090789135,
+          1078426020,
+          1569222167,
+          845107691,
+          3583754449,
+          4072456591,
+          1091646820,
+          628848692,
+          1613405280,
+          3757631651,
+          526609435,
+          236106946,
+          48312990,
+          2942717905,
+          3402727701,
+          1797494240,
+          859738849,
+          992217954,
+          4005476642,
+          2243076622,
+          3870952857,
+          3732016268,
+          765654824,
+          3490871365,
+          2511836413,
+          1685915746,
+          3888969200,
+          1414112111,
+          2273134842,
+          3281911079,
+          4080962846,
+          172450625,
+          2569994100,
+          980381355,
+          4109958455,
+          2819808352,
+          2716589560,
+          2568741196,
+          3681446669,
+          3329971472,
+          1835478071,
+          660984891,
+          3704678404,
+          4045999559,
+          3422617507,
+          3040415634,
+          1762651403,
+          1719377915,
+          3470491036,
+          2693910283,
+          3642056355,
+          3138596744,
+          1364962596,
+          2073328063,
+          1983633131,
+          926494387,
+          3423689081,
+          2150032023,
+          4096667949,
+          1749200295,
+          3328846651,
+          309677260,
+          2016342300,
+          1779581495,
+          3079819751,
+          111262694,
+          1274766160,
+          443224088,
+          298511866,
+          1025883608,
+          3806446537,
+          1145181785,
+          168956806,
+          3641502830,
+          3584813610,
+          1689216846,
+          3666258015,
+          3200248200,
+          1692713982,
+          2646376535,
+          4042768518,
+          1618508792,
+          1610833997,
+          3523052358,
+          4130873264,
+          2001055236,
+          3610705100,
+          2202168115,
+          4028541809,
+          2961195399,
+          1006657119,
+          2006996926,
+          3186142756,
+          1430667929,
+          3210227297,
+          1314452623,
+          4074634658,
+          4101304120,
+          2273951170,
+          1399257539,
+          3367210612,
+          3027628629,
+          1190975929,
+          2062231137,
+          2333990788,
+          2221543033,
+          2438960610,
+          1181637006,
+          548689776,
+          2362791313,
+          3372408396,
+          3104550113,
+          3145860560,
+          296247880,
+          1970579870,
+          3078560182,
+          3769228297,
+          1714227617,
+          3291629107,
+          3898220290,
+          166772364,
+          1251581989,
+          493813264,
+          448347421,
+          195405023,
+          2709975567,
+          677966185,
+          3703036547,
+          1463355134,
+          2715995803,
+          1338867538,
+          1343315457,
+          2802222074,
+          2684532164,
+          233230375,
+          2599980071,
+          2000651841,
+          3277868038,
+          1638401717,
+          4028070440,
+          3237316320,
+          6314154,
+          819756386,
+          300326615,
+          590932579,
+          1405279636,
+          3267499572,
+          3150704214,
+          2428286686,
+          3959192993,
+          3461946742,
+          1862657033,
+          1266418056,
+          963775037,
+          2089974820,
+          2263052895,
+          1917689273,
+          448879540,
+          3550394620,
+          3981727096,
+          150775221,
+          3627908307,
+          1303187396,
+          508620638,
+          2975983352,
+          2726630617,
+          1817252668,
+          1876281319,
+          1457606340,
+          908771278,
+          3720792119,
+          3617206836,
+          2455994898,
+          1729034894,
+          1080033504,
+          976866871,
+          3556439503,
+          2881648439,
+          1522871579,
+          1555064734,
+          1336096578,
+          3548522304,
+          2579274686,
+          3574697629,
+          3205460757,
+          3593280638,
+          3338716283,
+          3079412587,
+          564236357,
+          2993598910,
+          1781952180,
+          1464380207,
+          3163844217,
+          3332601554,
+          1699332808,
+          1393555694,
+          1183702653,
+          3581086237,
+          1288719814,
+          691649499,
+          2847557200,
+          2895455976,
+          3193889540,
+          2717570544,
+          1781354906,
+          1676643554,
+          2592534050,
+          3230253752,
+          1126444790,
+          2770207658,
+          2633158820,
+          2210423226,
+          2615765581,
+          2414155088,
+          3127139286,
+          673620729,
+          2805611233,
+          1269405062,
+          4015350505,
+          3341807571,
+          4149409754,
+          1057255273,
+          2012875353,
+          2162469141,
+          2276492801,
+          2601117357,
+          993977747,
+          3918593370,
+          2654263191,
+          753973209,
+          36408145,
+          2530585658,
+          25011837,
+          3520020182,
+          2088578344,
+          530523599,
+          2918365339,
+          1524020338,
+          1518925132,
+          3760827505,
+          3759777254,
+          1202760957,
+          3985898139,
+          3906192525,
+          674977740,
+          4174734889,
+          2031300136,
+          2019492241,
+          3983892565,
+          4153806404,
+          3822280332,
+          352677332,
+          2297720250,
+          60907813,
+          90501309,
+          3286998549,
+          1016092578,
+          2535922412,
+          2839152426,
+          457141659,
+          509813237,
+          4120667899,
+          652014361,
+          1966332200,
+          2975202805,
+          55981186,
+          2327461051,
+          676427537,
+          3255491064,
+          2882294119,
+          3433927263,
+          1307055953,
+          942726286,
+          933058658,
+          2468411793,
+          3933900994,
+          4215176142,
+          1361170020,
+          2001714738,
+          2830558078,
+          3274259782,
+          1222529897,
+          1679025792,
+          2729314320,
+          3714953764,
+          1770335741,
+          151462246,
+          3013232138,
+          1682292957,
+          1483529935,
+          471910574,
+          1539241949,
+          458788160,
+          3436315007,
+          1807016891,
+          3718408830,
+          978976581,
+          1043663428,
+          3165965781,
+          1927990952,
+          4200891579,
+          2372276910,
+          3208408903,
+          3533431907,
+          1412390302,
+          2931980059,
+          4132332400,
+          1947078029,
+          3881505623,
+          4168226417,
+          2941484381,
+          1077988104,
+          1320477388,
+          886195818,
+          18198404,
+          3786409e3,
+          2509781533,
+          112762804,
+          3463356488,
+          1866414978,
+          891333506,
+          18488651,
+          661792760,
+          1628790961,
+          3885187036,
+          3141171499,
+          876946877,
+          2693282273,
+          1372485963,
+          791857591,
+          2686433993,
+          3759982718,
+          3167212022,
+          3472953795,
+          2716379847,
+          445679433,
+          3561995674,
+          3504004811,
+          3574258232,
+          54117162,
+          3331405415,
+          2381918588,
+          3769707343,
+          4154350007,
+          1140177722,
+          4074052095,
+          668550556,
+          3214352940,
+          367459370,
+          261225585,
+          2610173221,
+          4209349473,
+          3468074219,
+          3265815641,
+          314222801,
+          3066103646,
+          3808782860,
+          282218597,
+          3406013506,
+          3773591054,
+          379116347,
+          1285071038,
+          846784868,
+          2669647154,
+          3771962079,
+          3550491691,
+          2305946142,
+          453669953,
+          1268987020,
+          3317592352,
+          3279303384,
+          3744833421,
+          2610507566,
+          3859509063,
+          266596637,
+          3847019092,
+          517658769,
+          3462560207,
+          3443424879,
+          370717030,
+          4247526661,
+          2224018117,
+          4143653529,
+          4112773975,
+          2788324899,
+          2477274417,
+          1456262402,
+          2901442914,
+          1517677493,
+          1846949527,
+          2295493580,
+          3734397586,
+          2176403920,
+          1280348187,
+          1908823572,
+          3871786941,
+          846861322,
+          1172426758,
+          3287448474,
+          3383383037,
+          1655181056,
+          3139813346,
+          901632758,
+          1897031941,
+          2986607138,
+          3066810236,
+          3447102507,
+          1393639104,
+          373351379,
+          950779232,
+          625454576,
+          3124240540,
+          4148612726,
+          2007998917,
+          544563296,
+          2244738638,
+          2330496472,
+          2058025392,
+          1291430526,
+          424198748,
+          50039436,
+          29584100,
+          3605783033,
+          2429876329,
+          2791104160,
+          1057563949,
+          3255363231,
+          3075367218,
+          3463963227,
+          1469046755,
+          985887462
+        ];
+        var C_ORIG = [
+          1332899944,
+          1700884034,
+          1701343084,
+          1684370003,
+          1668446532,
+          1869963892
+        ];
+        function _encipher(lr, off, P, S) {
+          var n, l2 = lr[off], r = lr[off + 1];
+          l2 ^= P[0];
+          n = S[l2 >>> 24];
+          n += S[256 | l2 >> 16 & 255];
+          n ^= S[512 | l2 >> 8 & 255];
+          n += S[768 | l2 & 255];
+          r ^= n ^ P[1];
+          n = S[r >>> 24];
+          n += S[256 | r >> 16 & 255];
+          n ^= S[512 | r >> 8 & 255];
+          n += S[768 | r & 255];
+          l2 ^= n ^ P[2];
+          n = S[l2 >>> 24];
+          n += S[256 | l2 >> 16 & 255];
+          n ^= S[512 | l2 >> 8 & 255];
+          n += S[768 | l2 & 255];
+          r ^= n ^ P[3];
+          n = S[r >>> 24];
+          n += S[256 | r >> 16 & 255];
+          n ^= S[512 | r >> 8 & 255];
+          n += S[768 | r & 255];
+          l2 ^= n ^ P[4];
+          n = S[l2 >>> 24];
+          n += S[256 | l2 >> 16 & 255];
+          n ^= S[512 | l2 >> 8 & 255];
+          n += S[768 | l2 & 255];
+          r ^= n ^ P[5];
+          n = S[r >>> 24];
+          n += S[256 | r >> 16 & 255];
+          n ^= S[512 | r >> 8 & 255];
+          n += S[768 | r & 255];
+          l2 ^= n ^ P[6];
+          n = S[l2 >>> 24];
+          n += S[256 | l2 >> 16 & 255];
+          n ^= S[512 | l2 >> 8 & 255];
+          n += S[768 | l2 & 255];
+          r ^= n ^ P[7];
+          n = S[r >>> 24];
+          n += S[256 | r >> 16 & 255];
+          n ^= S[512 | r >> 8 & 255];
+          n += S[768 | r & 255];
+          l2 ^= n ^ P[8];
+          n = S[l2 >>> 24];
+          n += S[256 | l2 >> 16 & 255];
+          n ^= S[512 | l2 >> 8 & 255];
+          n += S[768 | l2 & 255];
+          r ^= n ^ P[9];
+          n = S[r >>> 24];
+          n += S[256 | r >> 16 & 255];
+          n ^= S[512 | r >> 8 & 255];
+          n += S[768 | r & 255];
+          l2 ^= n ^ P[10];
+          n = S[l2 >>> 24];
+          n += S[256 | l2 >> 16 & 255];
+          n ^= S[512 | l2 >> 8 & 255];
+          n += S[768 | l2 & 255];
+          r ^= n ^ P[11];
+          n = S[r >>> 24];
+          n += S[256 | r >> 16 & 255];
+          n ^= S[512 | r >> 8 & 255];
+          n += S[768 | r & 255];
+          l2 ^= n ^ P[12];
+          n = S[l2 >>> 24];
+          n += S[256 | l2 >> 16 & 255];
+          n ^= S[512 | l2 >> 8 & 255];
+          n += S[768 | l2 & 255];
+          r ^= n ^ P[13];
+          n = S[r >>> 24];
+          n += S[256 | r >> 16 & 255];
+          n ^= S[512 | r >> 8 & 255];
+          n += S[768 | r & 255];
+          l2 ^= n ^ P[14];
+          n = S[l2 >>> 24];
+          n += S[256 | l2 >> 16 & 255];
+          n ^= S[512 | l2 >> 8 & 255];
+          n += S[768 | l2 & 255];
+          r ^= n ^ P[15];
+          n = S[r >>> 24];
+          n += S[256 | r >> 16 & 255];
+          n ^= S[512 | r >> 8 & 255];
+          n += S[768 | r & 255];
+          l2 ^= n ^ P[16];
+          lr[off] = r ^ P[BLOWFISH_NUM_ROUNDS + 1];
+          lr[off + 1] = l2;
+          return lr;
+        }
+        function _streamtoword(data, offp) {
+          for (var i = 0, word = 0; i < 4; ++i)
+            word = word << 8 | data[offp] & 255, offp = (offp + 1) % data.length;
+          return {
+            key: word,
+            offp
+          };
+        }
+        function _key(key, P, S) {
+          var offset = 0, lr = [0, 0], plen = P.length, slen = S.length, sw;
+          for (var i = 0; i < plen; i++)
+            sw = _streamtoword(key, offset), offset = sw.offp, P[i] = P[i] ^ sw.key;
+          for (i = 0; i < plen; i += 2)
+            lr = _encipher(lr, 0, P, S), P[i] = lr[0], P[i + 1] = lr[1];
+          for (i = 0; i < slen; i += 2)
+            lr = _encipher(lr, 0, P, S), S[i] = lr[0], S[i + 1] = lr[1];
+        }
+        function _ekskey(data, key, P, S) {
+          var offp = 0, lr = [0, 0], plen = P.length, slen = S.length, sw;
+          for (var i = 0; i < plen; i++)
+            sw = _streamtoword(key, offp), offp = sw.offp, P[i] = P[i] ^ sw.key;
+          offp = 0;
+          for (i = 0; i < plen; i += 2)
+            sw = _streamtoword(data, offp), offp = sw.offp, lr[0] ^= sw.key, sw = _streamtoword(data, offp), offp = sw.offp, lr[1] ^= sw.key, lr = _encipher(lr, 0, P, S), P[i] = lr[0], P[i + 1] = lr[1];
+          for (i = 0; i < slen; i += 2)
+            sw = _streamtoword(data, offp), offp = sw.offp, lr[0] ^= sw.key, sw = _streamtoword(data, offp), offp = sw.offp, lr[1] ^= sw.key, lr = _encipher(lr, 0, P, S), S[i] = lr[0], S[i + 1] = lr[1];
+        }
+        function _crypt(b, salt, rounds, callback, progressCallback) {
+          var cdata = C_ORIG.slice(), clen = cdata.length, err;
+          if (rounds < 4 || rounds > 31) {
+            err = Error("Illegal number of rounds (4-31): " + rounds);
+            if (callback) {
+              nextTick(callback.bind(this, err));
+              return;
+            } else throw err;
+          }
+          if (salt.length !== BCRYPT_SALT_LEN) {
+            err = Error(
+              "Illegal salt length: " + salt.length + " != " + BCRYPT_SALT_LEN
+            );
+            if (callback) {
+              nextTick(callback.bind(this, err));
+              return;
+            } else throw err;
+          }
+          rounds = 1 << rounds >>> 0;
+          var P, S, i = 0, j;
+          if (typeof Int32Array === "function") {
+            P = new Int32Array(P_ORIG);
+            S = new Int32Array(S_ORIG);
+          } else {
+            P = P_ORIG.slice();
+            S = S_ORIG.slice();
+          }
+          _ekskey(salt, b, P, S);
+          function next() {
+            if (progressCallback) progressCallback(i / rounds);
+            if (i < rounds) {
+              var start = Date.now();
+              for (; i < rounds; ) {
+                i = i + 1;
+                _key(b, P, S);
+                _key(salt, P, S);
+                if (Date.now() - start > MAX_EXECUTION_TIME) break;
+              }
+            } else {
+              for (i = 0; i < 64; i++)
+                for (j = 0; j < clen >> 1; j++) _encipher(cdata, j << 1, P, S);
+              var ret2 = [];
+              for (i = 0; i < clen; i++)
+                ret2.push((cdata[i] >> 24 & 255) >>> 0), ret2.push((cdata[i] >> 16 & 255) >>> 0), ret2.push((cdata[i] >> 8 & 255) >>> 0), ret2.push((cdata[i] & 255) >>> 0);
+              if (callback) {
+                callback(null, ret2);
+                return;
+              } else return ret2;
+            }
+            if (callback) nextTick(next);
+          }
+          if (typeof callback !== "undefined") {
+            next();
+          } else {
+            var res;
+            while (true)
+              if (typeof (res = next()) !== "undefined") return res || [];
+          }
+        }
+        function _hash(password, salt, callback, progressCallback) {
+          var err;
+          if (typeof password !== "string" || typeof salt !== "string") {
+            err = Error("Invalid string / salt: Not a string");
+            if (callback) {
+              nextTick(callback.bind(this, err));
+              return;
+            } else throw err;
+          }
+          var minor, offset;
+          if (salt.charAt(0) !== "$" || salt.charAt(1) !== "2") {
+            err = Error("Invalid salt version: " + salt.substring(0, 2));
+            if (callback) {
+              nextTick(callback.bind(this, err));
+              return;
+            } else throw err;
+          }
+          if (salt.charAt(2) === "$")
+            minor = String.fromCharCode(0), offset = 3;
+          else {
+            minor = salt.charAt(2);
+            if (minor !== "a" && minor !== "b" && minor !== "y" || salt.charAt(3) !== "$") {
+              err = Error("Invalid salt revision: " + salt.substring(2, 4));
+              if (callback) {
+                nextTick(callback.bind(this, err));
+                return;
+              } else throw err;
+            }
+            offset = 4;
+          }
+          if (salt.charAt(offset + 2) > "$") {
+            err = Error("Missing salt rounds");
+            if (callback) {
+              nextTick(callback.bind(this, err));
+              return;
+            } else throw err;
+          }
+          var r1 = parseInt(salt.substring(offset, offset + 1), 10) * 10, r2 = parseInt(salt.substring(offset + 1, offset + 2), 10), rounds = r1 + r2, real_salt = salt.substring(offset + 3, offset + 25);
+          password += minor >= "a" ? "\0" : "";
+          var passwordb = utf8Array(password), saltb = base64_decode(real_salt, BCRYPT_SALT_LEN);
+          function finish(bytes) {
+            var res = [];
+            res.push("$2");
+            if (minor >= "a") res.push(minor);
+            res.push("$");
+            if (rounds < 10) res.push("0");
+            res.push(rounds.toString());
+            res.push("$");
+            res.push(base64_encode(saltb, saltb.length));
+            res.push(base64_encode(bytes, C_ORIG.length * 4 - 1));
+            return res.join("");
+          }
+          if (typeof callback == "undefined")
+            return finish(_crypt(passwordb, saltb, rounds));
+          else {
+            _crypt(
+              passwordb,
+              saltb,
+              rounds,
+              function(err2, bytes) {
+                if (err2) callback(err2, null);
+                else callback(null, finish(bytes));
+              },
+              progressCallback
+            );
+          }
+        }
+        function encodeBase64(bytes, length) {
+          return base64_encode(bytes, length);
+        }
+        function decodeBase64(string4, length) {
+          return base64_decode(string4, length);
+        }
+        var _default3 = _exports.default = {
+          setRandomFallback,
+          genSaltSync,
+          genSalt,
+          hashSync,
+          hash: hash2,
+          compareSync,
+          compare,
+          getRounds,
+          getSalt,
+          truncates,
+          encodeBase64,
+          decodeBase64
+        };
+      }
+    );
   }
 });
 
@@ -97883,12 +99703,12 @@ init_trackingService();
 init_db();
 
 // src/services/encryptionService.ts
-var crypto6 = __toESM(require("crypto"));
+var crypto7 = __toESM(require("crypto"));
 init_config2();
 function encryptCredential(plaintext) {
   const key = Buffer.from(config.vaultEncryptionKey, "hex");
-  const iv = crypto6.randomBytes(16);
-  const cipher = crypto6.createCipheriv("aes-256-gcm", key, iv);
+  const iv = crypto7.randomBytes(16);
+  const cipher = crypto7.createCipheriv("aes-256-gcm", key, iv);
   let encrypted = cipher.update(plaintext, "utf8", "hex");
   encrypted += cipher.final("hex");
   const authTag = cipher.getAuthTag().toString("hex");
@@ -97896,7 +99716,7 @@ function encryptCredential(plaintext) {
 }
 function decryptCredential(encrypted, iv, authTag) {
   const key = Buffer.from(config.vaultEncryptionKey, "hex");
-  const decipher = crypto6.createDecipheriv("aes-256-gcm", key, Buffer.from(iv, "hex"));
+  const decipher = crypto7.createDecipheriv("aes-256-gcm", key, Buffer.from(iv, "hex"));
   decipher.setAuthTag(Buffer.from(authTag, "hex"));
   let decrypted = decipher.update(encrypted, "hex", "utf8");
   decrypted += decipher.final("utf8");
@@ -98009,7 +99829,7 @@ function rateLimit(key, maxRequests, windowMs) {
 function rateLimitMiddleware(maxRequests, windowMs) {
   const ms = windowMs ?? config.rateLimitWindowMs;
   return (req, res, next) => {
-    const ip = req.ip || req.socket?.remoteAddress || "unknown";
+    const ip = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.ip || req.socket?.remoteAddress || "unknown";
     const key = `rl:${req.path}:${ip}`;
     if (!rateLimit(key, maxRequests, ms)) {
       return res.status(429).json({
@@ -118013,8 +119833,8 @@ async function handleRedirectLanding(req, res, type) {
     const resolvedProjectId = project?.id || session.metadata_json?.project_id;
     const resolvedVendorId = session.vendor_id;
     const studyId = session.study_id;
-    const crypto8 = require("crypto");
-    const cbKey = crypto8.createHash("sha256").update(`${resolvedProjectId || studyId}|${resolvedVendorId}|${normUid}|${status}|${txid}`).digest("hex");
+    const crypto9 = require("crypto");
+    const cbKey = crypto9.createHash("sha256").update(`${resolvedProjectId || studyId}|${resolvedVendorId}|${normUid}|${status}|${txid}`).digest("hex");
     const eventInserted = await db.createResponseEvent({
       session_id: session.id,
       study_id: studyId,
@@ -118144,7 +119964,8 @@ router2.post(
         "Account suspended. Contact administrator."
       );
     }
-    if (user.locked_until && new Date(user.locked_until) > /* @__PURE__ */ new Date()) {
+    const isTempUnlocked = user.temp_unlock_until && new Date(user.temp_unlock_until) > /* @__PURE__ */ new Date();
+    if (!isTempUnlocked && user.locked_until && new Date(user.locked_until) > /* @__PURE__ */ new Date()) {
       const minutes = Math.ceil((new Date(user.locked_until).getTime() - Date.now()) / 6e4);
       await db.recordLoginAudit({
         userId: user.id,
@@ -118161,9 +119982,22 @@ router2.post(
         `Account temporarily locked due to too many failed attempts. Try again in ${minutes} minute(s).`
       );
     }
-    const crypto8 = require("crypto");
-    const passwordHash = crypto8.createHmac("sha256", config.authSecret).update(v.data.password).digest("hex");
-    if (user.password_hash && user.password_hash !== passwordHash) {
+    const bcrypt = require_umd();
+    let isPasswordValid = false;
+    if (user.password_hash) {
+      if (user.password_hash.startsWith("$2a$") || user.password_hash.startsWith("$2b$")) {
+        isPasswordValid = await bcrypt.compare(v.data.password, user.password_hash);
+      } else {
+        const crypto9 = require("crypto");
+        const legacyHash = crypto9.createHmac("sha256", config.authSecret).update(v.data.password).digest("hex");
+        if (user.password_hash === legacyHash) {
+          isPasswordValid = true;
+          const newBcryptHash = await bcrypt.hash(v.data.password, 10);
+          await db.updateUserPassword(user.id, newBcryptHash);
+        }
+      }
+    }
+    if (!isPasswordValid) {
       const { failedAttempts, lockedUntil } = await db.recordFailedLogin(user.id, ip, userAgent);
       await db.recordLoginAudit({
         userId: user.id,
@@ -118244,12 +120078,21 @@ router2.post(
     }
     const user = await db.getUserById(req.user.id);
     if (!user) return apiError(res, 404, "USER_NOT_FOUND", "User not found");
-    const crypto8 = require("crypto");
-    const currentHash = crypto8.createHmac("sha256", config.authSecret).update(currentPassword).digest("hex");
-    if (user.password_hash !== currentHash) {
+    const bcrypt = require_umd();
+    let isCurrentValid = false;
+    if (user.password_hash) {
+      if (user.password_hash.startsWith("$2a$") || user.password_hash.startsWith("$2b$")) {
+        isCurrentValid = await bcrypt.compare(currentPassword, user.password_hash);
+      } else {
+        const crypto9 = require("crypto");
+        const legacyHash = crypto9.createHmac("sha256", config.authSecret).update(currentPassword).digest("hex");
+        isCurrentValid = user.password_hash === legacyHash;
+      }
+    }
+    if (!isCurrentValid) {
       return apiError(res, 401, "INVALID_CURRENT_PASSWORD", "Current password is incorrect");
     }
-    const newHash = crypto8.createHmac("sha256", config.authSecret).update(newPassword).digest("hex");
+    const newHash = await bcrypt.hash(newPassword, 10);
     await db.updateUserPassword(user.id, newHash);
     const ip = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.socket?.remoteAddress || "unknown";
     const userAgent = req.headers["user-agent"] || "unknown";
@@ -118262,6 +120105,134 @@ router2.post(
       userAgent
     });
     res.json({ success: true, data: { message: "Password changed successfully. Please log in again." } });
+  })
+);
+router2.post(
+  "/auth/admin/recovery-secret/setup",
+  authenticate,
+  authorize(["SUPER_ADMIN", "ADMIN"]),
+  asyncHandler(async (req, res) => {
+    const { recoverySecret } = req.body || {};
+    if (!recoverySecret || typeof recoverySecret !== "string" || recoverySecret.length < 8) {
+      return validationError(res, ["recoverySecret must be at least 8 characters"]);
+    }
+    const crypto9 = require("crypto");
+    const secretHash = crypto9.createHmac("sha256", config.authSecret).update(recoverySecret).digest("hex");
+    await db.setRecoverySecret(req.user.id, secretHash);
+    const ip = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.socket?.remoteAddress || "unknown";
+    await db.createAuditLog({
+      user: req.user?.email || "admin",
+      action: "RECOVERY_SECRET_UPDATED",
+      entity: "user",
+      entity_id: req.user.id,
+      ip
+    });
+    res.json({ success: true, message: "Recovery secret configured successfully." });
+  })
+);
+router2.post(
+  "/auth/admin/recovery/verify",
+  authRateLimit,
+  asyncHandler(async (req, res) => {
+    const { email: email3, recoverySecret } = req.body || {};
+    if (!email3 || !recoverySecret) {
+      return validationError(res, ["email and recoverySecret are required"]);
+    }
+    const user = await db.getUserByEmail(String(email3).trim().toLowerCase());
+    if (!user || !["ADMIN", "SUPER_ADMIN"].includes(user.role)) {
+      return apiError(res, 404, "ADMIN_NOT_FOUND", "Admin user not found");
+    }
+    if (!user.recovery_secret_hash) {
+      return apiError(res, 400, "RECOVERY_NOT_CONFIGURED", "Admin recovery secret has not been configured");
+    }
+    if (user.recovery_locked_until) {
+      if (new Date(user.recovery_locked_until) > /* @__PURE__ */ new Date()) {
+        const waitMinutes = Math.ceil((new Date(user.recovery_locked_until).getTime() - Date.now()) / 6e4);
+        return apiError(res, 429, "RECOVERY_LOCKED", `Too many failed recovery attempts. Locked for ${waitMinutes} minutes.`);
+      } else {
+        await db.pool.query("UPDATE users SET recovery_attempts = 0, recovery_locked_until = NULL WHERE id = $1", [user.id]);
+      }
+    }
+    const crypto9 = require("crypto");
+    const inputHash = crypto9.createHmac("sha256", config.authSecret).update(String(recoverySecret)).digest("hex");
+    if (user.recovery_secret_hash !== inputHash) {
+      const { attempts, lockedUntil } = await db.recordFailedRecovery(user.id);
+      if (lockedUntil) {
+        return apiError(res, 429, "RECOVERY_LOCKED", "5 failed recovery attempts. Account recovery locked for 15 minutes.");
+      }
+      return apiError(res, 401, "INVALID_RECOVERY_SECRET", `Invalid recovery secret. ${5 - attempts} attempts remaining.`);
+    }
+    const tempUnlockUntil = await db.setTempUnlock(user.id, 10);
+    const ip = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.socket?.remoteAddress || "unknown";
+    await db.createAuditLog({
+      user: user.email,
+      action: "ADMIN_RECOVERY_SUCCESS",
+      entity: "user",
+      entity_id: user.id,
+      ip
+    });
+    res.json({
+      success: true,
+      message: "Recovery secret verified. Account temporarily unlocked for 10 minutes.",
+      data: {
+        email: user.email,
+        temp_unlock_until: tempUnlockUntil
+      }
+    });
+  })
+);
+router2.post(
+  "/auth/admin/recovery/reset-password",
+  authRateLimit,
+  asyncHandler(async (req, res) => {
+    const { email: email3, recoverySecret, newPassword } = req.body || {};
+    if (!email3 || !recoverySecret || !newPassword) {
+      return validationError(res, ["email, recoverySecret, and newPassword are required"]);
+    }
+    if (String(newPassword).length < 8) {
+      return validationError(res, ["newPassword must be at least 8 characters"]);
+    }
+    const user = await db.getUserByEmail(String(email3).trim().toLowerCase());
+    if (!user || !["ADMIN", "SUPER_ADMIN"].includes(user.role)) {
+      return apiError(res, 404, "ADMIN_NOT_FOUND", "Admin user not found");
+    }
+    if (!user.recovery_secret_hash) {
+      return apiError(res, 400, "RECOVERY_NOT_CONFIGURED", "Admin recovery secret has not been configured");
+    }
+    if (user.recovery_locked_until && new Date(user.recovery_locked_until) > /* @__PURE__ */ new Date()) {
+      return apiError(res, 429, "RECOVERY_LOCKED", "Account recovery is currently locked due to multiple failed attempts");
+    }
+    if (!user.temp_unlock_until || new Date(user.temp_unlock_until) < /* @__PURE__ */ new Date()) {
+      return apiError(res, 403, "RECOVERY_EXPIRED", "Recovery window has expired or is invalid. Please verify recovery secret again.");
+    }
+    const crypto9 = require("crypto");
+    const inputHash = crypto9.createHmac("sha256", config.authSecret).update(String(recoverySecret)).digest("hex");
+    if (user.recovery_secret_hash !== inputHash) {
+      await db.recordFailedRecovery(user.id);
+      return apiError(res, 401, "INVALID_RECOVERY_SECRET", "Invalid recovery secret");
+    }
+    const bcrypt = require_umd();
+    const newPasswordHash = await bcrypt.hash(String(newPassword), 10);
+    await db.updateUserPassword(user.id, newPasswordHash);
+    await db.unlockUser(user.id);
+    await db.pool.query(
+      `UPDATE users 
+       SET temp_unlock_until = NULL, recovery_attempts = 0, recovery_locked_until = NULL, failed_login_attempts = 0, locked_until = NULL 
+       WHERE id = $1`,
+      [user.id]
+    );
+    const ip = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.socket?.remoteAddress || "unknown";
+    await db.createAuditLog({
+      user: user.email,
+      action: "ADMIN_RECOVERY_PASSWORD_RESET",
+      entity: "user",
+      entity_id: user.id,
+      ip
+    });
+    res.json({
+      success: true,
+      message: "Password reset successfully via verified recovery secret."
+    });
   })
 );
 router2.get(
@@ -118465,10 +120436,11 @@ router2.post(
     if (existing) {
       return apiError(res, 409, "USER_EXISTS", "A user with this email or login ID already exists");
     }
-    const crypto8 = require("crypto");
-    const passwordHash = crypto8.createHmac("sha256", config.authSecret).update(password).digest("hex");
+    const bcrypt = require_umd();
+    const crypto9 = require("crypto");
+    const passwordHash = await bcrypt.hash(password, 10);
     const user = await db.createUser({
-      auth_user_id: crypto8.randomUUID(),
+      auth_user_id: crypto9.randomUUID(),
       full_name: full_name ? String(full_name).trim() : email3.split("@")[0],
       email: String(email3).trim().toLowerCase(),
       password_hash: passwordHash,
@@ -118664,8 +120636,8 @@ router2.post(
     }
     const user = await db.getUserById(id);
     if (!user) return apiError(res, 404, "USER_NOT_FOUND", "User not found");
-    const crypto8 = require("crypto");
-    const passwordHash = crypto8.createHmac("sha256", config.authSecret).update(password).digest("hex");
+    const bcrypt = require_umd();
+    const passwordHash = await bcrypt.hash(password, 10);
     await db.updateUserPassword(id, passwordHash);
     if (force_password_change !== void 0 || forcePasswordChange !== void 0) {
       await db.pool.query(
@@ -119472,7 +121444,7 @@ router2.get(
     const userAgent = req.get("User-Agent") || null;
     const referrer = req.get("Referer") || req.get("Referrer") || null;
     const landingUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
-    const crypto8 = require("crypto");
+    const crypto9 = require("crypto");
     const { rows: existingSess } = await db.pool.query(
       `SELECT * FROM sessions 
        WHERE (metadata_json->>'project_id' = $1 OR study_id = $2) 
@@ -119482,7 +121454,7 @@ router2.get(
     );
     let session = existingSess[0];
     if (!session) {
-      const sessionToken = "sess_" + crypto8.randomBytes(18).toString("hex");
+      const sessionToken = "sess_" + crypto9.randomBytes(18).toString("hex");
       const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1e3);
       session = await db.createSession({
         session_token: sessionToken,
@@ -119492,7 +121464,7 @@ router2.get(
         uid: original,
         normalized_uid: normalized,
         external_uid: null,
-        ip_hash: crypto8.createHash("sha256").update(ipAddress + (config.authSecret || "salt")).digest("hex"),
+        ip_hash: crypto9.createHash("sha256").update(ipAddress + (config.authSecret || "salt")).digest("hex"),
         ip_address_encrypted_or_restricted_storage: true,
         user_agent: userAgent,
         country_detected: country.country_code,
@@ -119511,7 +121483,7 @@ router2.get(
           vendor_id: assignedVendorId
         }
       });
-      const landingKey = crypto8.createHash("sha256").update(`${project.id}|${assignedVendorId}|${normalized}|LANDING`).digest("hex");
+      const landingKey = crypto9.createHash("sha256").update(`${project.id}|${assignedVendorId}|${normalized}|LANDING`).digest("hex");
       await db.createResponseEvent({
         session_id: session.id,
         study_id: studyId,
@@ -119835,7 +121807,7 @@ router2.get(
         const allVendors = await db.getVendors(true);
         assignedVendorId = allVendors[0]?.id || null;
       }
-      const crypto8 = require("crypto");
+      const crypto9 = require("crypto");
       const { rows: existingSess } = await db.pool.query(
         `SELECT * FROM sessions
        WHERE metadata_json->>'project_id' = $1
@@ -119846,9 +121818,9 @@ router2.get(
       );
       let session = existingSess[0];
       if (!session) {
-        const sessionToken = "trk_" + crypto8.randomBytes(20).toString("hex");
+        const sessionToken = "trk_" + crypto9.randomBytes(20).toString("hex");
         const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1e3);
-        const ipHash = crypto8.createHash("sha256").update(ipAddress + config.authSecret).digest("hex");
+        const ipHash = crypto9.createHash("sha256").update(ipAddress + config.authSecret).digest("hex");
         session = await db.createSession({
           session_token: sessionToken,
           study_id: studyId,
@@ -119878,7 +121850,7 @@ router2.get(
             tracking_type: "OPI_TRACK"
           }
         });
-        const landingKey = crypto8.createHash("sha256").update(`${project.id}|${country.id}|${normalized}|LANDING`).digest("hex");
+        const landingKey = crypto9.createHash("sha256").update(`${project.id}|${country.id}|${normalized}|LANDING`).digest("hex");
         await db.createResponseEvent({
           session_id: session.id,
           study_id: studyId,
@@ -119967,8 +121939,8 @@ router2.get(
     const links = await db.getTrackingLinks({ study_id: session.study_id, vendor_id: session.vendor_id });
     const link = links[0];
     if (!link) return apiError(res, 404, "LINK_NOT_FOUND", "Tracking link not found");
-    const crypto8 = require("crypto");
-    const startKey = crypto8.createHash("sha256").update(`${session.study_id}|${session.vendor_id}|${session.normalized_uid}|START`).digest("hex");
+    const crypto9 = require("crypto");
+    const startKey = crypto9.createHash("sha256").update(`${session.study_id}|${session.vendor_id}|${session.normalized_uid}|START`).digest("hex");
     await db.createResponseEvent({
       session_id: session.id,
       study_id: session.study_id,
@@ -121573,7 +123545,7 @@ router2.post(
     if (missingUrls.length > 0) {
       return validationError(res, [`survey_url is required for each country. Missing for: ${missingUrls.map((c) => c.code || "unknown").join(", ")}`]);
     }
-    const crypto8 = require("crypto");
+    const crypto9 = require("crypto");
     let projectCode = "";
     let attempts = 0;
     while (attempts < 20) {
@@ -121590,7 +123562,7 @@ router2.post(
       attempts++;
     }
     if (!projectCode) {
-      projectCode = "OPI" + crypto8.randomBytes(3).toString("hex").toUpperCase();
+      projectCode = "OPI" + crypto9.randomBytes(3).toString("hex").toUpperCase();
     }
     const resolvedCountries = [];
     for (const c of countries) {
