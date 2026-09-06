@@ -2278,6 +2278,182 @@ function buildOpiLaunchUrl(baseUrl: string, projectCode: string, countryCode: st
   return `${baseUrl}/track?code=${projectCode}&country=${countryCode.toUpperCase()}&uid={UID}`;
 }
 
+function escapeHtml(str: any): string {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function renderProjectPausedPage(project: any, countryCode: string): string {
+  const code = project.project_code || 'OPI';
+  const name = project.name || 'Survey';
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project Paused · Opinion Insights</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0B0F19;
+      color: #E2E8F0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      position: relative;
+      overflow-x: hidden;
+    }
+    body::before {
+      content: '';
+      position: fixed;
+      top: -20%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(245, 158, 11, 0.12) 0%, rgba(11, 15, 25, 0) 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .card {
+      position: relative;
+      z-index: 1;
+      background: rgba(17, 24, 39, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(245, 158, 11, 0.1);
+      border-radius: 20px;
+      padding: 44px 36px;
+      max-width: 500px;
+      width: 100%;
+      text-align: center;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      color: #F59E0B;
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 0.825rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+    .status-badge .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #F59E0B;
+      box-shadow: 0 0 8px #F59E0B;
+    }
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #FFFFFF;
+      margin-bottom: 12px;
+      letter-spacing: -0.01em;
+    }
+    p {
+      color: #94A3B8;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+    .meta-box {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 28px;
+      text-align: left;
+    }
+    .meta-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.85rem;
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+    .meta-row:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+    .meta-row:first-child {
+      padding-top: 0;
+    }
+    .meta-label {
+      color: #64748B;
+      font-weight: 500;
+    }
+    .meta-val {
+      font-family: ui-monospace, monospace;
+      color: #E2E8F0;
+      font-weight: 600;
+    }
+    .footer-note {
+      font-size: 0.775rem;
+      color: #475569;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card" id="project-paused-notice" data-status="PAUSED">
+    <div class="status-badge">
+      <span class="dot"></span>
+      Project Paused
+    </div>
+    <h1>Project Paused</h1>
+    <p>This project is temporarily paused and not accepting new survey responses. If you believe this is an error, please contact your project administrator.</p>
+    
+    <div class="meta-box">
+      <div class="meta-row">
+        <span class="meta-label">Project:</span>
+        <span class="meta-val">${escapeHtml(code)}</span>
+      </div>
+      <div class="meta-row">
+        <span class="meta-label">Study Name:</span>
+        <span class="meta-val" style="font-family:inherit;">${escapeHtml(name)}</span>
+      </div>
+      ${countryCode ? `
+      <div class="meta-row">
+        <span class="meta-label">Market:</span>
+        <span class="meta-val">${escapeHtml(countryCode)}</span>
+      </div>` : ''}
+      <div class="meta-row">
+        <span class="meta-label">Status:</span>
+        <span class="meta-val" style="color:#F59E0B;">🟡 PAUSED</span>
+      </div>
+    </div>
+
+    <div class="footer-note">
+      <span>🔒</span> Opinion Insights Secure Fieldwork Telemetry
+    </div>
+  </div>
+</body>
+</html>`;
+}
+
 // ─── /track — Canonical OPI Tracking Entrypoint ──────────────────────────────
 // GET /track?code=OPI883&country=FR&uid=VDFERRER
 
@@ -2300,6 +2476,25 @@ router.get(
     );
     const project = projRows[0];
     if (!project) return apiError(res, 404, 'INVALID_PROJECT', `Project '${projectCode}' not found`);
+
+    // 1.1 Check if project is paused — block new respondent launch safely
+    if (project.status === 'PAUSED') {
+      res.setHeader('X-Project-Status', 'PAUSED');
+      res.setHeader('X-Survey-Paused', 'true');
+
+      const wantsJson = (req.headers.accept && req.headers.accept.includes('application/json')) ||
+                        req.query.format === 'json';
+      if (wantsJson) {
+        return res.status(423).json({
+          success: false,
+          status: 'PAUSED',
+          code: 'PROJECT_PAUSED',
+          message: `Project '${projectCode}' is currently paused. New survey sessions cannot be created.`,
+        });
+      }
+
+      return res.status(200).send(renderProjectPausedPage(project, countryCode));
+    }
 
     // 2. Validate country (must belong to project and be active)
     const { rows: countryRows } = await db.pool.query(
@@ -4250,6 +4445,7 @@ router.post(
       vendor_rate: vendor_rate !== undefined ? Number(vendor_rate) : 50,
       currency: currency || 'INR',
       created_by: req.user?.id,
+      status: 'ACTIVE',
     });
 
     // Create project_countries + project_links per country (each with own URL)
@@ -4381,9 +4577,109 @@ router.put(
   authenticate,
   authorize(['ADMIN', 'PM']),
   asyncHandler(async (req: AuthRequest, res: Response) => {
+    // Only administrators can modify project status
+    if (req.body.status && req.user?.role !== 'ADMIN') {
+      return apiError(res, 403, 'FORBIDDEN', 'Only administrators can modify project status');
+    }
+    const ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.socket?.remoteAddress || '127.0.0.1';
+    const user = req.user?.email || req.user?.id || 'admin';
+    if (req.body.status) {
+      const upper = String(req.body.status).toUpperCase();
+      if (upper === 'PAUSED') {
+        const result = await db.pauseProject(req.params.id, user, ip);
+        return res.json({ success: true, data: result.project });
+      } else if (upper === 'ACTIVE' || upper === 'LIVE') {
+        const result = await db.resumeProject(req.params.id, user, ip);
+        return res.json({ success: true, data: result.project });
+      }
+    }
     const updated = await db.updateProject(req.params.id, req.body);
     if (!updated) return apiError(res, 404, 'NOT_FOUND', 'Project not found');
     res.json({ success: true, data: updated });
+  }),
+);
+
+// ── Project Pause / Resume Endpoints (ADMIN ONLY) ───────────────────────────
+router.post(
+  '/projects/:id/pause',
+  authenticate,
+  authorize(['ADMIN']),
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.socket?.remoteAddress || '127.0.0.1';
+    const user = req.user?.email || req.user?.id || 'admin';
+    try {
+      const result = await db.pauseProject(req.params.id, user, ip);
+      res.json({
+        success: true,
+        data: result.project,
+        message: result.alreadyPaused ? 'Project is already paused' : 'Project paused successfully',
+      });
+    } catch (err: any) {
+      if (err.message === 'Project not found') {
+        return apiError(res, 404, 'NOT_FOUND', 'Project not found');
+      }
+      throw err;
+    }
+  }),
+);
+
+router.post(
+  '/projects/:id/resume',
+  authenticate,
+  authorize(['ADMIN']),
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.socket?.remoteAddress || '127.0.0.1';
+    const user = req.user?.email || req.user?.id || 'admin';
+    try {
+      const result = await db.resumeProject(req.params.id, user, ip);
+      res.json({
+        success: true,
+        data: result.project,
+        message: result.alreadyActive ? 'Project is already active' : 'Project resumed successfully',
+      });
+    } catch (err: any) {
+      if (err.message === 'Project not found') {
+        return apiError(res, 404, 'NOT_FOUND', 'Project not found');
+      }
+      throw err;
+    }
+  }),
+);
+
+router.patch(
+  '/projects/:id/status',
+  authenticate,
+  authorize(['ADMIN']),
+  asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { status } = req.body;
+    if (!status) return apiError(res, 400, 'MISSING_STATUS', 'status is required');
+    const upper = String(status).trim().toUpperCase();
+    const ip = (req.headers['x-forwarded-for'] as string)?.split(',')[0]?.trim() || req.socket?.remoteAddress || '127.0.0.1';
+    const user = req.user?.email || req.user?.id || 'admin';
+    try {
+      if (upper === 'PAUSED') {
+        const result = await db.pauseProject(req.params.id, user, ip);
+        return res.json({
+          success: true,
+          data: result.project,
+          message: result.alreadyPaused ? 'Project is already paused' : 'Project paused successfully',
+        });
+      } else if (upper === 'ACTIVE' || upper === 'LIVE') {
+        const result = await db.resumeProject(req.params.id, user, ip);
+        return res.json({
+          success: true,
+          data: result.project,
+          message: result.alreadyActive ? 'Project is already active' : 'Project resumed successfully',
+        });
+      } else {
+        return apiError(res, 400, 'INVALID_STATUS', 'Status must be ACTIVE or PAUSED');
+      }
+    } catch (err: any) {
+      if (err.message === 'Project not found') {
+        return apiError(res, 404, 'NOT_FOUND', 'Project not found');
+      }
+      throw err;
+    }
   }),
 );
 

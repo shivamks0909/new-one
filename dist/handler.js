@@ -18664,8 +18664,8 @@ var require_escape_html = __commonJS({
   "node_modules/escape-html/index.js"(exports2, module2) {
     "use strict";
     var matchHtmlRegExp = /["'&<>]/;
-    module2.exports = escapeHtml;
-    function escapeHtml(string4) {
+    module2.exports = escapeHtml2;
+    function escapeHtml2(string4) {
       var str = "" + string4;
       var match = matchHtmlRegExp.exec(str);
       if (!match) {
@@ -18796,13 +18796,13 @@ var require_finalhandler = __commonJS({
     "use strict";
     var debug = require_src()("finalhandler");
     var encodeUrl = require_encodeurl();
-    var escapeHtml = require_escape_html();
+    var escapeHtml2 = require_escape_html();
     var onFinished = require_on_finished();
     var parseUrl = require_parseurl();
     var statuses = require_statuses();
     var isFinished = onFinished.isFinished;
     function createHtmlDocument(message) {
-      var body = escapeHtml(message).replaceAll("\n", "<br>").replaceAll("  ", " &nbsp;");
+      var body = escapeHtml2(message).replaceAll("\n", "<br>").replaceAll("  ", " &nbsp;");
       return '<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<title>Error</title>\n</head>\n<body>\n<pre>' + body + "</pre>\n</body>\n</html>\n";
     }
     module2.exports = finalhandler;
@@ -22865,7 +22865,7 @@ var require_send = __commonJS({
     var createError = require_http_errors();
     var debug = require_src()("send");
     var encodeUrl = require_encodeurl();
-    var escapeHtml = require_escape_html();
+    var escapeHtml2 = require_escape_html();
     var etag = require_etag();
     var fresh = require_fresh();
     var fs2 = require("fs");
@@ -22918,7 +22918,7 @@ var require_send = __commonJS({
       }
       var res = this.res;
       var msg = statuses.message[status] || String(status);
-      var doc = createHtmlDocument("Error", escapeHtml(msg));
+      var doc = createHtmlDocument("Error", escapeHtml2(msg));
       clearHeaders(res);
       if (err && err.headers) {
         setHeaders(res, err.headers);
@@ -23018,7 +23018,7 @@ var require_send = __commonJS({
         return;
       }
       var loc = encodeUrl(collapseLeadingSlashes(this.path + "/"));
-      var doc = createHtmlDocument("Redirecting", "Redirecting to " + escapeHtml(loc));
+      var doc = createHtmlDocument("Redirecting", "Redirecting to " + escapeHtml2(loc));
       res.statusCode = 301;
       res.setHeader("Content-Type", "text/html; charset=UTF-8");
       res.setHeader("Content-Length", Buffer.byteLength(doc));
@@ -23422,7 +23422,7 @@ var require_response = __commonJS({
     var createError = require_http_errors();
     var deprecate = require_depd()("express");
     var encodeUrl = require_encodeurl();
-    var escapeHtml = require_escape_html();
+    var escapeHtml2 = require_escape_html();
     var http = require("node:http");
     var onFinished = require_on_finished();
     var mime = require_mime_types();
@@ -23761,7 +23761,7 @@ var require_response = __commonJS({
           body = statuses.message[status] + ". Redirecting to " + address;
         },
         html: function() {
-          var u = escapeHtml(address);
+          var u = escapeHtml2(address);
           body = "<p>" + statuses.message[status] + ". Redirecting to " + u + "</p>";
         },
         default: function() {
@@ -23889,7 +23889,7 @@ var require_serve_static = __commonJS({
   "node_modules/serve-static/index.js"(exports2, module2) {
     "use strict";
     var encodeUrl = require_encodeurl();
-    var escapeHtml = require_escape_html();
+    var escapeHtml2 = require_escape_html();
     var parseUrl = require_parseurl();
     var resolve = require("path").resolve;
     var send = require_send();
@@ -23975,7 +23975,7 @@ var require_serve_static = __commonJS({
         originalUrl.path = null;
         originalUrl.pathname = collapseLeadingSlashes(originalUrl.pathname + "/");
         var loc = encodeUrl(url2.format(originalUrl));
-        var doc = createHtmlDocument("Redirecting", "Redirecting to " + escapeHtml(loc));
+        var doc = createHtmlDocument("Redirecting", "Redirecting to " + escapeHtml2(loc));
         res.statusCode = 301;
         res.setHeader("Content-Type", "text/html; charset=UTF-8");
         res.setHeader("Content-Length", Buffer.byteLength(doc));
@@ -96496,11 +96496,12 @@ var init_db = __esm({
       // ═════════════════════════════════════════════════════════════════════════════
       // ── Projects ───────────────────────────────────────────────────────────────
       async createProject(data) {
+        const status = data.status || "ACTIVE";
         const { rows } = await this.pool.query(
           `INSERT INTO projects
-         (project_code, name, description, client_id, created_by, client_rate, vendor_rate, currency,
+         (project_code, name, description, client_id, created_by, client_rate, vendor_rate, currency, status,
           client_name, survey_url, uid_param, uid_placeholder)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *`,
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *`,
           [
             data.project_code,
             data.name,
@@ -96510,6 +96511,7 @@ var init_db = __esm({
             data.client_rate !== void 0 ? data.client_rate : 70,
             data.vendor_rate !== void 0 ? data.vendor_rate : 50,
             data.currency || "INR",
+            status,
             data.client_name || null,
             data.survey_url || null,
             data.uid_param || null,
@@ -96585,6 +96587,58 @@ var init_db = __esm({
           params
         );
         return rows[0] ?? null;
+      }
+      async pauseProject(id, user = "admin", ip) {
+        const project = await this.getProjectById(id);
+        if (!project) throw new Error("Project not found");
+        if (project.status === "PAUSED") {
+          return { project, alreadyPaused: true };
+        }
+        const updated = await this.updateProject(id, { status: "PAUSED" });
+        try {
+          await this.pool.query(
+            "UPDATE studies SET status = 'PAUSED', updated_at = NOW() WHERE study_code = $1",
+            [project.project_code]
+          );
+        } catch (e) {
+          console.warn("[DB] Warning syncing backing study status on pause:", e?.message);
+        }
+        await this.createAuditLog({
+          user,
+          action: "PROJECT_PAUSED",
+          entity: "project",
+          entity_id: project.id,
+          before: { status: project.status, project_code: project.project_code, name: project.name },
+          after: { status: "PAUSED", project_code: project.project_code, name: project.name },
+          ip: this.parseValidInet(ip)
+        });
+        return { project: updated, alreadyPaused: false };
+      }
+      async resumeProject(id, user = "admin", ip) {
+        const project = await this.getProjectById(id);
+        if (!project) throw new Error("Project not found");
+        if (project.status === "ACTIVE" || project.status === "LIVE") {
+          return { project, alreadyActive: true };
+        }
+        const updated = await this.updateProject(id, { status: "ACTIVE" });
+        try {
+          await this.pool.query(
+            "UPDATE studies SET status = 'LIVE', updated_at = NOW() WHERE study_code = $1",
+            [project.project_code]
+          );
+        } catch (e) {
+          console.warn("[DB] Warning syncing backing study status on resume:", e?.message);
+        }
+        await this.createAuditLog({
+          user,
+          action: "PROJECT_RESUMED",
+          entity: "project",
+          entity_id: project.id,
+          before: { status: project.status, project_code: project.project_code, name: project.name },
+          after: { status: "ACTIVE", project_code: project.project_code, name: project.name },
+          ip: this.parseValidInet(ip)
+        });
+        return { project: updated, alreadyActive: false };
       }
       async deleteProject(id) {
         const { rowCount } = await this.pool.query("DELETE FROM projects WHERE id = $1", [id]);
@@ -119545,6 +119599,175 @@ function analyzeSurveyUrl(surveyUrl) {
 function buildOpiLaunchUrl(baseUrl, projectCode, countryCode) {
   return `${baseUrl}/track?code=${projectCode}&country=${countryCode.toUpperCase()}&uid={UID}`;
 }
+function escapeHtml(str) {
+  if (!str) return "";
+  return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+}
+function renderProjectPausedPage(project, countryCode) {
+  const code = project.project_code || "OPI";
+  const name = project.name || "Survey";
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Project Paused \xB7 Opinion Insights</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0B0F19;
+      color: #E2E8F0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      position: relative;
+      overflow-x: hidden;
+    }
+    body::before {
+      content: '';
+      position: fixed;
+      top: -20%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 600px;
+      height: 600px;
+      background: radial-gradient(circle, rgba(245, 158, 11, 0.12) 0%, rgba(11, 15, 25, 0) 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .card {
+      position: relative;
+      z-index: 1;
+      background: rgba(17, 24, 39, 0.85);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(245, 158, 11, 0.1);
+      border-radius: 20px;
+      padding: 44px 36px;
+      max-width: 500px;
+      width: 100%;
+      text-align: center;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(245, 158, 11, 0.12);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      color: #F59E0B;
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 0.825rem;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+    .status-badge .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #F59E0B;
+      box-shadow: 0 0 8px #F59E0B;
+    }
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #FFFFFF;
+      margin-bottom: 12px;
+      letter-spacing: -0.01em;
+    }
+    p {
+      color: #94A3B8;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+    .meta-box {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 12px;
+      padding: 16px 20px;
+      margin-bottom: 28px;
+      text-align: left;
+    }
+    .meta-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.85rem;
+      padding: 6px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+    .meta-row:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+    .meta-row:first-child {
+      padding-top: 0;
+    }
+    .meta-label {
+      color: #64748B;
+      font-weight: 500;
+    }
+    .meta-val {
+      font-family: ui-monospace, monospace;
+      color: #E2E8F0;
+      font-weight: 600;
+    }
+    .footer-note {
+      font-size: 0.775rem;
+      color: #475569;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card" id="project-paused-notice" data-status="PAUSED">
+    <div class="status-badge">
+      <span class="dot"></span>
+      Project Paused
+    </div>
+    <h1>Project Paused</h1>
+    <p>This project is temporarily paused and not accepting new survey responses. If you believe this is an error, please contact your project administrator.</p>
+    
+    <div class="meta-box">
+      <div class="meta-row">
+        <span class="meta-label">Project:</span>
+        <span class="meta-val">${escapeHtml(code)}</span>
+      </div>
+      <div class="meta-row">
+        <span class="meta-label">Study Name:</span>
+        <span class="meta-val" style="font-family:inherit;">${escapeHtml(name)}</span>
+      </div>
+      ${countryCode ? `
+      <div class="meta-row">
+        <span class="meta-label">Market:</span>
+        <span class="meta-val">${escapeHtml(countryCode)}</span>
+      </div>` : ""}
+      <div class="meta-row">
+        <span class="meta-label">Status:</span>
+        <span class="meta-val" style="color:#F59E0B;">\u{1F7E1} PAUSED</span>
+      </div>
+    </div>
+
+    <div class="footer-note">
+      <span>\u{1F512}</span> Opinion Insights Secure Fieldwork Telemetry
+    </div>
+  </div>
+</body>
+</html>`;
+}
 router2.get(
   "/track",
   startRateLimit,
@@ -119562,6 +119785,20 @@ router2.get(
       );
       const project = projRows[0];
       if (!project) return apiError(res, 404, "INVALID_PROJECT", `Project '${projectCode}' not found`);
+      if (project.status === "PAUSED") {
+        res.setHeader("X-Project-Status", "PAUSED");
+        res.setHeader("X-Survey-Paused", "true");
+        const wantsJson = req.headers.accept && req.headers.accept.includes("application/json") || req.query.format === "json";
+        if (wantsJson) {
+          return res.status(423).json({
+            success: false,
+            status: "PAUSED",
+            code: "PROJECT_PAUSED",
+            message: `Project '${projectCode}' is currently paused. New survey sessions cannot be created.`
+          });
+        }
+        return res.status(200).send(renderProjectPausedPage(project, countryCode));
+      }
       const { rows: countryRows } = await db.pool.query(
         `SELECT * FROM project_countries
        WHERE project_id = $1 AND UPPER(country_code) = $2
@@ -121382,7 +121619,8 @@ router2.post(
       client_rate: client_rate !== void 0 ? Number(client_rate) : 70,
       vendor_rate: vendor_rate !== void 0 ? Number(vendor_rate) : 50,
       currency: currency || "INR",
-      created_by: req.user?.id
+      created_by: req.user?.id,
+      status: "ACTIVE"
     });
     const appBaseUrl = `${req.protocol}://${req.get("host")}`;
     const createdCountries = [];
@@ -121501,9 +121739,104 @@ router2.put(
   authenticate,
   authorize(["ADMIN", "PM"]),
   asyncHandler(async (req, res) => {
+    if (req.body.status && req.user?.role !== "ADMIN") {
+      return apiError(res, 403, "FORBIDDEN", "Only administrators can modify project status");
+    }
+    const ip = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.socket?.remoteAddress || "127.0.0.1";
+    const user = req.user?.email || req.user?.id || "admin";
+    if (req.body.status) {
+      const upper = String(req.body.status).toUpperCase();
+      if (upper === "PAUSED") {
+        const result = await db.pauseProject(req.params.id, user, ip);
+        return res.json({ success: true, data: result.project });
+      } else if (upper === "ACTIVE" || upper === "LIVE") {
+        const result = await db.resumeProject(req.params.id, user, ip);
+        return res.json({ success: true, data: result.project });
+      }
+    }
     const updated = await db.updateProject(req.params.id, req.body);
     if (!updated) return apiError(res, 404, "NOT_FOUND", "Project not found");
     res.json({ success: true, data: updated });
+  })
+);
+router2.post(
+  "/projects/:id/pause",
+  authenticate,
+  authorize(["ADMIN"]),
+  asyncHandler(async (req, res) => {
+    const ip = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.socket?.remoteAddress || "127.0.0.1";
+    const user = req.user?.email || req.user?.id || "admin";
+    try {
+      const result = await db.pauseProject(req.params.id, user, ip);
+      res.json({
+        success: true,
+        data: result.project,
+        message: result.alreadyPaused ? "Project is already paused" : "Project paused successfully"
+      });
+    } catch (err) {
+      if (err.message === "Project not found") {
+        return apiError(res, 404, "NOT_FOUND", "Project not found");
+      }
+      throw err;
+    }
+  })
+);
+router2.post(
+  "/projects/:id/resume",
+  authenticate,
+  authorize(["ADMIN"]),
+  asyncHandler(async (req, res) => {
+    const ip = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.socket?.remoteAddress || "127.0.0.1";
+    const user = req.user?.email || req.user?.id || "admin";
+    try {
+      const result = await db.resumeProject(req.params.id, user, ip);
+      res.json({
+        success: true,
+        data: result.project,
+        message: result.alreadyActive ? "Project is already active" : "Project resumed successfully"
+      });
+    } catch (err) {
+      if (err.message === "Project not found") {
+        return apiError(res, 404, "NOT_FOUND", "Project not found");
+      }
+      throw err;
+    }
+  })
+);
+router2.patch(
+  "/projects/:id/status",
+  authenticate,
+  authorize(["ADMIN"]),
+  asyncHandler(async (req, res) => {
+    const { status } = req.body;
+    if (!status) return apiError(res, 400, "MISSING_STATUS", "status is required");
+    const upper = String(status).trim().toUpperCase();
+    const ip = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.socket?.remoteAddress || "127.0.0.1";
+    const user = req.user?.email || req.user?.id || "admin";
+    try {
+      if (upper === "PAUSED") {
+        const result = await db.pauseProject(req.params.id, user, ip);
+        return res.json({
+          success: true,
+          data: result.project,
+          message: result.alreadyPaused ? "Project is already paused" : "Project paused successfully"
+        });
+      } else if (upper === "ACTIVE" || upper === "LIVE") {
+        const result = await db.resumeProject(req.params.id, user, ip);
+        return res.json({
+          success: true,
+          data: result.project,
+          message: result.alreadyActive ? "Project is already active" : "Project resumed successfully"
+        });
+      } else {
+        return apiError(res, 400, "INVALID_STATUS", "Status must be ACTIVE or PAUSED");
+      }
+    } catch (err) {
+      if (err.message === "Project not found") {
+        return apiError(res, 404, "NOT_FOUND", "Project not found");
+      }
+      throw err;
+    }
   })
 );
 router2.delete(
@@ -123186,7 +123519,15 @@ var staticCandidates = [
 ];
 for (const p of staticCandidates) {
   if (import_fs.default.existsSync(p)) {
-    app.use("/static", import_express3.default.static(p));
+    app.use("/static", import_express3.default.static(p, {
+      maxAge: 0,
+      etag: false,
+      setHeaders: (res) => {
+        res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+        res.setHeader("Pragma", "no-cache");
+        res.setHeader("Expires", "0");
+      }
+    }));
   }
 }
 function resolveDashboardFile() {

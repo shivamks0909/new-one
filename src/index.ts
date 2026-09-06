@@ -54,7 +54,15 @@ const staticCandidates = [
 
 for (const p of staticCandidates) {
   if (fs.existsSync(p)) {
-    app.use('/static', express.static(p));
+    app.use('/static', express.static(p, {
+      maxAge: 0,
+      etag: false,
+      setHeaders: (res) => {
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+      },
+    }));
   }
 }
 

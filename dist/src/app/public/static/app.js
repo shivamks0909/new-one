@@ -380,12 +380,12 @@ function renderBadge(value, type = "neutral") {
     )
       badgeType = "danger";
     else if (
-      ["QUOTA_FULL", "QUOTA FULL", "WARNING", "LIMITED", "FULL"].includes(upper)
+      ["QUOTA_FULL", "QUOTA FULL", "WARNING", "LIMITED", "FULL", "PAUSED"].includes(upper)
     )
       badgeType = "warning";
     else if (["IN_PROGRESS", "STARTED", "INFO"].includes(upper))
       badgeType = "info";
-    else if (["CLOSED", "EXPIRED", "PAUSED", "DRAFT"].includes(upper))
+    else if (["CLOSED", "EXPIRED", "DRAFT"].includes(upper))
       badgeType = "neutral";
     else badgeType = "neutral";
   }
@@ -3844,44 +3844,96 @@ async function renderProjects() {
   area.innerHTML = `<div class="loading-screen"><div class="spinner-lg"></div></div>`;
   try {
     const { data: projects } = await api("/projects");
+    const isAdmin = currentUser && (currentUser.role === 'ADMIN' || currentUser.role === 'SUPER_ADMIN');
+
     area.innerHTML = `
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem;">
         <div>
           <h2 style="margin:0;font-size:1.25rem;font-weight:700;color:var(--text-primary)">Client Projects</h2>
           <p style="margin:0.25rem 0 0;font-size:0.8125rem;color:var(--text-muted);">${projects.length} project${projects.length !== 1 ? 's' : ''} configured</p>
         </div>
-        <button class="btn btn-primary" onclick="showCreateProjectModal()">+ Create Project</button>
+        ${isAdmin ? `<button class="btn btn-primary" onclick="showCreateProjectModal()">+ Create Project</button>` : ''}
       </div>
+
       ${projects.length === 0 ? `
         <div style="text-align:center;padding:4rem 2rem;background:var(--bg-surface);border-radius:1rem;border:1px solid var(--border-default);">
-          <div style="font-size:3rem;margin-bottom:1rem;">ðŸ“</div>
+          <div style="font-size:3rem;margin-bottom:1rem;">📁</div>
           <h3 style="margin:0 0 0.5rem;color:var(--text-primary)">No Projects Yet</h3>
           <p style="color:var(--text-muted);margin-bottom:1.5rem;">Create your first survey tracking project to get started.</p>
-          <button class="btn btn-primary" onclick="showCreateProjectModal()">+ Create Project</button>
+          ${isAdmin ? `<button class="btn btn-primary" onclick="showCreateProjectModal()">+ Create Project</button>` : ''}
         </div>
       ` : `
-        <div style="display:grid;gap:1rem;">
-          ${projects.map(function(p) {
-            var statusColor = p.status === 'LIVE' ? 'var(--color-success)' : p.status === 'DRAFT' ? 'var(--text-muted)' : 'var(--color-warning)';
-            return `
-              <div onclick="renderProjectDetail('${escapeHtml(p.id)}')" style="background:var(--bg-surface);border:1px solid var(--border-default);border-radius:0.875rem;padding:1.25rem 1.5rem;cursor:pointer;transition:all 0.2s ease;display:grid;grid-template-columns:1fr auto;gap:0.75rem;align-items:start;" onmouseover="this.style.borderColor='var(--accent)';this.style.transform='translateY(-2px)'" onmouseout="this.style.borderColor='var(--border-default)';this.style.transform='translateY(0)'">
-                <div>
-                  <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.5rem;">
-                    <span style="font-family:monospace;font-size:0.8125rem;font-weight:700;background:var(--accent);color:#fff;padding:0.2rem 0.6rem;border-radius:0.375rem;">${escapeHtml(p.project_code)}</span>
-                    <span style="font-size:0.75rem;font-weight:600;color:${statusColor};background:${statusColor}18;padding:0.15rem 0.5rem;border-radius:999px;">${escapeHtml(p.status)}</span>
-                  </div>
-                  <div style="font-size:1rem;font-weight:600;color:var(--text-primary);margin-bottom:0.25rem;">${escapeHtml(p.name)}</div>
-                  ${p.client_name ? `<div style="font-size:0.8125rem;color:var(--text-muted);">Client: ${escapeHtml(p.client_name)}</div>` : ''}
-                  ${p.survey_url ? `<div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.35rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:500px;">🔗 ${escapeHtml(p.survey_url)}</div>` : ''}
-                </div>
-                <div style="text-align:right;font-size:0.75rem;color:var(--text-muted);">
-                  ${p.client_rate ? `<div>Client: <strong style="color:var(--text-primary);">₹${p.client_rate}</strong></div>` : ''}
-                  ${p.vendor_rate ? `<div>Vendor: <strong style="color:var(--text-primary);">₹${p.vendor_rate}</strong></div>` : ''}
-                  <div style="margin-top:0.5rem;color:var(--accent);font-weight:500;">View Details  →</div>
-                </div>
-              </div>
-            `;
-          }).join('')}
+        <div style="background:var(--bg-surface);border:1px solid var(--border-default);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-sm);">
+          <div class="table-container" style="overflow-x:auto;">
+            <table class="data-table" style="width:100%;border-collapse:collapse;">
+              <thead>
+                <tr>
+                  <th style="padding:12px 16px;text-align:left;">Project Code</th>
+                  <th style="padding:12px 16px;text-align:left;">Name / Client</th>
+                  <th style="padding:12px 16px;text-align:left;">Status</th>
+                  <th style="padding:12px 16px;text-align:left;">Rates</th>
+                  <th style="padding:12px 16px;text-align:center;width:90px;">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${projects.map(function(p) {
+                  const isPaused = p.status === 'PAUSED';
+                  const statusBadge = isPaused
+                    ? `<span class="badge" style="background:rgba(245,158,11,0.15);color:#d97706;border:1px solid rgba(245,158,11,0.35);font-weight:700;padding:4px 10px;border-radius:999px;display:inline-flex;align-items:center;gap:6px;"><span style="color:#f59e0b;font-size:0.75rem;">🟡</span> Paused</span>`
+                    : `<span class="badge" style="background:rgba(16,185,129,0.15);color:#059669;border:1px solid rgba(16,185,129,0.35);font-weight:700;padding:4px 10px;border-radius:999px;display:inline-flex;align-items:center;gap:6px;"><span style="color:#10b981;font-size:0.75rem;">🟢</span> Active</span>`;
+
+                  return `
+                    <tr style="border-bottom:1px solid var(--border-light);transition:background 0.15s;" onmouseover="this.style.background='var(--bg-muted)'" onmouseout="this.style.background='transparent'">
+                      <td style="padding:14px 16px;vertical-align:middle;">
+                        <span onclick="renderProjectDetail('${escapeHtml(p.id)}')" style="font-family:ui-monospace,monospace;font-size:0.875rem;font-weight:800;background:var(--accent);color:#fff;padding:3px 8px;border-radius:5px;cursor:pointer;letter-spacing:0.03em;">
+                          ${escapeHtml(p.project_code)}
+                        </span>
+                      </td>
+                      <td style="padding:14px 16px;vertical-align:middle;">
+                        <div onclick="renderProjectDetail('${escapeHtml(p.id)}')" style="font-weight:600;font-size:0.925rem;color:var(--text-primary);cursor:pointer;">
+                          ${escapeHtml(p.name)}
+                        </div>
+                        ${p.client_name ? `<div style="font-size:0.8rem;color:var(--text-muted);margin-top:2px;">Client: ${escapeHtml(p.client_name)}</div>` : ''}
+                      </td>
+                      <td style="padding:14px 16px;vertical-align:middle;">
+                        ${statusBadge}
+                      </td>
+                      <td style="padding:14px 16px;vertical-align:middle;font-size:0.825rem;">
+                        <div style="color:var(--text-primary);">Client: <strong>₹${p.client_rate || 0}</strong></div>
+                        <div style="color:var(--text-muted);">Vendor: ₹${p.vendor_rate || 0}</div>
+                      </td>
+                      <td style="padding:14px 16px;vertical-align:middle;text-align:center;position:relative;">
+                        <div style="position:relative;display:inline-block;">
+                          <button class="btn btn-ghost btn-sm" onclick="toggleProjectMenu(event, '${p.id}')" style="padding:4px 10px;font-size:1.25rem;line-height:1;border-radius:6px;color:var(--text-secondary);" title="Actions">
+                            ⋮
+                          </button>
+                          <div id="project-menu-${p.id}" class="project-dropdown-menu" style="display:none;position:absolute;right:0;top:100%;background:var(--bg-surface);border:1px solid var(--border-default);border-radius:8px;box-shadow:0 10px 25px rgba(0,0,0,0.22);min-width:160px;z-index:100;overflow:hidden;margin-top:4px;text-align:left;">
+                            <div onclick="event.stopPropagation();closeProjectMenus();renderProjectDetail('${p.id}')" style="padding:9px 14px;font-size:0.85rem;cursor:pointer;display:flex;align-items:center;gap:8px;color:var(--text-primary);" onmouseover="this.style.background='var(--bg-muted)'" onmouseout="this.style.background='transparent'">
+                              👁️ View
+                            </div>
+                            ${isAdmin ? `
+                              <div onclick="event.stopPropagation();closeProjectMenus();showEditProjectModal('${p.id}')" style="padding:9px 14px;font-size:0.85rem;cursor:pointer;display:flex;align-items:center;gap:8px;color:var(--text-primary);" onmouseover="this.style.background='var(--bg-muted)'" onmouseout="this.style.background='transparent'">
+                                ✏️ Edit
+                              </div>
+                              ${isPaused ? `
+                                <div onclick="event.stopPropagation();closeProjectMenus();confirmResumeProject('${p.id}', '${escapeHtml(p.name)}')" style="padding:9px 14px;font-size:0.85rem;cursor:pointer;display:flex;align-items:center;gap:8px;color:#059669;font-weight:600;border-top:1px solid var(--border-light);" onmouseover="this.style.background='rgba(16,185,129,0.1)'" onmouseout="this.style.background='transparent'">
+                                  ▶ Resume Project
+                                </div>
+                              ` : `
+                                <div onclick="event.stopPropagation();closeProjectMenus();confirmPauseProject('${p.id}', '${escapeHtml(p.name)}')" style="padding:9px 14px;font-size:0.85rem;cursor:pointer;display:flex;align-items:center;gap:8px;color:#d97706;font-weight:600;border-top:1px solid var(--border-light);" onmouseover="this.style.background='rgba(245,158,11,0.1)'" onmouseout="this.style.background='transparent'">
+                                  ⏸ Pause Project
+                                </div>
+                              `}
+                            ` : ''}
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+          </div>
         </div>
       `}
     `;
@@ -3900,6 +3952,8 @@ async function renderProjectDetail(projectId) {
     const countriesRes = await api('/projects/' + projectId + '/countries').catch(() => ({ data: [] }));
     const countries = countriesRes.data || [];
     const baseUrl = window.location.origin;
+    const isPaused = proj.status === 'PAUSED';
+    const isAdmin = currentUser && (currentUser.role === 'ADMIN' || currentUser.role === 'SUPER_ADMIN');
 
     const flagMap = {
       IN: '🇮🇳', US: '🇺🇸', GB: '🇬🇧', UK: '🇬🇧', FR: '🇫🇷', DE: '🇩🇪',
@@ -3971,14 +4025,44 @@ async function renderProjectDetail(projectId) {
           ← Back to Projects
         </button>
 
+        ${isPaused ? `
+          <div style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);border-radius:var(--radius-md);padding:14px 18px;margin-bottom:1.25rem;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;">
+            <div style="display:flex;align-items:center;gap:12px;">
+              <span style="font-size:1.6rem;">⏸️</span>
+              <div>
+                <div style="font-weight:700;font-size:0.95rem;color:#d97706;">Project is currently PAUSED</div>
+                <div style="font-size:0.8125rem;color:var(--text-muted);margin-top:2px;">
+                  New respondent launches are blocked. Existing respondents can still submit survey callbacks safely.
+                </div>
+              </div>
+            </div>
+            ${isAdmin ? `
+              <button class="btn btn-sm" onclick="confirmResumeProject('${proj.id}', '${escapeHtml(proj.name)}', true)" style="background:#10b981;border-color:#059669;color:#ffffff;font-weight:700;padding:7px 16px;border-radius:6px;cursor:pointer;">
+                Resume Project
+              </button>
+            ` : ''}
+          </div>
+        ` : ''}
+
         <div style="background:var(--bg-surface);border:1px solid var(--border-default);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);padding:1.75rem;margin-bottom:1.5rem;">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1.5rem;">
             <div style="flex:1;min-width:280px;">
-              <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+              <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap;">
                 <span style="font-family:ui-monospace,monospace;font-weight:800;font-size:1.15rem;background:var(--accent);color:#ffffff;padding:4px 12px;border-radius:6px;letter-spacing:0.04em;">
                   ${escapeHtml(proj.project_code)}
                 </span>
-                ${renderBadge(proj.status || 'ACTIVE')}
+                <span style="font-size:0.9rem;font-weight:700;display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:999px;background:${isPaused ? 'rgba(245,158,11,0.15)' : 'rgba(16,185,129,0.15)'};color:${isPaused ? '#d97706' : '#059669'};border:1px solid ${isPaused ? 'rgba(245,158,11,0.35)' : 'rgba(16,185,129,0.35)'};">
+                  Status: ${isPaused ? '🟡 PAUSED' : '🟢 ACTIVE'}
+                </span>
+                ${isAdmin ? (
+                  isPaused
+                    ? `<button class="btn btn-sm" id="btn-detail-resume" onclick="confirmResumeProject('${proj.id}', '${escapeHtml(proj.name)}', true)" style="background:rgba(16,185,129,0.15);color:#059669;border:1px solid rgba(16,185,129,0.4);font-weight:700;padding:5px 14px;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+                        Resume Project
+                       </button>`
+                    : `<button class="btn btn-sm" id="btn-detail-pause" onclick="confirmPauseProject('${proj.id}', '${escapeHtml(proj.name)}', true)" style="background:rgba(245,158,11,0.15);color:#d97706;border:1px solid rgba(245,158,11,0.4);font-weight:700;padding:5px 14px;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+                        Pause Project
+                       </button>`
+                ) : ''}
               </div>
               <h2 style="margin:0 0 6px;font-size:1.4rem;font-weight:700;color:var(--text-primary);line-height:1.3;">
                 ${escapeHtml(proj.name)}
@@ -4046,6 +4130,170 @@ async function renderProjectDetail(projectId) {
     area.innerHTML = `<p style="color:var(--color-danger);padding:1rem;">Error: ${escapeHtml(e.message)}</p><button class="btn btn-secondary" onclick="renderProjects()">← Back to Projects</button>`;
   }
 }
+
+// ── Project Action Menus & Modals ───────────────────────────────────────────
+window.toggleProjectMenu = function(event, id) {
+  event.stopPropagation();
+  var menu = document.getElementById('project-menu-' + id);
+  var allMenus = document.querySelectorAll('.project-dropdown-menu');
+  allMenus.forEach(function(m) {
+    if (m !== menu) m.style.display = 'none';
+  });
+  if (menu) {
+    menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+  }
+};
+
+window.closeProjectMenus = function() {
+  var allMenus = document.querySelectorAll('.project-dropdown-menu');
+  allMenus.forEach(function(m) { m.style.display = 'none'; });
+};
+
+document.addEventListener('click', function() {
+  if (typeof window.closeProjectMenus === 'function') {
+    window.closeProjectMenus();
+  }
+});
+
+window.confirmPauseProject = function(projectId, projectName, fromDetail = false) {
+  showModal(
+    'Pause Project?',
+    `<div style="padding:0.5rem 0;">
+      <p style="font-size:1rem;color:var(--text-primary);margin:0 0 0.75rem;">New survey traffic for this project will be stopped.</p>
+      <div style="font-size:0.875rem;color:var(--text-muted);background:var(--bg-muted);padding:10px 14px;border-radius:6px;border:1px solid var(--border-default);">
+        Project: <strong style="color:var(--text-primary);">${escapeHtml(projectName)}</strong>
+      </div>
+    </div>`,
+    `<button class="btn btn-secondary" onclick="hideModal()">Cancel</button>
+     <button class="btn btn-warning" id="btn-modal-pause" onclick="executePauseProject('${projectId}', ${fromDetail})" style="background:#f59e0b;border-color:#d97706;color:#ffffff;font-weight:700;">
+       Pause Project
+     </button>`
+  );
+};
+
+window.executePauseProject = async function(projectId, fromDetail = false) {
+  const btn = document.getElementById('btn-modal-pause');
+  if (btn) { btn.disabled = true; btn.textContent = 'Pausing...'; }
+  try {
+    const res = await api('/projects/' + projectId + '/pause', { method: 'POST' });
+    hideModal();
+    showToast(res.message || 'Project paused successfully', 'success');
+    if (fromDetail) {
+      await renderProjectDetail(projectId);
+    } else {
+      await renderProjects();
+    }
+  } catch (err) {
+    if (btn) { btn.disabled = false; btn.textContent = 'Pause Project'; }
+    showToast('Failed to pause project: ' + (err.message || 'Access denied'), 'error');
+  }
+};
+
+window.confirmResumeProject = function(projectId, projectName, fromDetail = false) {
+  showModal(
+    'Resume Project?',
+    `<div style="padding:0.5rem 0;">
+      <p style="font-size:1rem;color:var(--text-primary);margin:0 0 0.75rem;">New survey traffic will be allowed again.</p>
+      <div style="font-size:0.875rem;color:var(--text-muted);background:var(--bg-muted);padding:10px 14px;border-radius:6px;border:1px solid var(--border-default);">
+        Project: <strong style="color:var(--text-primary);">${escapeHtml(projectName)}</strong>
+      </div>
+    </div>`,
+    `<button class="btn btn-secondary" onclick="hideModal()">Cancel</button>
+     <button class="btn btn-success" id="btn-modal-resume" onclick="executeResumeProject('${projectId}', ${fromDetail})" style="background:#10b981;border-color:#059669;color:#ffffff;font-weight:700;">
+       Resume Project
+     </button>`
+  );
+};
+
+window.executeResumeProject = async function(projectId, fromDetail = false) {
+  const btn = document.getElementById('btn-modal-resume');
+  if (btn) { btn.disabled = true; btn.textContent = 'Resuming...'; }
+  try {
+    const res = await api('/projects/' + projectId + '/resume', { method: 'POST' });
+    hideModal();
+    showToast(res.message || 'Project resumed successfully', 'success');
+    if (fromDetail) {
+      await renderProjectDetail(projectId);
+    } else {
+      await renderProjects();
+    }
+  } catch (err) {
+    if (btn) { btn.disabled = false; btn.textContent = 'Resume Project'; }
+    showToast('Failed to resume project: ' + (err.message || 'Access denied'), 'error');
+  }
+};
+
+window.showEditProjectModal = async function(projectId) {
+  showModal(
+    'Edit Project',
+    '<div class="loading-screen" style="min-height:160px;"><div class="spinner-lg"></div></div>'
+  );
+  try {
+    const res = await api('/projects/' + projectId);
+    const proj = res.data;
+    showModal(
+      'Edit Project: ' + escapeHtml(proj.project_code),
+      `<form id="edit-project-form" style="display:flex;flex-direction:column;gap:1rem;">
+        <div class="form-group">
+          <label>Project Name <span style="color:var(--color-danger)">*</span></label>
+          <input type="text" id="ep-name" value="${escapeHtml(proj.name)}" required style="width:100%;">
+        </div>
+        <div class="form-group">
+          <label>Client Name</label>
+          <input type="text" id="ep-client-name" value="${escapeHtml(proj.client_name || '')}" style="width:100%;">
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+          <div class="form-group">
+            <label>Client Rate (₹)</label>
+            <input type="number" id="ep-client-rate" value="${proj.client_rate || 0}" min="0" step="0.01" style="width:100%;">
+          </div>
+          <div class="form-group">
+            <label>Vendor Rate (₹)</label>
+            <input type="number" id="ep-vendor-rate" value="${proj.vendor_rate || 0}" min="0" step="0.01" style="width:100%;">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Default Client Survey URL</label>
+          <input type="url" id="ep-survey-url" value="${escapeHtml(proj.survey_url || '')}" style="width:100%;">
+        </div>
+      </form>`,
+      `<button class="btn btn-secondary" onclick="hideModal()">Cancel</button>
+       <button class="btn btn-primary" onclick="submitEditProject('${projectId}')">Save Changes</button>`
+    );
+  } catch (err) {
+    showToast('Failed to load project details: ' + err.message, 'error');
+    hideModal();
+  }
+};
+
+window.submitEditProject = async function(projectId) {
+  const name = ($('#ep-name')?.value || '').trim();
+  const client_name = ($('#ep-client-name')?.value || '').trim();
+  const client_rate = parseFloat($('#ep-client-rate')?.value || '0');
+  const vendor_rate = parseFloat($('#ep-vendor-rate')?.value || '0');
+  const survey_url = ($('#ep-survey-url')?.value || '').trim();
+
+  if (!name) {
+    showToast('Project name is required', 'warning');
+    return;
+  }
+
+  try {
+    await api('/projects/' + projectId, {
+      method: 'PUT',
+      body: JSON.stringify({ name, client_name, client_rate, vendor_rate, survey_url }),
+    });
+    hideModal();
+    showToast('Project updated successfully', 'success');
+    if (_currentProjectId === projectId && currentPage === 'project-detail') {
+      await renderProjectDetail(projectId);
+    } else {
+      await renderProjects();
+    }
+  } catch (err) {
+    showToast('Failed to update project: ' + err.message, 'error');
+  }
+};
 
 function copyToClipboard(text, btn) {
   navigator.clipboard.writeText((text || '').trim()).then(function() {

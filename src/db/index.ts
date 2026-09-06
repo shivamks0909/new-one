@@ -1508,14 +1508,16 @@ export class Database {
     project_code: string; name: string; description?: string;
     client_id?: string; created_by?: string;
     client_rate?: number; vendor_rate?: number; currency?: string;
+    status?: string;
     // Survey tracking config (new)
     client_name?: string; survey_url?: string; uid_param?: string; uid_placeholder?: string;
   }): Promise<any> {
+    const status = data.status || 'ACTIVE';
     const { rows } = await this.pool.query(
       `INSERT INTO projects
-         (project_code, name, description, client_id, created_by, client_rate, vendor_rate, currency,
+         (project_code, name, description, client_id, created_by, client_rate, vendor_rate, currency, status,
           client_name, survey_url, uid_param, uid_placeholder)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING *`,
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING *`,
       [
         data.project_code,
         data.name,
@@ -1525,6 +1527,7 @@ export class Database {
         data.client_rate !== undefined ? data.client_rate : 70,
         data.vendor_rate !== undefined ? data.vendor_rate : 50,
         data.currency || 'INR',
+        status,
         data.client_name || null,
         data.survey_url || null,
         data.uid_param || null,
@@ -1584,6 +1587,72 @@ export class Database {
       `UPDATE projects SET ${sets.join(', ')}, updated_at = NOW() WHERE id = $${params.length} RETURNING *`, params
     );
     return rows[0] ?? null;
+  }
+
+  async pauseProject(id: string, user: string = 'admin', ip?: string): Promise<{ project: any; alreadyPaused?: boolean }> {
+    const project = await this.getProjectById(id);
+    if (!project) throw new Error('Project not found');
+    if (project.status === 'PAUSED') {
+      return { project, alreadyPaused: true };
+    }
+
+    const updated = await this.updateProject(id, { status: 'PAUSED' });
+
+    // Sync backing study status
+    try {
+      await this.pool.query(
+        "UPDATE studies SET status = 'PAUSED', updated_at = NOW() WHERE study_code = $1",
+        [project.project_code]
+      );
+    } catch (e: any) {
+      console.warn('[DB] Warning syncing backing study status on pause:', e?.message);
+    }
+
+    // Write audit log
+    await this.createAuditLog({
+      user,
+      action: 'PROJECT_PAUSED',
+      entity: 'project',
+      entity_id: project.id,
+      before: { status: project.status, project_code: project.project_code, name: project.name },
+      after: { status: 'PAUSED', project_code: project.project_code, name: project.name },
+      ip: this.parseValidInet(ip),
+    });
+
+    return { project: updated, alreadyPaused: false };
+  }
+
+  async resumeProject(id: string, user: string = 'admin', ip?: string): Promise<{ project: any; alreadyActive?: boolean }> {
+    const project = await this.getProjectById(id);
+    if (!project) throw new Error('Project not found');
+    if (project.status === 'ACTIVE' || project.status === 'LIVE') {
+      return { project, alreadyActive: true };
+    }
+
+    const updated = await this.updateProject(id, { status: 'ACTIVE' });
+
+    // Sync backing study status
+    try {
+      await this.pool.query(
+        "UPDATE studies SET status = 'LIVE', updated_at = NOW() WHERE study_code = $1",
+        [project.project_code]
+      );
+    } catch (e: any) {
+      console.warn('[DB] Warning syncing backing study status on resume:', e?.message);
+    }
+
+    // Write audit log
+    await this.createAuditLog({
+      user,
+      action: 'PROJECT_RESUMED',
+      entity: 'project',
+      entity_id: project.id,
+      before: { status: project.status, project_code: project.project_code, name: project.name },
+      after: { status: 'ACTIVE', project_code: project.project_code, name: project.name },
+      ip: this.parseValidInet(ip),
+    });
+
+    return { project: updated, alreadyActive: false };
   }
 
   async deleteProject(id: string): Promise<boolean> {
