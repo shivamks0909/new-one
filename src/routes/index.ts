@@ -15,6 +15,7 @@ import {
   verifyRedirectSignature,
 } from '../services/trackingService';
 import * as vaultService from '../services/vaultService';
+import { renderRedirectStatusPage } from '../lib/redirectStatusPage';
 import {
   AuthRequest,
   authenticate,
@@ -561,12 +562,13 @@ function renderLandingPage(
 }
 
 // Maps a redirect type to its status + card key
-function resolveRedirectType(type: string): { status: string; cardKey: CardKey } {
+function resolveRedirectType(type: string): { status: string; cardKey: string } {
   const t = (type || '').toLowerCase();
-  if (t.includes('qual') || t.includes('sec')) return { status: 'SECURITY_REJECT', cardKey: 'quality' };
+  if (t.includes('sec')) return { status: 'SECURITY_REJECT', cardKey: 'securityfail' };
+  if (t.includes('qual')) return { status: 'QUALITY_FAIL', cardKey: 'qualityfail' };
   if (t.includes('term')) return { status: 'TERMINATE', cardKey: 'terminate' };
-  if (t.includes('quota')) return { status: 'QUOTA_FULL', cardKey: 'quota' };
-  if (t.includes('close') || t.includes('closed')) return { status: 'CLOSED', cardKey: 'close' };
+  if (t.includes('quota')) return { status: 'QUOTA_FULL', cardKey: 'quotafull' };
+  if (t.includes('geo')) return { status: 'GEO_BLOCK', cardKey: 'geoblock' };
   return { status: 'COMPLETE', cardKey: 'complete' };
 }
 
@@ -761,16 +763,12 @@ async function handleRedirectLanding(req: Request, res: Response, type: string) 
   }
 
   // Render the responsive status landing page
-  const pageHtml = renderLandingPage(
-    cardKey,
-    effectiveProjectCode,
-    effectiveUid,
-    rawIp,
-    false,
+  const pageHtml = renderRedirectStatusPage({
+    statusKey: cardKey,
+    pid: effectiveProjectCode,
+    uid: effectiveUid,
     isGenuine,
-    effectiveSessionToken,
-    effectiveCountry
-  );
+  });
   res.send(pageHtml);
 }
 
@@ -3121,7 +3119,7 @@ router.get(
 );
 
 
-// â”€â”€â”€ Redirect Landing Pages (5 types) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── Redirect Landing Pages (6 types) ──────────────────────────────────────────
 // Canonical client-facing end links. Accept ?pid=<PROJECT>&uid=<UID>.
 // IMPORTANT: these MUST be defined before /redirect/:sessionToken so they match first.
 
@@ -3137,12 +3135,28 @@ router.get('/redirect/quotafull', callbackRateLimit, asyncHandler(async (req, re
   await handleRedirectLanding(req, res, 'quotafull');
 }));
 
+router.get('/redirect/quota', callbackRateLimit, asyncHandler(async (req, res) => {
+  await handleRedirectLanding(req, res, 'quotafull');
+}));
+
+router.get('/redirect/qualityfail', callbackRateLimit, asyncHandler(async (req, res) => {
+  await handleRedirectLanding(req, res, 'qualityfail');
+}));
+
 router.get('/redirect/qualityterm', callbackRateLimit, asyncHandler(async (req, res) => {
-  await handleRedirectLanding(req, res, 'qualityterm');
+  await handleRedirectLanding(req, res, 'qualityfail');
+}));
+
+router.get('/redirect/securityfail', callbackRateLimit, asyncHandler(async (req, res) => {
+  await handleRedirectLanding(req, res, 'securityfail');
+}));
+
+router.get('/redirect/geoblock', callbackRateLimit, asyncHandler(async (req, res) => {
+  await handleRedirectLanding(req, res, 'geoblock');
 }));
 
 router.get('/redirect/closed', callbackRateLimit, asyncHandler(async (req, res) => {
-  await handleRedirectLanding(req, res, 'closed');
+  await handleRedirectLanding(req, res, 'quotafull');
 }));
 
 router.get(
