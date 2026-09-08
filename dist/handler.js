@@ -119670,147 +119670,122 @@ function getCountryNameFromCode(code) {
 }
 var STATUS_DEFINITIONS = {
   complete: {
-    title: "2026 FIELDWORK COMPLETE: AI-POWERED SYNTHESIS",
-    subtitle: "Your survey responses have been verified and processed with real-time shopper motivation & confidence telemetry.",
-    category: "CONSUMER BEHAVIOR ANALYSIS",
-    badgeText: "SURVEY SUCCESSFUL",
-    badgeBg: "rgba(16, 185, 129, 0.2)",
-    badgeColor: "#34D399",
-    glowColor: "rgba(52, 211, 153, 0.3)",
-    illustration: "/static/illustrations/survey_complete.svg",
+    title: "Survey Successfully Completed",
+    subtitle: "Your survey responses have been verified and processed into our global consumer intelligence platform.",
+    category: "Fieldwork Telemetry / Disposition",
+    badgeText: "COMPLETE",
+    badgeBg: "#10B981",
+    badgeColor: "#FFFFFF",
     loi: "12:38"
   },
   terminate: {
-    title: "SCREENING TERMINATED: DISPOSITION TRACKER",
+    title: "Survey Screening Terminated",
     subtitle: "The participant profile did not meet the screening criteria established for this research study.",
-    category: "PARTICIPANT SCREENING AUDIT",
+    category: "Participant Audit / Screening",
     badgeText: "TERMINATED",
-    badgeBg: "rgba(239, 68, 68, 0.2)",
-    badgeColor: "#F87171",
-    glowColor: "rgba(248, 113, 113, 0.3)",
-    illustration: "/static/illustrations/survey_terminated.svg",
+    badgeBg: "#EF4444",
+    badgeColor: "#FFFFFF",
     loi: "02:15"
   },
   quota: {
-    title: "QUOTA MAXIMUM REACHED: AUDIT LOG",
+    title: "Quota Maximum Reached",
     subtitle: "Target sample size for this demographic or geographic segment has been fully satisfied.",
-    category: "SAMPLE QUOTA MANAGEMENT",
+    category: "Sample Quota / Management",
     badgeText: "QUOTA FULL",
-    badgeBg: "rgba(245, 158, 11, 0.2)",
-    badgeColor: "#FBBF24",
-    glowColor: "rgba(251, 191, 36, 0.3)",
-    illustration: "/static/illustrations/survey_quota.svg",
+    badgeBg: "#F59E0B",
+    badgeColor: "#FFFFFF",
     loi: "01:50"
   },
   quality: {
-    title: "QUALITY CONTROL REJECTION: SECURITY FILTER",
+    title: "Quality Control Rejection",
     subtitle: "Response flagged by automated data-integrity and anti-fraud verification filters.",
-    category: "QUALITY CONTROL & INTEGRITY",
-    badgeText: "QUALITY REJECT",
-    badgeBg: "rgba(139, 92, 246, 0.25)",
-    badgeColor: "#C084FC",
-    glowColor: "rgba(192, 132, 252, 0.3)",
-    illustration: "/static/illustrations/survey_quality.svg",
+    category: "Security & Data Integrity",
+    badgeText: "QUALITY TERM",
+    badgeBg: "#8B5CF6",
+    badgeColor: "#FFFFFF",
     loi: "01:20"
   },
   close: {
-    title: "FIELDWORK CONCLUDED: STUDY CLOSED",
+    title: "Fieldwork Concluded \u2014 Closed",
     subtitle: "This survey project has completed its data collection lifecycle and is no longer accepting entries.",
-    category: "STUDY LIFECYCLE MANAGEMENT",
-    badgeText: "SURVEY CLOSED",
-    badgeBg: "rgba(100, 116, 139, 0.25)",
-    badgeColor: "#94A3B8",
-    glowColor: "rgba(148, 163, 184, 0.3)",
-    illustration: "/static/illustrations/survey_closed.svg",
+    category: "Study Lifecycle Management",
+    badgeText: "CLOSED",
+    badgeBg: "#64748B",
+    badgeColor: "#FFFFFF",
     loi: "12:30"
   }
 };
 function buildStatusCardHtml(key, projectCode, uid, ip, dateTimeStr, isGenuine = true, sessionToken = "", country = "") {
   const def = STATUS_DEFINITIONS[key];
   return `
-    <div class="status-card-glass">
-      <div class="card-top-bar">
-        <span class="category-tag">${def.category}</span>
-        <span class="status-pill-badge" style="background: ${def.badgeBg}; color: ${def.badgeColor}; border: 1px solid ${def.glowColor}; box-shadow: 0 0 15px ${def.glowColor};">
-          <span class="status-dot" style="background: ${def.badgeColor};"></span>
-          ${def.badgeText}
-        </span>
-      </div>
+    <div class="coral-hero-container">
+      <div class="hero-left-content">
+        <span class="coral-category-tag">${def.category}</span>
+        <h1 class="coral-hero-title">${def.title}</h1>
+        <p class="coral-hero-desc">${def.subtitle}</p>
 
-      <h1 class="card-main-title">${def.title}</h1>
-      <p class="card-subtitle">${def.subtitle}</p>
-
-      <div class="card-grid-body">
-        <div class="illustration-glass-wrap">
-          <img src="${getIllustrationDataUri(key)}" alt="${def.title}" class="illustration-img" onerror="this.onerror=null;this.src='${def.illustration}';">
+        <div class="hero-actions-row">
+          <button class="coral-pill-btn">System Audit Log</button>
+          <span class="verification-pill ${isGenuine ? "genuine" : "unverified"}">
+            ${isGenuine ? "\u2713 VERIFIED SESSION" : "\u26A0 UNVERIFIED / DIRECT LINK"}
+          </span>
         </div>
 
-        <div class="data-table-glass">
-          <div class="glass-data-row">
-            <span class="glass-label">Project Code</span>
-            <span class="glass-val project-highlight">${projectCode}</span>
+        <div class="carousel-indicators">
+          <span class="dot"></span>
+          <span class="dot"></span>
+          <span class="dot active"></span>
+          <span class="dot"></span>
+          <span class="dot"></span>
+        </div>
+      </div>
+
+      <div class="hero-right-card">
+        <div class="illustration-hero-banner">
+          <img src="/static/hero_illustration.jpg" alt="Opinion Insights Hero" class="hero-vector-img" onerror="this.src='/static/logo.png'">
+        </div>
+
+        <div class="telemetry-table-coral">
+          <div class="coral-data-row">
+            <span class="c-label">Project Code</span>
+            <span class="c-val project-code-highlight">${projectCode}</span>
           </div>
           ${country ? `
-          <div class="glass-data-row">
-            <span class="glass-label">Country</span>
-            <span class="glass-val">${country}</span>
+          <div class="coral-data-row">
+            <span class="c-label">Country</span>
+            <span class="c-val">${country}</span>
           </div>` : ""}
-          <div class="glass-data-row">
-            <span class="glass-label">Participant UID</span>
-            <span class="glass-val uid-highlight">${uid}</span>
+          <div class="coral-data-row">
+            <span class="c-label">Participant UID</span>
+            <span class="c-val uid-code-highlight">${uid}</span>
           </div>
           ${sessionToken && sessionToken !== "\u2014" ? `
-          <div class="glass-data-row">
-            <span class="glass-label">Session Token</span>
-            <span class="glass-val token-code">${sessionToken}</span>
+          <div class="coral-data-row">
+            <span class="c-label">Session Token</span>
+            <span class="c-val session-token-code">${sessionToken}</span>
           </div>` : ""}
-          <div class="glass-data-row">
-            <span class="glass-label">Verification</span>
-            <span class="verification-badge ${isGenuine ? "genuine" : "unverified"}">
-              ${isGenuine ? "\u2713 VERIFIED SESSION" : "\u26A0 UNVERIFIED / DIRECT LINK"}
-            </span>
+          <div class="coral-data-row">
+            <span class="c-label">IP Address</span>
+            <span class="c-val">${ip}</span>
           </div>
-          <div class="glass-data-row">
-            <span class="glass-label">IP Address</span>
-            <span class="glass-val">${ip}</span>
+          <div class="coral-data-row">
+            <span class="c-label">LOI Duration</span>
+            <span class="c-val">${def.loi}</span>
           </div>
-          <div class="glass-data-row">
-            <span class="glass-label">Duration (LOI)</span>
-            <span class="glass-val">${def.loi}</span>
+          <div class="coral-data-row">
+            <span class="c-label">Timestamp</span>
+            <span class="c-val">${dateTimeStr}</span>
           </div>
-          <div class="glass-data-row">
-            <span class="glass-label">Timestamp</span>
-            <span class="glass-val">${dateTimeStr}</span>
+          <div class="coral-data-row">
+            <span class="c-label">Disposition</span>
+            <span class="coral-status-badge" style="background-color: ${def.badgeBg}; color: ${def.badgeColor};">${def.badgeText}</span>
           </div>
         </div>
-      </div>
 
-      ${!isGenuine ? `
-      <div class="unverified-glass-alert">
-        <span class="alert-icon">\u26A0\uFE0F</span>
-        <div>
-          <strong>Unverified Entry Notice:</strong> Direct client URL entry without an originating tracking session. Outcome logged under project <code>${projectCode}</code> as <strong>UNVERIFIED</strong>.
-        </div>
-      </div>` : ""}
-
-      <div class="stats-footer-grid">
-        <div class="stat-box">
-          <span class="stat-num">5,000+</span>
-          <span class="stat-desc">Verified Shoppers Tracked</span>
-        </div>
-        <div class="stat-box">
-          <span class="stat-num">4.8x</span>
-          <span class="stat-desc">Faster Qualitative Synthesis</span>
-        </div>
-        <div class="stat-box">
-          <span class="stat-num">Real-Time</span>
-          <span class="stat-desc">Basket Size & Pricing Sentiment</span>
-        </div>
-      </div>
-
-      <div class="card-footer-meta">
-        <span>Opinion Insights Consumer Intelligence Division</span>
-        <span>Published 2026 \u2022 Enterprise Platform</span>
+        ${!isGenuine ? `
+        <div class="coral-unverified-alert">
+          <strong>Notice:</strong> Direct URL entry without originating tracking session. Logged under <code>${projectCode}</code> as <strong>UNVERIFIED</strong>.
+        </div>` : ""}
       </div>
     </div>
   `;
@@ -119828,298 +119803,264 @@ function renderLandingPage(cardKey, projectCode, uid, ip, allCards = false, isGe
       <title>Opinion Insights \u2014 ${def.title}</title>
       <link rel="preconnect" href="https://fonts.googleapis.com">
       <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
       <link rel="icon" href="/static/logo.png" type="image/png">
       <style>
         :root {
-          --bg-dark: #0D0B21;
-          --bg-surface: #13112E;
-          --card-bg: rgba(22, 19, 54, 0.75);
-          --accent-purple: #7C3AED;
-          --accent-violet: #8B5CF6;
-          --accent-teal: #00BFA5;
-          --text-bright: #F8FAFC;
-          --text-muted: #94A3B8;
-          --border-glow: rgba(139, 92, 246, 0.25);
+          --coral-main: #FF5D3B;
+          --coral-dark: #E64A29;
+          --dark-purple: #1E152A;
+          --teal-accent: #00BFA5;
+          --text-light: #FFFFFF;
+          --text-dark: #1E293B;
+          --text-muted: rgba(255, 255, 255, 0.85);
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
           font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-          background-color: var(--bg-dark);
-          color: var(--text-bright);
+          background-color: var(--coral-main);
+          color: var(--text-light);
           min-height: 100vh;
           display: flex;
           flex-direction: column;
-          position: relative;
-          overflow-x: hidden;
         }
 
-        /* Ambient glowing background mesh & particles */
-        .ambient-bg {
-          position: fixed;
-          inset: 0;
-          pointer-events: none;
-          z-index: 0;
-          overflow: hidden;
-        }
-        .glow-orb-1 {
-          position: absolute;
-          top: -10%;
-          left: 30%;
-          width: 600px;
-          height: 600px;
-          background: radial-gradient(circle, rgba(124, 58, 237, 0.28) 0%, rgba(13, 11, 33, 0) 70%);
-          filter: blur(60px);
-          animation: pulseGlow 10s ease-in-out infinite alternate;
-        }
-        .glow-orb-2 {
-          position: absolute;
-          bottom: -10%;
-          right: 20%;
-          width: 550px;
-          height: 550px;
-          background: radial-gradient(circle, rgba(0, 191, 165, 0.18) 0%, rgba(13, 11, 33, 0) 70%);
-          filter: blur(60px);
-          animation: pulseGlow 12s ease-in-out infinite alternate-reverse;
-        }
-
-        @keyframes pulseGlow {
-          0% { transform: scale(1) translate(0, 0); opacity: 0.7; }
-          100% { transform: scale(1.15) translate(20px, -20px); opacity: 1; }
-        }
-
-        /* Header */
-        .site-header {
-          position: relative;
-          z-index: 10;
+        /* Top Bar Navigation matching template */
+        .coral-top-bar {
           height: 80px;
-          padding: 0 2.5rem;
+          padding: 0 3rem;
           display: flex;
           align-items: center;
           justify-content: space-between;
-          background: rgba(19, 17, 46, 0.6);
-          backdrop-filter: blur(16px);
-          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+          background: transparent;
         }
-        .header-logo-img { height: 44px; object-fit: contain; filter: drop-shadow(0 0 10px rgba(139, 92, 246, 0.4)); }
-        .microreport-badge {
-          background: linear-gradient(135deg, #7C3AED, #6366F1);
-          color: #FFFFFF;
-          font-size: 0.75rem;
-          font-weight: 800;
-          letter-spacing: 0.08em;
-          text-transform: uppercase;
-          padding: 8px 18px;
-          border-radius: 99px;
-          box-shadow: 0 0 20px rgba(124, 58, 237, 0.5);
+        .top-left-menu {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          font-size: 1rem;
+          font-weight: 600;
+          cursor: pointer;
         }
+        .top-brand-logo {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+        .top-logo-img { height: 42px; object-fit: contain; filter: brightness(0) invert(1); }
+        .top-brand-text { font-size: 1.25rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; }
+        .top-right-nav {
+          display: flex;
+          align-items: center;
+          gap: 1.75rem;
+          font-size: 0.9375rem;
+          font-weight: 600;
+        }
+        .nav-link { color: #FFFFFF; text-decoration: none; display: flex; align-items: center; gap: 6px; }
 
-        /* Main Content */
-        .page-content {
-          position: relative;
-          z-index: 10;
+        /* Main Page Content */
+        .coral-page-content {
           flex: 1;
-          padding: 3rem 1.5rem;
+          padding: 2rem 3rem 4rem 3rem;
           display: flex;
           justify-content: center;
           align-items: center;
         }
-        .single-card-wrap { width: 100%; max-width: 960px; }
-        .dashboard-stack { width: 100%; max-width: 960px; display: flex; flex-direction: column; gap: 3rem; }
+        .single-card-wrap { width: 100%; max-width: 1240px; }
+        .dashboard-stack { width: 100%; max-width: 1240px; display: flex; flex-direction: column; gap: 3rem; }
 
-        /* Glassmorphic Card */
-        .status-card-glass {
-          background: var(--card-bg);
-          backdrop-filter: blur(24px);
-          border: 1px solid var(--border-glow);
-          border-radius: 28px;
-          box-shadow: 0 30px 70px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255, 255, 255, 0.12);
-          padding: 2.75rem;
-          display: flex;
-          flex-direction: column;
-          gap: 1.75rem;
-          animation: floatCard 8s ease-in-out infinite;
-        }
-
-        @keyframes floatCard {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-6px); }
-        }
-
-        .card-top-bar {
-          display: flex;
-          justify-content: space-between;
+        /* Split Hero Grid Layout matching Mother watching TV and son playing near her.jpg */
+        .coral-hero-container {
+          display: grid;
+          grid-template-columns: 1fr 520px;
+          gap: 3.5rem;
           align-items: center;
+          width: 100%;
         }
-        .category-tag {
-          font-size: 0.8125rem;
+
+        .coral-category-tag {
+          display: inline-block;
+          font-size: 1rem;
+          font-weight: 700;
+          color: rgba(255, 255, 255, 0.9);
+          margin-bottom: 1.25rem;
+          letter-spacing: 0.02em;
+        }
+        .coral-hero-title {
+          font-size: 3.5rem;
           font-weight: 800;
-          letter-spacing: 0.1em;
-          color: var(--accent-violet);
-          text-transform: uppercase;
+          line-height: 1.15;
+          letter-spacing: -0.02em;
+          color: #FFFFFF;
+          margin-bottom: 1.5rem;
         }
-        .status-pill-badge {
-          display: inline-flex;
+        .coral-hero-desc {
+          font-size: 1.1875rem;
+          line-height: 1.6;
+          color: var(--text-muted);
+          max-width: 580px;
+          margin-bottom: 2.5rem;
+        }
+
+        .hero-actions-row {
+          display: flex;
           align-items: center;
-          gap: 8px;
-          padding: 6px 16px;
+          gap: 1.25rem;
+          margin-bottom: 3rem;
+        }
+        .coral-pill-btn {
+          background-color: var(--dark-purple);
+          color: #FFFFFF;
+          font-size: 1.0625rem;
+          font-weight: 700;
+          padding: 14px 32px;
           border-radius: 99px;
-          font-size: 0.8125rem;
-          font-weight: 800;
-          letter-spacing: 0.05em;
-          text-transform: uppercase;
+          border: none;
+          cursor: pointer;
+          transition: transform 0.2s, background-color 0.2s;
+          box-shadow: 0 10px 25px rgba(0,0,0,0.15);
         }
-        .status-dot {
+        .coral-pill-btn:hover {
+          transform: translateY(-2px);
+          background-color: #2D203F;
+        }
+
+        .verification-pill {
+          padding: 10px 20px;
+          border-radius: 99px;
+          font-size: 0.875rem;
+          font-weight: 800;
+          letter-spacing: 0.04em;
+        }
+        .verification-pill.genuine {
+          background: rgba(16, 185, 129, 0.25);
+          color: #FFFFFF;
+          border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+        .verification-pill.unverified {
+          background: rgba(239, 68, 68, 0.3);
+          color: #FFFFFF;
+          border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+
+        /* Carousel indicator dots matching design */
+        .carousel-indicators {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+        .dot {
           width: 8px;
           height: 8px;
           border-radius: 50%;
-          display: inline-block;
-          box-shadow: 0 0 10px currentColor;
+          background: rgba(255, 255, 255, 0.5);
+        }
+        .dot.active {
+          width: 14px;
+          height: 14px;
+          background: transparent;
+          border: 2.5px solid #FFFFFF;
         }
 
-        .card-main-title {
-          font-size: 2rem;
-          font-weight: 800;
-          line-height: 1.25;
-          letter-spacing: -0.02em;
-          background: linear-gradient(135deg, #FFFFFF 30%, #D8B4FE 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
+        /* Right White Curved Card Container */
+        .hero-right-card {
+          background: #FFFFFF;
+          border-radius: 36px;
+          padding: 2.25rem;
+          box-shadow: 0 30px 70px rgba(0, 0, 0, 0.2);
+          color: var(--text-dark);
+          display: flex;
+          flex-direction: column;
+          gap: 1.5rem;
         }
-        .card-subtitle {
-          font-size: 1.0625rem;
-          color: var(--text-muted);
-          line-height: 1.5;
-          max-width: 820px;
-        }
-
-        /* Card Body Grid */
-        .card-grid-body {
-          display: grid;
-          grid-template-columns: 280px 1fr;
-          gap: 2.25rem;
-          align-items: center;
-          margin-top: 0.5rem;
-        }
-        .illustration-glass-wrap {
-          background: rgba(255, 255, 255, 0.02);
-          border: 1px solid rgba(255, 255, 255, 0.06);
+        .illustration-hero-banner {
+          width: 100%;
           border-radius: 20px;
-          padding: 1.5rem;
+          overflow: hidden;
+          background: #F1F5F9;
           display: flex;
           justify-content: center;
           align-items: center;
         }
-        .illustration-img { width: 100%; max-height: 220px; object-fit: contain; }
+        .hero-vector-img {
+          width: 100%;
+          max-height: 240px;
+          object-fit: cover;
+        }
 
-        .data-table-glass {
+        .telemetry-table-coral {
           display: flex;
           flex-direction: column;
           gap: 0.625rem;
         }
-        .glass-data-row {
+        .coral-data-row {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          padding: 0.75rem 1.25rem;
-          background: rgba(255, 255, 255, 0.03);
-          border: 1px solid rgba(255, 255, 255, 0.06);
+          padding: 0.75rem 1rem;
+          background-color: #F8FAFC;
+          border: 1px solid #E2E8F0;
           border-radius: 12px;
-          transition: background 0.2s;
         }
-        .glass-data-row:hover { background: rgba(255, 255, 255, 0.05); }
-        .glass-label { font-size: 0.8125rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); }
-        .glass-val { font-size: 0.9375rem; font-weight: 700; color: #FFFFFF; }
-        .project-highlight { color: #A78BFA; }
-        .uid-highlight { color: #38BDF8; font-family: monospace; }
-        .token-code { font-family: monospace; font-size: 0.75rem; color: #F472B6; }
+        .c-label {
+          font-size: 0.8125rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.04em;
+          color: #64748B;
+        }
+        .c-val {
+          font-size: 0.9375rem;
+          font-weight: 700;
+          color: #0F172A;
+        }
+        .project-code-highlight { color: #6366F1; }
+        .uid-code-highlight { color: #0284C7; font-family: monospace; }
+        .session-token-code { font-family: monospace; font-size: 0.75rem; color: #DB2777; }
 
-        .verification-badge {
-          padding: 4px 12px;
+        .coral-status-badge {
+          display: inline-block;
+          padding: 4px 14px;
           border-radius: 99px;
-          font-size: 0.75rem;
+          font-size: 0.8125rem;
           font-weight: 800;
-          letter-spacing: 0.05em;
-        }
-        .verification-badge.genuine {
-          background: rgba(16, 185, 129, 0.2);
-          color: #34D399;
-          border: 1px solid rgba(52, 211, 153, 0.4);
-        }
-        .verification-badge.unverified {
-          background: rgba(239, 68, 68, 0.2);
-          color: #F87171;
-          border: 1px solid rgba(248, 113, 113, 0.4);
+          letter-spacing: 0.04em;
+          text-transform: uppercase;
         }
 
-        /* Unverified Alert */
-        .unverified-glass-alert {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          padding: 1rem 1.25rem;
-          background: rgba(239, 68, 68, 0.1);
-          border: 1px solid rgba(239, 68, 68, 0.3);
-          border-radius: 14px;
-          color: #FECACA;
-          font-size: 0.875rem;
+        .coral-unverified-alert {
+          padding: 10px 14px;
+          border-radius: 10px;
+          background: #FEF2F2;
+          border: 1px solid #FCA5A5;
+          color: #991B1B;
+          font-size: 0.8125rem;
           line-height: 1.4;
         }
 
-        /* Stats Grid Footer */
-        .stats-footer-grid {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 1rem;
-          margin-top: 0.5rem;
-        }
-        .stat-box {
-          background: rgba(255, 255, 255, 0.03);
-          border: 1px solid rgba(255, 255, 255, 0.07);
-          border-radius: 16px;
-          padding: 1.25rem 1rem;
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-        }
-        .stat-num {
-          font-size: 1.625rem;
-          font-weight: 800;
-          color: #FFFFFF;
-          letter-spacing: -0.02em;
-        }
-        .stat-desc {
-          font-size: 0.75rem;
-          color: var(--text-muted);
-          font-weight: 500;
-        }
-
-        .card-footer-meta {
-          display: flex;
-          justify-content: space-between;
-          font-size: 0.75rem;
-          color: #64748B;
-          border-top: 1px solid rgba(255, 255, 255, 0.06);
-          padding-top: 1rem;
-        }
-
-        @media (max-width: 840px) {
-          .card-grid-body { grid-template-columns: 1fr; }
-          .stats-footer-grid { grid-template-columns: 1fr; }
-          .status-card-glass { padding: 1.5rem; }
+        @media (max-width: 1024px) {
+          .coral-hero-container { grid-template-columns: 1fr; }
+          .coral-hero-title { font-size: 2.5rem; }
+          .coral-page-content { padding: 1.5rem; }
+          .coral-top-bar { padding: 0 1.5rem; }
         }
       </style>
     </head>
     <body>
-      <div class="ambient-bg">
-        <div class="glow-orb-1"></div>
-        <div class="glow-orb-2"></div>
-      </div>
-      <header class="site-header">
-        <img src="/static/logo.png" alt="Opinion Insights" class="header-logo-img">
-        <span class="microreport-badge">MICROREPORT 2026</span>
+      <header class="coral-top-bar">
+        <div class="top-left-menu">
+          <span>\u2261</span> Menu
+        </div>
+        <div class="top-brand-logo">
+          <img src="/static/logo.png" alt="Opinion Insights" class="top-logo-img">
+          <span class="top-brand-text">Opinion Insights</span>
+        </div>
+        <div class="top-right-nav">
+          <span class="nav-link">\u{1F50D} Search</span>
+          <a href="/login" class="nav-link">\u{1F464} Log In</a>
+        </div>
       </header>
-      <main class="page-content">
+      <main class="coral-page-content">
         ${mainContent}
       </main>
     </body>
