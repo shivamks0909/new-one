@@ -2945,7 +2945,7 @@ router.get(
   asyncHandler(async (req: Request, res: Response) => {
     const rawOutcome = Array.isArray(req.params.outcome) ? req.params.outcome[0] : req.params.outcome;
     const outcome = (rawOutcome || '').toLowerCase();
-    const rawOfferId = getQueryParam(req, 'offerId') || getQueryParam(req, 'study_id') || '';
+    const rawOfferId = getQueryParam(req, 'offerId') || getQueryParam(req, 'pid') || getQueryParam(req, 'code') || getQueryParam(req, 'project') || getQueryParam(req, 'study_id') || '';
     const rawUid = getQueryParam(req, 'zid') || getQueryParam(req, 'uid') || '';
     const sig = getQueryParam(req, 'sig') || getQueryParam(req, 'signature') || '';
     const isDashboardView = outcome === 'dashboard' || outcome === 'preview' || outcome === 'all' || req.query.view === 'grid' || req.query.view === 'stack';
@@ -2969,11 +2969,22 @@ router.get(
 
     let studyId = rawOfferId;
     let vendorId = '';
+    let resolvedProjectId: string | null = null;
+    let resolvedStudyId: string | null = null;
 
     if (rawOfferId) {
       try {
+        const { rows: projRows } = await db.pool.query(
+          'SELECT id FROM projects WHERE UPPER(project_code) = UPPER($1) OR id::text = $1',
+          [rawOfferId]
+        );
+        if (projRows[0]) resolvedProjectId = projRows[0].id;
+      } catch {}
+
+      try {
         const { study } = await discoveryService.resolveOrCreateExternalOffer(rawOfferId);
         studyId = study.id;
+        resolvedStudyId = study.id;
         const vendors = await db.getStudyVendors(study.id);
         vendorId = vendors[0]?.vendor_id || '';
       } catch { }
@@ -2986,14 +2997,17 @@ router.get(
     // SECURITY: Only process callback if a valid session exists.
     // This prevents fake pid+uid URL hits from creating phantom responses.
     let callbackProcessed = false;
-    if (studyId && rawUid && !isDashboardView) {
+    if (rawOfferId && rawUid && !isDashboardView) {
       try {
-        const vendorRows = await db.getStudyVendors(studyId);
-        const vendorIdForCb = vendorRows[0]?.vendor_id || vendorId;
+        let vendorIdForCb = vendorId;
+        if (resolvedStudyId) {
+          const vendorRows = await db.getStudyVendors(resolvedStudyId);
+          vendorIdForCb = vendorRows[0]?.vendor_id || vendorId;
+        }
 
         // Verify session exists with LANDING event before processing
-        if (vendorIdForCb) {
-          const verification = await callbackService.verifySession(studyId, vendorIdForCb, rawUid);
+        if (resolvedStudyId && vendorIdForCb) {
+          const verification = await callbackService.verifySession(resolvedStudyId, vendorIdForCb, rawUid);
 
           // Also verify HMAC signature if provided (signed URL approach)
           let sigValid = true;
@@ -3009,25 +3023,27 @@ router.get(
           if (!verification.valid) {
             console.warn(`[r/:outcome] Session verification failed for pid=${rawOfferId} uid=${rawUid}: ${verification.error}`);
             await recordFakeClick({
-              study_id: studyId, vendor_id: vendorIdForCb, uid: rawUid,
+              study_id: resolvedStudyId, vendor_id: vendorIdForCb, project_id: resolvedProjectId, uid: rawUid,
               normalized_uid: rawUid.toUpperCase().trim(),
               rejection_reason: verification.error && verification.error.includes('expired') ? 'EXPIRED_SESSION'
                 : verification.error && verification.error.includes('landing') ? 'NO_LANDING_EVENT' : 'NO_SESSION',
               raw_payload: { pid: rawOfferId, uid: rawUid, outcome }, ip_address: rawIp,
               user_agent: req.get('User-Agent'), provider: 'external_redirect'
             });
+            callbackProcessed = true;
           } else if (!sigValid) {
             console.warn(`[r/:outcome] Signature verification failed for pid=${rawOfferId} uid=${rawUid}`);
             await recordFakeClick({
-              study_id: studyId, vendor_id: vendorIdForCb, uid: rawUid,
+              study_id: resolvedStudyId, vendor_id: vendorIdForCb, project_id: resolvedProjectId, uid: rawUid,
               normalized_uid: rawUid.toUpperCase().trim(), rejection_reason: 'INVALID_SIGNATURE',
               raw_payload: { pid: rawOfferId, uid: rawUid, outcome }, ip_address: rawIp,
               user_agent: req.get('User-Agent'), provider: 'external_redirect'
             });
+            callbackProcessed = true;
           } else {
             await callbackService.processCallback(
               'external_redirect',
-              studyId,
+              resolvedStudyId,
               vendorIdForCb,
               rawUid,
               status,
@@ -3041,6 +3057,21 @@ router.get(
       } catch (err: any) {
         console.error('[r/:outcome:processCallback]', err?.message);
       }
+    }
+
+    if (!callbackProcessed && rawUid && !isDashboardView) {
+      await recordFakeClick({
+        study_id: resolvedStudyId || null,
+        vendor_id: vendorId && vendorId.length === 36 ? vendorId : null,
+        project_id: resolvedProjectId || null,
+        uid: rawUid,
+        normalized_uid: rawUid.toUpperCase().trim(),
+        rejection_reason: 'NO_SESSION',
+        raw_payload: { pid: rawOfferId, uid: rawUid, outcome },
+        ip_address: rawIp,
+        user_agent: req.get('User-Agent'),
+        provider: 'external_redirect',
+      });
     }
 
     const displayProjectCode = rawOfferId || 'PX-2024-0578';
