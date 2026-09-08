@@ -87,7 +87,7 @@ app.get('/login', (_req, res) => {
   res.sendFile(resolveDashboardFile());
 });
 
-app.get('/dashboard', (_req, res) => {
+app.get(/^\/dashboard/, (_req, res) => {
   res.sendFile(resolveDashboardFile());
 });
 

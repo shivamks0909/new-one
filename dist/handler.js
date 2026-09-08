@@ -96261,7 +96261,7 @@ var init_db = __esm({
       WITH unified_responses AS (
         SELECT id, session_id, study_id, project_id, vendor_id, uid, final_status, created_at, updated_at, terminal_at, first_terminal_event, NULL as rejection_reason, NULL as raw_payload, NULL as fake_ip, NULL as fake_ua, 'VERIFIED' as _source_type FROM responses
         UNION ALL
-        SELECT id, NULL as session_id, study_id, NULL as project_id, vendor_id, uid, COALESCE(UPPER(raw_payload->>'outcome'), UPPER(raw_payload->>'status'), 'TERMINATE') as final_status, created_at, created_at as updated_at, created_at as terminal_at, 'fake_click' as first_terminal_event, rejection_reason, raw_payload, ip_address as fake_ip, user_agent as fake_ua, 'UNVERIFIED' as _source_type FROM fake_click_events
+        SELECT id, NULL as session_id, study_id, project_id, vendor_id, uid, COALESCE(UPPER(raw_payload->>'outcome'), UPPER(raw_payload->>'status'), 'TERMINATE') as final_status, created_at, created_at as updated_at, created_at as terminal_at, 'fake_click' as first_terminal_event, rejection_reason, raw_payload, ip_address as fake_ip, user_agent as fake_ua, 'UNVERIFIED' as _source_type FROM fake_click_events
       )
       SELECT 
         r.id,
@@ -96293,7 +96293,17 @@ var init_db = __esm({
         sess.started_at,
         COALESCE(sess.country_detected, s.country, '\u2014') AS country_detected,
         sess.session_token,
-        COALESCE(NULLIF(p.project_code, ''), NULLIF(sess.metadata_json->>'project_code', ''), s.study_code, s.external_offer_id) AS project_code,
+        COALESCE(
+          NULLIF(p.project_code, ''),
+          NULLIF(sess.metadata_json->>'project_code', ''),
+          NULLIF(r.raw_payload->>'pid', ''),
+          NULLIF(r.raw_payload->>'code', ''),
+          NULLIF(r.raw_payload->>'project', ''),
+          NULLIF(r.raw_payload->>'offerId', ''),
+          NULLIF(r.raw_payload->>'project_code', ''),
+          s.study_code,
+          s.external_offer_id
+        ) AS project_code,
         COALESCE(NULLIF(p.name, ''), s.title) AS project_name,
         r._source_type AS verification_status,
         r.rejection_reason,
@@ -96306,7 +96316,10 @@ var init_db = __esm({
         p.id = r.project_id OR 
         (sess.metadata_json->>'project_id' IS NOT NULL AND p.id::text = (sess.metadata_json->>'project_id')::text) OR 
         (s.study_code IS NOT NULL AND s.study_code != '' AND UPPER(p.project_code) = UPPER(s.study_code)) OR 
-        (sess.metadata_json->>'project_code' IS NOT NULL AND sess.metadata_json->>'project_code' != '' AND UPPER(p.project_code) = UPPER(sess.metadata_json->>'project_code'))
+        (sess.metadata_json->>'project_code' IS NOT NULL AND sess.metadata_json->>'project_code' != '' AND UPPER(p.project_code) = UPPER(sess.metadata_json->>'project_code')) OR
+        (r.raw_payload->>'pid' IS NOT NULL AND (UPPER(p.project_code) = UPPER(r.raw_payload->>'pid') OR p.id::text = (r.raw_payload->>'pid')::text)) OR
+        (r.raw_payload->>'code' IS NOT NULL AND UPPER(p.project_code) = UPPER(r.raw_payload->>'code')) OR
+        (r.raw_payload->>'project' IS NOT NULL AND UPPER(p.project_code) = UPPER(r.raw_payload->>'project'))
       )
       LEFT JOIN LATERAL (
         SELECT ip_address, user_agent, raw_payload
@@ -122043,7 +122056,7 @@ router2.get(
   asyncHandler(async (req, res) => {
     const rawOutcome = Array.isArray(req.params.outcome) ? req.params.outcome[0] : req.params.outcome;
     const outcome = (rawOutcome || "").toLowerCase();
-    const rawOfferId = getQueryParam(req, "offerId") || getQueryParam(req, "study_id") || "";
+    const rawOfferId = getQueryParam(req, "offerId") || getQueryParam(req, "pid") || getQueryParam(req, "code") || getQueryParam(req, "project") || getQueryParam(req, "study_id") || "";
     const rawUid = getQueryParam(req, "zid") || getQueryParam(req, "uid") || "";
     const sig = getQueryParam(req, "sig") || getQueryParam(req, "signature") || "";
     const isDashboardView = outcome === "dashboard" || outcome === "preview" || outcome === "all" || req.query.view === "grid" || req.query.view === "stack";
@@ -122064,10 +122077,21 @@ router2.get(
     }
     let studyId = rawOfferId;
     let vendorId = "";
+    let resolvedProjectId = null;
+    let resolvedStudyId = null;
     if (rawOfferId) {
+      try {
+        const { rows: projRows } = await db.pool.query(
+          "SELECT id FROM projects WHERE UPPER(project_code) = UPPER($1) OR id::text = $1",
+          [rawOfferId]
+        );
+        if (projRows[0]) resolvedProjectId = projRows[0].id;
+      } catch {
+      }
       try {
         const { study } = await discoveryService.resolveOrCreateExternalOffer(rawOfferId);
         studyId = study.id;
+        resolvedStudyId = study.id;
         const vendors = await db.getStudyVendors(study.id);
         vendorId = vendors[0]?.vendor_id || "";
       } catch {
@@ -122077,12 +122101,15 @@ router2.get(
     let rawIp = ((Array.isArray(xff) ? String(xff[0]) : String(xff || ""))?.split(",")[0] || req.ip || "127.0.0.1").trim();
     if (rawIp === "::1" || rawIp === "::ffff:127.0.0.1") rawIp = "127.0.0.1";
     let callbackProcessed = false;
-    if (studyId && rawUid && !isDashboardView) {
+    if (rawOfferId && rawUid && !isDashboardView) {
       try {
-        const vendorRows = await db.getStudyVendors(studyId);
-        const vendorIdForCb = vendorRows[0]?.vendor_id || vendorId;
-        if (vendorIdForCb) {
-          const verification = await callbackService.verifySession(studyId, vendorIdForCb, rawUid);
+        let vendorIdForCb = vendorId;
+        if (resolvedStudyId) {
+          const vendorRows = await db.getStudyVendors(resolvedStudyId);
+          vendorIdForCb = vendorRows[0]?.vendor_id || vendorId;
+        }
+        if (resolvedStudyId && vendorIdForCb) {
+          const verification = await callbackService.verifySession(resolvedStudyId, vendorIdForCb, rawUid);
           let sigValid = true;
           if (sig) {
             const { verifyRedirectSignature: verifyRedirectSignature3 } = await Promise.resolve().then(() => (init_trackingService(), trackingService_exports));
@@ -122095,8 +122122,9 @@ router2.get(
           if (!verification.valid) {
             console.warn(`[r/:outcome] Session verification failed for pid=${rawOfferId} uid=${rawUid}: ${verification.error}`);
             await recordFakeClick({
-              study_id: studyId,
+              study_id: resolvedStudyId,
               vendor_id: vendorIdForCb,
+              project_id: resolvedProjectId,
               uid: rawUid,
               normalized_uid: rawUid.toUpperCase().trim(),
               rejection_reason: verification.error && verification.error.includes("expired") ? "EXPIRED_SESSION" : verification.error && verification.error.includes("landing") ? "NO_LANDING_EVENT" : "NO_SESSION",
@@ -122105,11 +122133,13 @@ router2.get(
               user_agent: req.get("User-Agent"),
               provider: "external_redirect"
             });
+            callbackProcessed = true;
           } else if (!sigValid) {
             console.warn(`[r/:outcome] Signature verification failed for pid=${rawOfferId} uid=${rawUid}`);
             await recordFakeClick({
-              study_id: studyId,
+              study_id: resolvedStudyId,
               vendor_id: vendorIdForCb,
+              project_id: resolvedProjectId,
               uid: rawUid,
               normalized_uid: rawUid.toUpperCase().trim(),
               rejection_reason: "INVALID_SIGNATURE",
@@ -122118,10 +122148,11 @@ router2.get(
               user_agent: req.get("User-Agent"),
               provider: "external_redirect"
             });
+            callbackProcessed = true;
           } else {
             await callbackService.processCallback(
               "external_redirect",
-              studyId,
+              resolvedStudyId,
               vendorIdForCb,
               rawUid,
               status,
@@ -122135,6 +122166,20 @@ router2.get(
       } catch (err) {
         console.error("[r/:outcome:processCallback]", err?.message);
       }
+    }
+    if (!callbackProcessed && rawUid && !isDashboardView) {
+      await recordFakeClick({
+        study_id: resolvedStudyId || null,
+        vendor_id: vendorId && vendorId.length === 36 ? vendorId : null,
+        project_id: resolvedProjectId || null,
+        uid: rawUid,
+        normalized_uid: rawUid.toUpperCase().trim(),
+        rejection_reason: "NO_SESSION",
+        raw_payload: { pid: rawOfferId, uid: rawUid, outcome },
+        ip_address: rawIp,
+        user_agent: req.get("User-Agent"),
+        provider: "external_redirect"
+      });
     }
     const displayProjectCode = rawOfferId || "PX-2024-0578";
     const displayUid = rawUid || "UID-7F3A-9C21-B8D6";
@@ -125576,7 +125621,7 @@ var dashboardFile = resolveDashboardFile();
 app.get("/login", (_req, res) => {
   res.sendFile(resolveDashboardFile());
 });
-app.get("/dashboard", (_req, res) => {
+app.get(/^\/dashboard/, (_req, res) => {
   res.sendFile(resolveDashboardFile());
 });
 app.use("/", routes_default);
