@@ -1202,14 +1202,15 @@ export class Database {
 
     const dataSql = `
       WITH unified_responses AS (
-        SELECT id, session_id, study_id, vendor_id, uid, final_status, created_at, updated_at, terminal_at, first_terminal_event, NULL as rejection_reason, NULL as raw_payload, NULL as fake_ip, NULL as fake_ua, 'VERIFIED' as _source_type FROM responses
+        SELECT id, session_id, study_id, project_id, vendor_id, uid, final_status, created_at, updated_at, terminal_at, first_terminal_event, NULL as rejection_reason, NULL as raw_payload, NULL as fake_ip, NULL as fake_ua, 'VERIFIED' as _source_type FROM responses
         UNION ALL
-        SELECT id, NULL as session_id, study_id, vendor_id, uid, COALESCE(UPPER(raw_payload->>'outcome'), UPPER(raw_payload->>'status'), 'TERMINATE') as final_status, created_at, created_at as updated_at, created_at as terminal_at, 'fake_click' as first_terminal_event, rejection_reason, raw_payload, ip_address as fake_ip, user_agent as fake_ua, 'UNVERIFIED' as _source_type FROM fake_click_events
+        SELECT id, NULL as session_id, study_id, NULL as project_id, vendor_id, uid, COALESCE(UPPER(raw_payload->>'outcome'), UPPER(raw_payload->>'status'), 'TERMINATE') as final_status, created_at, created_at as updated_at, created_at as terminal_at, 'fake_click' as first_terminal_event, rejection_reason, raw_payload, ip_address as fake_ip, user_agent as fake_ua, 'UNVERIFIED' as _source_type FROM fake_click_events
       )
       SELECT 
         r.id,
         r.session_id,
         r.study_id,
+        r.project_id,
         r.vendor_id,
         r.uid,
         r.final_status,
@@ -1235,16 +1236,21 @@ export class Database {
         sess.started_at,
         COALESCE(sess.country_detected, s.country, '—') AS country_detected,
         sess.session_token,
-        COALESCE(p.project_code, s.study_code) AS project_code,
-        COALESCE(p.name, s.title) AS project_name,
+        COALESCE(NULLIF(p.project_code, ''), NULLIF(sess.metadata_json->>'project_code', ''), s.study_code, s.external_offer_id) AS project_code,
+        COALESCE(NULLIF(p.name, ''), s.title) AS project_name,
         r._source_type AS verification_status,
         r.rejection_reason,
         r.raw_payload
       FROM unified_responses r
       LEFT JOIN studies s ON s.id = r.study_id
       LEFT JOIN vendors v ON v.id = r.vendor_id
-      LEFT JOIN projects p ON (UPPER(p.project_code) = UPPER(s.study_code))
       LEFT JOIN sessions sess ON sess.id = r.session_id
+      LEFT JOIN projects p ON (
+        p.id = r.project_id OR 
+        (sess.metadata_json->>'project_id' IS NOT NULL AND p.id::text = (sess.metadata_json->>'project_id')::text) OR 
+        (s.study_code IS NOT NULL AND s.study_code != '' AND UPPER(p.project_code) = UPPER(s.study_code)) OR 
+        (sess.metadata_json->>'project_code' IS NOT NULL AND sess.metadata_json->>'project_code' != '' AND UPPER(p.project_code) = UPPER(sess.metadata_json->>'project_code'))
+      )
       LEFT JOIN LATERAL (
         SELECT ip_address, user_agent, raw_payload
         FROM response_events 
@@ -1328,9 +1334,9 @@ export class Database {
 
       return {
         ...r,
-        project: projectDisplay,
-        project_code: r.study_code || r.external_offer_id || projectDisplay,
-        project_name: r.study_title || 'Market Research Survey Project',
+        project: r.project_code || projectDisplay,
+        project_code: r.project_code || r.study_code || r.external_offer_id || projectDisplay,
+        project_name: r.project_name || r.study_title || 'Market Research Survey Project',
         supplier_token: r.vendor_code || r.vendor_name || r.vendor_id,
         country: countryDisplay,
         device,

@@ -1638,6 +1638,7 @@ async function fetchAndRenderResponsesData() {
         .map((r) => {
           const uid = r.uid || "";
           const project =
+            r.project_code ||
             r.project ||
             r.study_code ||
             r.external_offer_id ||

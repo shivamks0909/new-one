@@ -17,6 +17,7 @@ interface ResponseItem {
   study_id: string;
   study_title?: string;
   study_code?: string;
+  project_code?: string;
   vendor_id: string;
   vendor_name?: string;
   vendor_code?: string;
@@ -276,17 +277,15 @@ export default function ResponsesPage() {
             },
             {
               key: 'study',
-              header: 'Survey / Study',
+              header: 'Project Code / Study',
               render: (row: ResponseItem) => (
                 <div className="flex flex-col py-0.5 min-w-[140px]">
-                  <span className="font-semibold text-sm text-[var(--text-primary)] leading-tight">
+                  <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded bg-[var(--bg-tertiary)] border border-[var(--glass-border)] text-[var(--text-primary)] w-fit">
+                    {row.project_code || row.study_code || '—'}
+                  </span>
+                  <span className="text-xs text-[var(--text-muted)] truncate max-w-[180px] mt-0.5">
                     {row.study_title || 'Direct Survey'}
                   </span>
-                  {row.study_code && (
-                    <span className="font-mono text-xs text-[var(--text-muted)]">
-                      {row.study_code}
-                    </span>
-                  )}
                 </div>
               ),
             },
@@ -391,12 +390,12 @@ export default function ResponsesPage() {
                 </span>
               </div>
               <div>
-                <span className="text-xs text-[var(--text-muted)] block mb-0.5">Study</span>
-                <span className="text-xs font-medium text-[var(--text-primary)] block">
-                  {selectedResponse.study_title || 'Direct'}
+                <span className="text-xs text-[var(--text-muted)] block mb-0.5">Project Code</span>
+                <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded bg-[var(--bg-tertiary)] border border-[var(--glass-border)] text-[var(--accent-1)] block w-fit">
+                  {selectedResponse.project_code || selectedResponse.study_code || '—'}
                 </span>
-                <span className="font-mono text-[11px] text-[var(--text-muted)]">
-                  {selectedResponse.study_code || selectedResponse.study_id}
+                <span className="text-[11px] text-[var(--text-muted)] mt-0.5 block">
+                  {selectedResponse.study_title || selectedResponse.study_id}
                 </span>
               </div>
               <div>
