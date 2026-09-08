@@ -504,6 +504,21 @@ export async function resolveOrCreateSession(
   const sessionToken = generateSessionToken();
   const expiresAt = new Date(Date.now() + config.sessionTtlHours * 60 * 60 * 1000);
 
+  let projectId: string | null = null;
+  let projectCode: string | null = null;
+  try {
+    const pRes = await db.pool.query(
+      `SELECT p.id, p.project_code FROM projects p 
+       JOIN studies s ON UPPER(p.project_code) = UPPER(s.study_code) 
+       WHERE s.id::text = $1::text LIMIT 1`,
+      [studyId]
+    );
+    if (pRes.rows[0]) {
+      projectId = pRes.rows[0].id;
+      projectCode = pRes.rows[0].project_code;
+    }
+  } catch (e) { /* ignore fallback error */ }
+
   const session = await db.createSession({
     session_token: sessionToken,
     study_id: studyId,
@@ -521,13 +536,17 @@ export async function resolveOrCreateSession(
     initial_status: 'STARTED',
     current_status: 'STARTED',
     expires_at: expiresAt,
-    metadata_json: {},
+    metadata_json: {
+      project_id: projectId,
+      project_code: projectCode,
+    },
   });
 
   // Create initial response record (IN_PROGRESS)
   await db.createResponseRecord({
     session_id: session.id,
     study_id: studyId,
+    project_id: projectId,
     vendor_id: vendorId,
     uid: original,
     final_status: 'IN_PROGRESS',
@@ -767,7 +786,10 @@ export async function processCallback(
     ? Math.max(0, Math.round((new Date(transition.terminalAt).getTime() - new Date(session.created_at || Date.now()).getTime()) / 1000))
     : undefined;
 
+  const resolvedProjectId = session.metadata_json?.project_id || undefined;
+
   await db.updateResponseRecord(session.id, {
+    project_id:           resolvedProjectId,
     final_status:        transition.finalStatus,
     first_terminal_event: transition.firstTerminalEvent,
     terminal_at:          transition.terminalAt,

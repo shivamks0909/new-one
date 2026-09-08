@@ -649,16 +649,38 @@ export class Database {
   }
 
   async createResponseRecord(record: Partial<any>): Promise<any> {
+    let projectId = record.project_id || null;
+    if (!projectId && record.study_id) {
+      try {
+        const { rows } = await this.pool.query(
+          `SELECT p.id FROM projects p JOIN studies s ON UPPER(p.project_code) = UPPER(s.study_code) WHERE s.id::text = $1::text LIMIT 1`,
+          [record.study_id]
+        );
+        if (rows[0]?.id) projectId = rows[0].id;
+      } catch (e) { /* ignore fallback error */ }
+    }
+    if (!projectId && record.session_id) {
+      try {
+        const { rows } = await this.pool.query(
+          `SELECT metadata_json->>'project_id' as pid FROM sessions WHERE id::text = $1::text`,
+          [record.session_id]
+        );
+        if (rows[0]?.pid) projectId = rows[0].pid;
+      } catch (e) { /* ignore fallback error */ }
+    }
+
     const { rows } = await this.pool.query(
       `INSERT INTO responses
-         (session_id, study_id, vendor_id, uid, final_status, first_terminal_event,
+         (session_id, study_id, project_id, vendor_id, uid, final_status, first_terminal_event,
            terminal_at, is_counted, counted_at, rejection_reason, callback_source,
            created_at, updated_at)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,NOW(),NOW())
-       ON CONFLICT (session_id) DO NOTHING
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,NOW(),NOW())
+       ON CONFLICT (session_id) DO UPDATE SET
+         project_id = COALESCE(EXCLUDED.project_id, responses.project_id),
+         updated_at = NOW()
        RETURNING *`,
       [
-        record.session_id, record.study_id, record.vendor_id, record.uid,
+        record.session_id, record.study_id, projectId, record.vendor_id, record.uid,
         record.final_status ?? 'IN_PROGRESS',
         record.first_terminal_event ?? null,
         record.terminal_at ?? null,
@@ -683,7 +705,7 @@ export class Database {
     const sets: string[] = [];
     const params: any[] = [];
     const allowed = [
-      'final_status', 'first_terminal_event', 'terminal_at',
+      'project_id', 'final_status', 'first_terminal_event', 'terminal_at',
       'is_counted', 'counted_at', 'rejection_reason', 'callback_source', 'loi_seconds',
     ];
     for (const key of allowed) {

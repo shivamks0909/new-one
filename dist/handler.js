@@ -95712,17 +95712,41 @@ var init_db = __esm({
         return rows.length > 0;
       }
       async createResponseRecord(record2) {
+        let projectId = record2.project_id || null;
+        if (!projectId && record2.study_id) {
+          try {
+            const { rows: rows2 } = await this.pool.query(
+              `SELECT p.id FROM projects p JOIN studies s ON UPPER(p.project_code) = UPPER(s.study_code) WHERE s.id::text = $1::text LIMIT 1`,
+              [record2.study_id]
+            );
+            if (rows2[0]?.id) projectId = rows2[0].id;
+          } catch (e) {
+          }
+        }
+        if (!projectId && record2.session_id) {
+          try {
+            const { rows: rows2 } = await this.pool.query(
+              `SELECT metadata_json->>'project_id' as pid FROM sessions WHERE id::text = $1::text`,
+              [record2.session_id]
+            );
+            if (rows2[0]?.pid) projectId = rows2[0].pid;
+          } catch (e) {
+          }
+        }
         const { rows } = await this.pool.query(
           `INSERT INTO responses
-         (session_id, study_id, vendor_id, uid, final_status, first_terminal_event,
+         (session_id, study_id, project_id, vendor_id, uid, final_status, first_terminal_event,
            terminal_at, is_counted, counted_at, rejection_reason, callback_source,
            created_at, updated_at)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,NOW(),NOW())
-       ON CONFLICT (session_id) DO NOTHING
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,NOW(),NOW())
+       ON CONFLICT (session_id) DO UPDATE SET
+         project_id = COALESCE(EXCLUDED.project_id, responses.project_id),
+         updated_at = NOW()
        RETURNING *`,
           [
             record2.session_id,
             record2.study_id,
+            projectId,
             record2.vendor_id,
             record2.uid,
             record2.final_status ?? "IN_PROGRESS",
@@ -95747,6 +95771,7 @@ var init_db = __esm({
         const sets = [];
         const params = [];
         const allowed = [
+          "project_id",
           "final_status",
           "first_terminal_event",
           "terminal_at",
@@ -97478,6 +97503,21 @@ async function resolveOrCreateSession(studyId, vendorId, trackingLinkId, rawUid,
   }
   const sessionToken = generateSessionToken();
   const expiresAt = new Date(Date.now() + config.sessionTtlHours * 60 * 60 * 1e3);
+  let projectId = null;
+  let projectCode = null;
+  try {
+    const pRes = await db.pool.query(
+      `SELECT p.id, p.project_code FROM projects p 
+       JOIN studies s ON UPPER(p.project_code) = UPPER(s.study_code) 
+       WHERE s.id::text = $1::text LIMIT 1`,
+      [studyId]
+    );
+    if (pRes.rows[0]) {
+      projectId = pRes.rows[0].id;
+      projectCode = pRes.rows[0].project_code;
+    }
+  } catch (e) {
+  }
   const session = await db.createSession({
     session_token: sessionToken,
     study_id: studyId,
@@ -97495,11 +97535,15 @@ async function resolveOrCreateSession(studyId, vendorId, trackingLinkId, rawUid,
     initial_status: "STARTED",
     current_status: "STARTED",
     expires_at: expiresAt,
-    metadata_json: {}
+    metadata_json: {
+      project_id: projectId,
+      project_code: projectCode
+    }
   });
   await db.createResponseRecord({
     session_id: session.id,
     study_id: studyId,
+    project_id: projectId,
     vendor_id: vendorId,
     uid: original,
     final_status: "IN_PROGRESS"
@@ -97669,7 +97713,9 @@ async function processCallback(provider, studyId, vendorId, rawUid, rawStatus, t
     };
   }
   const loiSeconds = transition.terminalAt ? Math.max(0, Math.round((new Date(transition.terminalAt).getTime() - new Date(session.created_at || Date.now()).getTime()) / 1e3)) : void 0;
+  const resolvedProjectId = session.metadata_json?.project_id || void 0;
   await db.updateResponseRecord(session.id, {
+    project_id: resolvedProjectId,
     final_status: transition.finalStatus,
     first_terminal_event: transition.firstTerminalEvent,
     terminal_at: transition.terminalAt,
