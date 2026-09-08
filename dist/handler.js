@@ -119669,71 +119669,148 @@ function getCountryNameFromCode(code) {
   return COUNTRY_MAP[c] || c;
 }
 var STATUS_DEFINITIONS = {
-  complete: { title: "SURVEY SUCCESSFULLY COMPLETED", badgeText: "COMPLETE", badgeBg: "#10B981", badgeColor: "#FFFFFF", illustration: "/static/illustrations/survey_complete.svg", loi: "12:38" },
-  terminate: { title: "SURVEY TERMINATED", badgeText: "TERMINATED", badgeBg: "#EF4444", badgeColor: "#FFFFFF", illustration: "/static/illustrations/survey_terminated.svg", loi: "02:15" },
-  quota: { title: "QUOTA REACHED", badgeText: "QUOTA REACHED", badgeBg: "#F59E0B", badgeColor: "#FFFFFF", illustration: "/static/illustrations/survey_quota.svg", loi: "01:50" },
-  quality: { title: "QUALITY TERMINATION", badgeText: "QUALITY TERM", badgeBg: "#8B5CF6", badgeColor: "#FFFFFF", illustration: "/static/illustrations/survey_quality.svg", loi: "01:20" },
-  close: { title: "SURVEY CLOSED", badgeText: "CLOSED", badgeBg: "#64748B", badgeColor: "#FFFFFF", illustration: "/static/illustrations/survey_closed.svg", loi: "12:30" }
+  complete: {
+    title: "2026 FIELDWORK COMPLETE: AI-POWERED SYNTHESIS",
+    subtitle: "Your survey responses have been verified and processed with real-time shopper motivation & confidence telemetry.",
+    category: "CONSUMER BEHAVIOR ANALYSIS",
+    badgeText: "SURVEY SUCCESSFUL",
+    badgeBg: "rgba(16, 185, 129, 0.2)",
+    badgeColor: "#34D399",
+    glowColor: "rgba(52, 211, 153, 0.3)",
+    illustration: "/static/illustrations/survey_complete.svg",
+    loi: "12:38"
+  },
+  terminate: {
+    title: "SCREENING TERMINATED: DISPOSITION TRACKER",
+    subtitle: "The participant profile did not meet the screening criteria established for this research study.",
+    category: "PARTICIPANT SCREENING AUDIT",
+    badgeText: "TERMINATED",
+    badgeBg: "rgba(239, 68, 68, 0.2)",
+    badgeColor: "#F87171",
+    glowColor: "rgba(248, 113, 113, 0.3)",
+    illustration: "/static/illustrations/survey_terminated.svg",
+    loi: "02:15"
+  },
+  quota: {
+    title: "QUOTA MAXIMUM REACHED: AUDIT LOG",
+    subtitle: "Target sample size for this demographic or geographic segment has been fully satisfied.",
+    category: "SAMPLE QUOTA MANAGEMENT",
+    badgeText: "QUOTA FULL",
+    badgeBg: "rgba(245, 158, 11, 0.2)",
+    badgeColor: "#FBBF24",
+    glowColor: "rgba(251, 191, 36, 0.3)",
+    illustration: "/static/illustrations/survey_quota.svg",
+    loi: "01:50"
+  },
+  quality: {
+    title: "QUALITY CONTROL REJECTION: SECURITY FILTER",
+    subtitle: "Response flagged by automated data-integrity and anti-fraud verification filters.",
+    category: "QUALITY CONTROL & INTEGRITY",
+    badgeText: "QUALITY REJECT",
+    badgeBg: "rgba(139, 92, 246, 0.25)",
+    badgeColor: "#C084FC",
+    glowColor: "rgba(192, 132, 252, 0.3)",
+    illustration: "/static/illustrations/survey_quality.svg",
+    loi: "01:20"
+  },
+  close: {
+    title: "FIELDWORK CONCLUDED: STUDY CLOSED",
+    subtitle: "This survey project has completed its data collection lifecycle and is no longer accepting entries.",
+    category: "STUDY LIFECYCLE MANAGEMENT",
+    badgeText: "SURVEY CLOSED",
+    badgeBg: "rgba(100, 116, 139, 0.25)",
+    badgeColor: "#94A3B8",
+    glowColor: "rgba(148, 163, 184, 0.3)",
+    illustration: "/static/illustrations/survey_closed.svg",
+    loi: "12:30"
+  }
 };
 function buildStatusCardHtml(key, projectCode, uid, ip, dateTimeStr, isGenuine = true, sessionToken = "", country = "") {
   const def = STATUS_DEFINITIONS[key];
   return `
-    <div class="status-card">
-      <div class="status-card-header">
-        <h1 class="status-heading">${def.title}</h1>
+    <div class="status-card-glass">
+      <div class="card-top-bar">
+        <span class="category-tag">${def.category}</span>
+        <span class="status-pill-badge" style="background: ${def.badgeBg}; color: ${def.badgeColor}; border: 1px solid ${def.glowColor}; box-shadow: 0 0 15px ${def.glowColor};">
+          <span class="status-dot" style="background: ${def.badgeColor};"></span>
+          ${def.badgeText}
+        </span>
       </div>
-      <div class="status-card-body">
-        <div class="illustration-area">
+
+      <h1 class="card-main-title">${def.title}</h1>
+      <p class="card-subtitle">${def.subtitle}</p>
+
+      <div class="card-grid-body">
+        <div class="illustration-glass-wrap">
           <img src="${getIllustrationDataUri(key)}" alt="${def.title}" class="illustration-img" onerror="this.onerror=null;this.src='${def.illustration}';">
         </div>
-        <div class="info-area">
-          <div class="data-panel">
-            <div class="data-row">
-              <span class="data-label">Project Code</span>
-              <span class="data-val">${projectCode}</span>
-            </div>
-            ${country ? `
-            <div class="data-row">
-              <span class="data-label">Country</span>
-              <span class="data-val">${country}</span>
-            </div>` : ""}
-            <div class="data-row">
-              <span class="data-label">UID</span>
-              <span class="data-val">${uid}</span>
-            </div>
-            ${sessionToken && sessionToken !== "\u2014" ? `
-            <div class="data-row">
-              <span class="data-label">Session Token</span>
-              <span class="data-val" style="font-family:monospace; font-size:11px;">${sessionToken}</span>
-            </div>` : ""}
-            <div class="data-row">
-              <span class="data-label">Verification</span>
-              <span class="status-badge" style="background-color: ${isGenuine ? "#10B981" : "#EF4444"}; color: #FFFFFF; font-weight: 700; letter-spacing: 0.05em;">
-                ${isGenuine ? "\u2713 GENUINE" : "\u26A0 UNVERIFIED / FAKE"}
-              </span>
-            </div>
-            <div class="data-row">
-              <span class="data-label">IP Address</span>
-              <span class="data-val">${ip}</span>
-            </div>
-            <div class="data-row">
-              <span class="data-label">LOI</span>
-              <span class="data-val" style="font-family:inherit;">${def.loi}</span>
-            </div>
-            <div class="data-row">
-              <span class="data-label">Date & Time</span>
-              <span class="data-val" style="font-family:inherit;">${dateTimeStr}</span>
-            </div>
-            <div class="data-row">
-              <span class="data-label">Status</span>
-              <span class="status-badge" style="background-color: ${def.badgeBg}; color: ${def.badgeColor};">${def.badgeText}</span>
-            </div>
+
+        <div class="data-table-glass">
+          <div class="glass-data-row">
+            <span class="glass-label">Project Code</span>
+            <span class="glass-val project-highlight">${projectCode}</span>
           </div>
-          ${!isGenuine ? `
-          <div style="margin-top: 14px; padding: 10px 14px; border-radius: 8px; background: #FEF2F2; border: 1px solid #FCA5A5; color: #991B1B; font-size: 11px; line-height: 1.4; text-align: left;">
-            <strong>Notice:</strong> No valid originating tracking session was found for this participant UID. This outcome has been recorded as <strong>Unverified / Fake</strong>.
+          ${country ? `
+          <div class="glass-data-row">
+            <span class="glass-label">Country</span>
+            <span class="glass-val">${country}</span>
           </div>` : ""}
+          <div class="glass-data-row">
+            <span class="glass-label">Participant UID</span>
+            <span class="glass-val uid-highlight">${uid}</span>
+          </div>
+          ${sessionToken && sessionToken !== "\u2014" ? `
+          <div class="glass-data-row">
+            <span class="glass-label">Session Token</span>
+            <span class="glass-val token-code">${sessionToken}</span>
+          </div>` : ""}
+          <div class="glass-data-row">
+            <span class="glass-label">Verification</span>
+            <span class="verification-badge ${isGenuine ? "genuine" : "unverified"}">
+              ${isGenuine ? "\u2713 VERIFIED SESSION" : "\u26A0 UNVERIFIED / DIRECT LINK"}
+            </span>
+          </div>
+          <div class="glass-data-row">
+            <span class="glass-label">IP Address</span>
+            <span class="glass-val">${ip}</span>
+          </div>
+          <div class="glass-data-row">
+            <span class="glass-label">Duration (LOI)</span>
+            <span class="glass-val">${def.loi}</span>
+          </div>
+          <div class="glass-data-row">
+            <span class="glass-label">Timestamp</span>
+            <span class="glass-val">${dateTimeStr}</span>
+          </div>
         </div>
+      </div>
+
+      ${!isGenuine ? `
+      <div class="unverified-glass-alert">
+        <span class="alert-icon">\u26A0\uFE0F</span>
+        <div>
+          <strong>Unverified Entry Notice:</strong> Direct client URL entry without an originating tracking session. Outcome logged under project <code>${projectCode}</code> as <strong>UNVERIFIED</strong>.
+        </div>
+      </div>` : ""}
+
+      <div class="stats-footer-grid">
+        <div class="stat-box">
+          <span class="stat-num">5,000+</span>
+          <span class="stat-desc">Verified Shoppers Tracked</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-num">4.8x</span>
+          <span class="stat-desc">Faster Qualitative Synthesis</span>
+        </div>
+        <div class="stat-box">
+          <span class="stat-num">Real-Time</span>
+          <span class="stat-desc">Basket Size & Pricing Sentiment</span>
+        </div>
+      </div>
+
+      <div class="card-footer-meta">
+        <span>Opinion Insights Consumer Intelligence Division</span>
+        <span>Published 2026 \u2022 Enterprise Platform</span>
       </div>
     </div>
   `;
@@ -119748,44 +119825,299 @@ function renderLandingPage(cardKey, projectCode, uid, ip, allCards = false, isGe
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>Opinion Insights \xE2\u20AC\u201D ${def.title}</title>
+      <title>Opinion Insights \u2014 ${def.title}</title>
       <link rel="preconnect" href="https://fonts.googleapis.com">
       <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
       <link rel="icon" href="/static/logo.png" type="image/png">
       <style>
-        :root { --brand-magenta: #9E003F; --page-bg: #F8FAFC; --card-bg: #FFFFFF; --border-color: #E2E8F0; --text-dark: #0F172A; --text-muted: #64748B; }
+        :root {
+          --bg-dark: #0D0B21;
+          --bg-surface: #13112E;
+          --card-bg: rgba(22, 19, 54, 0.75);
+          --accent-purple: #7C3AED;
+          --accent-violet: #8B5CF6;
+          --accent-teal: #00BFA5;
+          --text-bright: #F8FAFC;
+          --text-muted: #94A3B8;
+          --border-glow: rgba(139, 92, 246, 0.25);
+        }
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background-color: var(--page-bg); color: var(--text-dark); min-height: 100vh; display: flex; flex-direction: column; }
-        .site-header { background-color: #FFFFFF; height: 76px; padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color); box-shadow: 0 1px 3px rgba(0,0,0,0.04); }
-        .header-left { display: flex; align-items: center; gap: 1rem; }
-        .brand-logo-area { display: flex; align-items: center; }
-        .header-logo-img { height: 48px; object-fit: contain; }
-        .header-right { font-size: 0.8125rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--brand-magenta); background: #FFF1F5; padding: 6px 16px; border-radius: 99px; border: 1px solid #FFE4ED; }
-        .page-content { flex: 1; padding: 2.5rem 1.5rem; display: flex; justify-content: center; align-items: center; }
-        .single-card-wrap { width: 100%; max-width: 920px; }
-        .dashboard-stack { width: 100%; max-width: 920px; display: flex; flex-direction: column; gap: 2.5rem; }
-        .status-card { background-color: var(--card-bg); border-radius: 20px; border: 1px solid var(--border-color); box-shadow: 0 15px 35px -10px rgba(15,23,42,0.07); padding: 2.25rem 2.5rem; display: flex; flex-direction: column; gap: 1.5rem; width: 100%; overflow: hidden; }
-        .status-card-header { text-align: center; padding-bottom: 0.25rem; }
-        .status-heading { font-size: 1.625rem; font-weight: 800; color: #0F172A; letter-spacing: -0.02em; line-height: 1.25; text-transform: uppercase; }
-        .status-card-body { display: flex; align-items: center; gap: 2.5rem; width: 100%; }
-        .illustration-area { flex: 0 0 300px; max-width: 300px; display: flex; justify-content: center; align-items: center; }
-        .illustration-img { width: 100%; max-height: 240px; object-fit: contain; border-radius: 16px; }
-        .info-area { flex: 1; min-width: 0; }
-        .data-panel { display: flex; flex-direction: column; gap: 0.75rem; }
-        .data-row { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 1rem; background-color: #F8FAFC; border: 1px solid var(--border-color); border-radius: 12px; }
-        .data-label { font-size: 0.8125rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted); }
-        .data-val { font-weight: 700; color: var(--text-dark); word-break: break-all; text-align: right; }
-        .status-badge { display: inline-block; padding: 4px 12px; border-radius: 99px; font-weight: 700; font-size: 0.8125rem; text-transform: uppercase; letter-spacing: 0.03em; }
-        @media (max-width: 760px) { .status-card-body { flex-direction: column; } .illustration-area { flex: none; max-width: 100%; } }
+        body {
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+          background-color: var(--bg-dark);
+          color: var(--text-bright);
+          min-height: 100vh;
+          display: flex;
+          flex-direction: column;
+          position: relative;
+          overflow-x: hidden;
+        }
+
+        /* Ambient glowing background mesh & particles */
+        .ambient-bg {
+          position: fixed;
+          inset: 0;
+          pointer-events: none;
+          z-index: 0;
+          overflow: hidden;
+        }
+        .glow-orb-1 {
+          position: absolute;
+          top: -10%;
+          left: 30%;
+          width: 600px;
+          height: 600px;
+          background: radial-gradient(circle, rgba(124, 58, 237, 0.28) 0%, rgba(13, 11, 33, 0) 70%);
+          filter: blur(60px);
+          animation: pulseGlow 10s ease-in-out infinite alternate;
+        }
+        .glow-orb-2 {
+          position: absolute;
+          bottom: -10%;
+          right: 20%;
+          width: 550px;
+          height: 550px;
+          background: radial-gradient(circle, rgba(0, 191, 165, 0.18) 0%, rgba(13, 11, 33, 0) 70%);
+          filter: blur(60px);
+          animation: pulseGlow 12s ease-in-out infinite alternate-reverse;
+        }
+
+        @keyframes pulseGlow {
+          0% { transform: scale(1) translate(0, 0); opacity: 0.7; }
+          100% { transform: scale(1.15) translate(20px, -20px); opacity: 1; }
+        }
+
+        /* Header */
+        .site-header {
+          position: relative;
+          z-index: 10;
+          height: 80px;
+          padding: 0 2.5rem;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          background: rgba(19, 17, 46, 0.6);
+          backdrop-filter: blur(16px);
+          border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .header-logo-img { height: 44px; object-fit: contain; filter: drop-shadow(0 0 10px rgba(139, 92, 246, 0.4)); }
+        .microreport-badge {
+          background: linear-gradient(135deg, #7C3AED, #6366F1);
+          color: #FFFFFF;
+          font-size: 0.75rem;
+          font-weight: 800;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          padding: 8px 18px;
+          border-radius: 99px;
+          box-shadow: 0 0 20px rgba(124, 58, 237, 0.5);
+        }
+
+        /* Main Content */
+        .page-content {
+          position: relative;
+          z-index: 10;
+          flex: 1;
+          padding: 3rem 1.5rem;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+        }
+        .single-card-wrap { width: 100%; max-width: 960px; }
+        .dashboard-stack { width: 100%; max-width: 960px; display: flex; flex-direction: column; gap: 3rem; }
+
+        /* Glassmorphic Card */
+        .status-card-glass {
+          background: var(--card-bg);
+          backdrop-filter: blur(24px);
+          border: 1px solid var(--border-glow);
+          border-radius: 28px;
+          box-shadow: 0 30px 70px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+          padding: 2.75rem;
+          display: flex;
+          flex-direction: column;
+          gap: 1.75rem;
+          animation: floatCard 8s ease-in-out infinite;
+        }
+
+        @keyframes floatCard {
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-6px); }
+        }
+
+        .card-top-bar {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+        .category-tag {
+          font-size: 0.8125rem;
+          font-weight: 800;
+          letter-spacing: 0.1em;
+          color: var(--accent-violet);
+          text-transform: uppercase;
+        }
+        .status-pill-badge {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          padding: 6px 16px;
+          border-radius: 99px;
+          font-size: 0.8125rem;
+          font-weight: 800;
+          letter-spacing: 0.05em;
+          text-transform: uppercase;
+        }
+        .status-dot {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          display: inline-block;
+          box-shadow: 0 0 10px currentColor;
+        }
+
+        .card-main-title {
+          font-size: 2rem;
+          font-weight: 800;
+          line-height: 1.25;
+          letter-spacing: -0.02em;
+          background: linear-gradient(135deg, #FFFFFF 30%, #D8B4FE 100%);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+        }
+        .card-subtitle {
+          font-size: 1.0625rem;
+          color: var(--text-muted);
+          line-height: 1.5;
+          max-width: 820px;
+        }
+
+        /* Card Body Grid */
+        .card-grid-body {
+          display: grid;
+          grid-template-columns: 280px 1fr;
+          gap: 2.25rem;
+          align-items: center;
+          margin-top: 0.5rem;
+        }
+        .illustration-glass-wrap {
+          background: rgba(255, 255, 255, 0.02);
+          border: 1px solid rgba(255, 255, 255, 0.06);
+          border-radius: 20px;
+          padding: 1.5rem;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+        }
+        .illustration-img { width: 100%; max-height: 220px; object-fit: contain; }
+
+        .data-table-glass {
+          display: flex;
+          flex-direction: column;
+          gap: 0.625rem;
+        }
+        .glass-data-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 0.75rem 1.25rem;
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(255, 255, 255, 0.06);
+          border-radius: 12px;
+          transition: background 0.2s;
+        }
+        .glass-data-row:hover { background: rgba(255, 255, 255, 0.05); }
+        .glass-label { font-size: 0.8125rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); }
+        .glass-val { font-size: 0.9375rem; font-weight: 700; color: #FFFFFF; }
+        .project-highlight { color: #A78BFA; }
+        .uid-highlight { color: #38BDF8; font-family: monospace; }
+        .token-code { font-family: monospace; font-size: 0.75rem; color: #F472B6; }
+
+        .verification-badge {
+          padding: 4px 12px;
+          border-radius: 99px;
+          font-size: 0.75rem;
+          font-weight: 800;
+          letter-spacing: 0.05em;
+        }
+        .verification-badge.genuine {
+          background: rgba(16, 185, 129, 0.2);
+          color: #34D399;
+          border: 1px solid rgba(52, 211, 153, 0.4);
+        }
+        .verification-badge.unverified {
+          background: rgba(239, 68, 68, 0.2);
+          color: #F87171;
+          border: 1px solid rgba(248, 113, 113, 0.4);
+        }
+
+        /* Unverified Alert */
+        .unverified-glass-alert {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 1rem 1.25rem;
+          background: rgba(239, 68, 68, 0.1);
+          border: 1px solid rgba(239, 68, 68, 0.3);
+          border-radius: 14px;
+          color: #FECACA;
+          font-size: 0.875rem;
+          line-height: 1.4;
+        }
+
+        /* Stats Grid Footer */
+        .stats-footer-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          gap: 1rem;
+          margin-top: 0.5rem;
+        }
+        .stat-box {
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(255, 255, 255, 0.07);
+          border-radius: 16px;
+          padding: 1.25rem 1rem;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+        .stat-num {
+          font-size: 1.625rem;
+          font-weight: 800;
+          color: #FFFFFF;
+          letter-spacing: -0.02em;
+        }
+        .stat-desc {
+          font-size: 0.75rem;
+          color: var(--text-muted);
+          font-weight: 500;
+        }
+
+        .card-footer-meta {
+          display: flex;
+          justify-content: space-between;
+          font-size: 0.75rem;
+          color: #64748B;
+          border-top: 1px solid rgba(255, 255, 255, 0.06);
+          padding-top: 1rem;
+        }
+
+        @media (max-width: 840px) {
+          .card-grid-body { grid-template-columns: 1fr; }
+          .stats-footer-grid { grid-template-columns: 1fr; }
+          .status-card-glass { padding: 1.5rem; }
+        }
       </style>
     </head>
     <body>
+      <div class="ambient-bg">
+        <div class="glow-orb-1"></div>
+        <div class="glow-orb-2"></div>
+      </div>
       <header class="site-header">
-        <div class="header-left">
-          <div class="brand-logo-area"><img src="/static/logo.png" alt="Opinion Insights" class="header-logo-img"></div>
-        </div>
-        <div class="header-right"><span>SYSTEM STATUS</span></div>
+        <img src="/static/logo.png" alt="Opinion Insights" class="header-logo-img">
+        <span class="microreport-badge">MICROREPORT 2026</span>
       </header>
       <main class="page-content">
         ${mainContent}
