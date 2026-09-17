@@ -1157,11 +1157,18 @@ export class Database {
     end_date?: string;
     sort_by?: string;
     sort_order?: string;
+    type?: string;
     page?: number;
     limit?: number;
   }): Promise<{ rows: any[]; total: number }> {
     let where = 'WHERE 1=1';
     const params: any[] = [];
+
+    if (filters.type === 'verified') {
+      where += ` AND r._source_type = 'VERIFIED'`;
+    } else if (filters.type === 'unverified') {
+      where += ` AND r._source_type = 'UNVERIFIED'`;
+    }
 
     if (filters.study_id) {
       params.push(filters.study_id);
@@ -1183,6 +1190,8 @@ export class Database {
         where += ` AND r.final_status IN ('SECURITY_REJECT', 'QUALITY_TERM', 'QUALITY TERM')`;
       } else if (st === 'SURVEY CLOSED' || st === 'EXPIRED' || st === 'CLOSED') {
         where += ` AND r.final_status IN ('EXPIRED', 'CLOSED', 'SURVEY CLOSED')`;
+      } else if (st === 'UNVERIFIED') {
+        where += ` AND r._source_type = 'UNVERIFIED'`;
       } else {
         params.push(st);
         where += ` AND r.final_status ILIKE $${params.length}`;
@@ -1239,7 +1248,7 @@ export class Database {
       WITH unified_responses AS (
         SELECT id, session_id, study_id, project_id, vendor_id, uid, final_status, created_at, updated_at, terminal_at, first_terminal_event, NULL as rejection_reason, NULL as raw_payload, NULL as fake_ip, NULL as fake_ua, 'VERIFIED' as _source_type FROM responses
         UNION ALL
-        SELECT id, NULL as session_id, study_id, project_id, vendor_id, uid, COALESCE(UPPER(raw_payload->>'outcome'), UPPER(raw_payload->>'status'), 'TERMINATE') as final_status, created_at, created_at as updated_at, created_at as terminal_at, 'fake_click' as first_terminal_event, rejection_reason, raw_payload, ip_address as fake_ip, user_agent as fake_ua, 'UNVERIFIED' as _source_type FROM fake_click_events
+        SELECT id, NULL as session_id, study_id, project_id, vendor_id, uid, 'UNVERIFIED' as final_status, created_at, created_at as updated_at, created_at as terminal_at, 'fake_click' as first_terminal_event, rejection_reason, raw_payload, ip_address as fake_ip, user_agent as fake_ua, 'UNVERIFIED' as _source_type FROM fake_click_events
       )
       SELECT 
         r.id,
@@ -1315,7 +1324,7 @@ export class Database {
       WITH unified_responses AS (
         SELECT id, session_id, study_id, vendor_id, uid, final_status, created_at, updated_at, terminal_at, first_terminal_event, NULL as rejection_reason, NULL as raw_payload, NULL as fake_ip, NULL as fake_ua, 'VERIFIED' as _source_type FROM responses
         UNION ALL
-        SELECT id, NULL as session_id, study_id, vendor_id, uid, COALESCE(UPPER(raw_payload->>'outcome'), UPPER(raw_payload->>'status'), 'TERMINATE') as final_status, created_at, created_at as updated_at, created_at as terminal_at, 'fake_click' as first_terminal_event, rejection_reason, raw_payload, ip_address as fake_ip, user_agent as fake_ua, 'UNVERIFIED' as _source_type FROM fake_click_events
+        SELECT id, NULL as session_id, study_id, vendor_id, uid, 'UNVERIFIED' as final_status, created_at, created_at as updated_at, created_at as terminal_at, 'fake_click' as first_terminal_event, rejection_reason, raw_payload, ip_address as fake_ip, user_agent as fake_ua, 'UNVERIFIED' as _source_type FROM fake_click_events
       )
       SELECT COUNT(*) 
       FROM unified_responses r
@@ -1347,21 +1356,25 @@ export class Database {
         device = 'Mobile';
       }
 
-      // Map status enum to exact required display names: COMPLETE, TERMINATE, OVER QUOTA, QUALITY TERM, SURVEY CLOSED
-      let statusDisplay = 'COMPLETE';
-      const sUpper = (r.final_status || '').toUpperCase();
-      if (['COMPLETE', 'COMPLETED', 'SUCCESS'].includes(sUpper)) {
-        statusDisplay = 'COMPLETE';
-      } else if (['TERMINATE', 'TERMINATED', 'FAILED'].includes(sUpper)) {
-        statusDisplay = 'TERMINATE';
-      } else if (['QUOTA_FULL', 'QUOTA', 'OVER QUOTA'].includes(sUpper)) {
-        statusDisplay = 'OVER QUOTA';
-      } else if (['SECURITY_REJECT', 'QUALITY_TERM', 'PURPLE'].includes(sUpper)) {
-        statusDisplay = 'QUALITY TERM';
-      } else if (['EXPIRED', 'CLOSED', 'SURVEY CLOSED'].includes(sUpper)) {
-        statusDisplay = 'SURVEY CLOSED';
-      } else {
-        statusDisplay = sUpper || 'COMPLETE';
+      const isUnv = r.verification_status === 'UNVERIFIED' || r._source_type === 'UNVERIFIED' || r.final_status === 'UNVERIFIED';
+
+      // Map status enum to exact required display names: COMPLETE, TERMINATE, OVER QUOTA, QUALITY TERM, SURVEY CLOSED, UNVERIFIED
+      let statusDisplay = isUnv ? 'UNVERIFIED' : 'COMPLETE';
+      if (!isUnv) {
+        const sUpper = (r.final_status || '').toUpperCase();
+        if (['COMPLETE', 'COMPLETED', 'SUCCESS'].includes(sUpper)) {
+          statusDisplay = 'COMPLETE';
+        } else if (['TERMINATE', 'TERMINATED', 'FAILED'].includes(sUpper)) {
+          statusDisplay = 'TERMINATE';
+        } else if (['QUOTA_FULL', 'QUOTA', 'OVER QUOTA'].includes(sUpper)) {
+          statusDisplay = 'OVER QUOTA';
+        } else if (['SECURITY_REJECT', 'QUALITY_TERM', 'PURPLE'].includes(sUpper)) {
+          statusDisplay = 'QUALITY TERM';
+        } else if (['EXPIRED', 'CLOSED', 'SURVEY CLOSED'].includes(sUpper)) {
+          statusDisplay = 'SURVEY CLOSED';
+        } else {
+          statusDisplay = sUpper || 'COMPLETE';
+        }
       }
 
       const projectDisplay = r.study_code || r.external_offer_id || r.study_title || r.study_id;
@@ -1382,14 +1395,18 @@ export class Database {
 
       return {
         ...r,
-        project: r.project_code || projectDisplay,
-        project_code: r.project_code || r.study_code || r.external_offer_id || projectDisplay,
-        project_name: r.project_name || r.study_title || 'Market Research Survey Project',
-        supplier_token: r.vendor_code || r.vendor_name || r.vendor_id,
-        country: countryDisplay,
-        device,
+        is_unverified: isUnv,
+        final_status: isUnv ? 'UNVERIFIED' : r.final_status,
         status: statusDisplay,
         raw_status: r.final_status,
+        rejection_reason: r.rejection_reason || (isUnv ? 'Direct client link — no tracking token' : null),
+        project: r.project_code || projectDisplay,
+        project_code: r.project_code || r.study_code || r.external_offer_id || projectDisplay,
+        project_name: r.project_name || r.study_title || (isUnv ? 'Direct / External Link' : 'Market Research Survey Project'),
+        supplier_token: r.vendor_code || r.vendor_name || r.vendor_id || (isUnv ? 'Direct / External' : '—'),
+        vendor_name: r.vendor_name || (isUnv ? 'Direct / External' : 'Direct / External'),
+        country: countryDisplay,
+        device,
         started_at: r.started_at || r.created_at,
         loi_seconds: loiSec,
         loi_formatted: loiFormatted,

@@ -118,7 +118,7 @@ export default function ResponsesPage() {
 
       setResponses(rows);
       setTotalPages(meta.pages || Math.max(1, Math.ceil((meta.total || rows.length) / 30)));
-      setTotalCount(meta.total ?? rows.length);
+      setTotalCount(meta.allTotal !== undefined ? meta.allTotal : ((meta.verifiedTotal ?? 0) + (meta.unverifiedTotal ?? 0)));
       if (meta.verifiedTotal !== undefined) setVerifiedCount(meta.verifiedTotal);
       if (meta.unverifiedTotal !== undefined) setUnverifiedCount(meta.unverifiedTotal);
     } catch (err: any) {
@@ -192,6 +192,7 @@ export default function ResponsesPage() {
       
       if (statusFilter) url.searchParams.set('status', statusFilter);
       if (searchQuery) url.searchParams.set('search', searchQuery);
+      if (activeTab !== 'all') url.searchParams.set('type', activeTab);
       if (role === 'VENDOR' && vendor_id) url.searchParams.set('vendor_id', vendor_id);
 
       const response = await fetch(url.toString(), {

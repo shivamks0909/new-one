@@ -4526,71 +4526,17 @@ router.get(
       : (vendor_id ? String(vendor_id) : undefined);
 
     const type = getQueryParam(req, 'type');
-    if (type === 'unverified' || status === 'UNVERIFIED') {
-      let sql = `
-        SELECT f.*, p.name as project_name, p.project_code
-        FROM fake_click_events f
-        LEFT JOIN projects p ON p.id = f.project_id
-        WHERE 1=1
-      `;
-      const params: any[] = [];
-      if (search) {
-        params.push(`%${search}%`);
-        sql += ` AND (f.uid ILIKE $${params.length} OR f.ip_address ILIKE $${params.length} OR f.rejection_reason ILIKE $${params.length} OR p.name ILIKE $${params.length})`;
-      }
-      if (study_id) {
-        params.push(study_id);
-        sql += ` AND (f.project_id = $${params.length} OR f.study_id = $${params.length})`;
-      }
-      sql += ` ORDER BY f.created_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
-      params.push(limit, (page - 1) * limit);
+    const filterType = (type === 'unverified' || status === 'UNVERIFIED')
+      ? 'unverified'
+      : (type === 'verified' ? 'verified' : 'all');
 
-      const countSql = `SELECT COUNT(*) FROM fake_click_events f WHERE 1=1 ${study_id ? `AND (f.project_id = '${study_id}' OR f.study_id = '${study_id}')` : ''}`;
-      const [dataRes, countRes, verifiedCountRes] = await Promise.all([
-        db.pool.query(sql, params),
-        db.pool.query(countSql),
-        db.pool.query(`SELECT COUNT(*) FROM responses WHERE final_status != 'UNVERIFIED'`),
-      ]);
-      const total = parseInt(countRes.rows[0]?.count || '0', 10);
-      const verifiedTotal = parseInt(verifiedCountRes.rows[0]?.count || '0', 10);
-
-      const rows = dataRes.rows.map(r => ({
-        id: r.id,
-        uid: r.uid,
-        final_status: 'UNVERIFIED',
-        is_unverified: true,
-        created_at: r.created_at,
-        ip_address: r.ip_address,
-        ip_hash: r.ip_hash,
-        user_agent: r.user_agent,
-        rejection_reason: r.rejection_reason || 'Direct hit — no tracking session token',
-        provider: r.provider || 'direct_client',
-        is_reviewed: !!r.is_reviewed,
-        reviewed_at: r.reviewed_at,
-        reviewed_by: r.reviewed_by,
-        review_notes: r.review_notes,
-        project_id: r.project_id,
-        project_name: r.project_name || 'Direct / Unknown Project',
-        project_code: r.project_code || r.raw_payload?.pid || 'DIRECT',
-        client_billing_status: 'NOT_BILLED',
-        vendor_acceptance_status: 'REJECTED',
-        country: r.raw_payload?.country || '—',
-      }));
-
-      return res.json({
-        success: true,
-        data: rows,
-        responses: rows,
-        meta: {
-          total,
-          verifiedTotal,
-          unverifiedTotal: total,
-          page,
-          limit,
-          pages: Math.max(1, Math.ceil(total / limit))
-        }
-      });
-    }
+    const [verCountRes, unvCountRes] = await Promise.all([
+      db.pool.query("SELECT COUNT(*) FROM responses WHERE final_status != 'UNVERIFIED'"),
+      db.pool.query('SELECT COUNT(*) FROM fake_click_events'),
+    ]);
+    const verifiedTotal = parseInt(verCountRes.rows[0]?.count || '0', 10);
+    const unverifiedTotal = parseInt(unvCountRes.rows[0]?.count || '0', 10);
+    const allTotal = verifiedTotal + unverifiedTotal;
 
     const { rows, total } = await db.getResponses({
       study_id: study_id ? String(study_id) : undefined,
@@ -4603,12 +4549,10 @@ router.get(
       end_date: end_date ? String(end_date) : undefined,
       sort_by: sort_by ? String(sort_by) : undefined,
       sort_order: sort_order ? String(sort_order) : undefined,
+      type: filterType,
       page,
       limit,
     });
-
-    const unvCountRes = await db.pool.query('SELECT COUNT(*) FROM fake_click_events');
-    const unverifiedTotal = parseInt(unvCountRes.rows[0]?.count || '0', 10);
 
     res.json({
       success: true,
@@ -4616,12 +4560,13 @@ router.get(
       responses: rows,
       meta: {
         total,
-        verifiedTotal: total,
+        allTotal,
+        verifiedTotal,
         unverifiedTotal,
         page,
         limit,
-        pages: Math.ceil(total / (limit || 25))
-      }
+        pages: Math.max(1, Math.ceil(total / (limit || 25))),
+      },
     });
   }),
 );
@@ -4645,7 +4590,8 @@ router.get(
       ? (req.user.vendor_id || '__UNASSIGNED_VENDOR__')
       : (vendor_id ? String(vendor_id) : undefined);
 
-    const filterObj = export_type === 'all' ? { limit: 10000, vendor_id: effectiveVendorId } : {
+    const typeParam = getQueryParam(req, 'type');
+    const filterObj = export_type === 'all' ? { limit: 10000, vendor_id: effectiveVendorId, type: typeParam ? String(typeParam) : undefined } : {
       search: search ? String(search) : undefined,
       status: status ? String(status) : undefined,
       study_id: study_id ? String(study_id) : undefined,
@@ -4653,6 +4599,7 @@ router.get(
       device: device ? String(device) : undefined,
       start_date: start_date ? String(start_date) : undefined,
       end_date: end_date ? String(end_date) : undefined,
+      type: typeParam ? String(typeParam) : undefined,
       limit: 10000,
     };
 
