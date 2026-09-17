@@ -13,7 +13,7 @@ interface DashboardLayoutProps {
   subtitle?: string;
   actions?: React.ReactNode;
   breadcrumbs?: { label: string; href?: string }[];
-  user?: { email: string; name?: string; role: string; vendor_id: string | null | undefined };
+  user?: { email: string; name?: string; role: string; vendor_id?: string | null };
   isOpen?: boolean;
   onClose?: () => void;
   onLogout?: () => void;

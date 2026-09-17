@@ -8,14 +8,28 @@ import { config } from './config';
 const app = express();
 const port = config.port;
 
+// Security hardening
+app.disable('x-powered-by');
+
+app.use((_req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  if (process.env.NODE_ENV === 'production') {
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  }
+  next();
+});
+
 // Production-ready CORS allowing local development, opinioninsights.in and any Vercel deployment preview
 app.use(cors({
   origin: (origin, callback) => {
     if (!origin) return callback(null, true);
-    const isAllowed = 
-      origin.includes('localhost') || 
-      origin.includes('127.0.0.1') || 
-      origin.endsWith('.vercel.app') || 
+    const isAllowed =
+      origin.includes('localhost') ||
+      origin.includes('127.0.0.1') ||
+      origin.endsWith('.vercel.app') ||
       origin.includes('opinioninsights.in');
     return callback(null, isAllowed);
   },
@@ -107,8 +121,8 @@ app.get('/health', (_req, res) => {
   });
 });
 
-// ─── Server start (Non-Vercel environment) ──────────────────────────────
-if (!process.env.VERCEL && process.env.NODE_ENV !== 'test') {
+// ─── Server start (Non-Vercel standalone environment) ────────────────────
+if (!process.env.VERCEL && process.env.NODE_ENV !== 'test' && !process.env.NEXT_RUNTIME && require.main === module) {
   app.listen(port, () => {
     console.log(`🚀 CAWI Fieldwork Tracking Platform running on port ${port}`);
     console.log(`📍 Health check: http://localhost:${port}/api/health`);

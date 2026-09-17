@@ -44,6 +44,10 @@ export default function AnalyticsPage() {
   const [funnel, setFunnel] = useState<Funnel>({ total_sessions: 0, completed: 0 });
   const [byStudy, setByStudy] = useState<ByStudy[]>([]);
   const [byVendor, setByVendor] = useState<ByVendor[]>([]);
+  const [unverifiedBreakdown, setUnverifiedBreakdown] = useState<{
+    trend: { date: string; count: number }[];
+    top_ips: { ip: string; hit_count: number; last_seen: string }[];
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [trafficFilter, setTrafficFilter] = useState<'all' | 'verified' | 'unverified'>('all');
 
@@ -57,15 +61,16 @@ export default function AnalyticsPage() {
     if (isAuthenticated) {
       loadAnalytics();
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, trafficFilter]);
 
   const loadAnalytics = async () => {
     setLoading(true);
     try {
-      const [funnelRes, byStudyRes, byVendorRes] = await Promise.all([
+      const [funnelRes, byStudyRes, byVendorRes, breakdownRes] = await Promise.all([
         apiClient.get<any>('/analytics/funnel?verified=' + trafficFilter),
         apiClient.get<any>('/analytics/by-study?verified=' + trafficFilter),
         apiClient.get<any>('/analytics/by-vendor?verified=' + trafficFilter),
+        apiClient.get<any>('/analytics/unverified-breakdown'),
       ]);
 
       setFunnel({
@@ -75,6 +80,9 @@ export default function AnalyticsPage() {
       });
       setByStudy(byStudyRes?.analytics || byStudyRes?.data || []);
       setByVendor(byVendorRes?.analytics || byVendorRes?.data || []);
+      if (breakdownRes?.success && breakdownRes?.data) {
+        setUnverifiedBreakdown(breakdownRes.data);
+      }
     } catch (err: any) {
       showToast(err.message || 'Failed to load analytics', 'error');
     } finally {
@@ -314,37 +322,76 @@ export default function AnalyticsPage() {
           )}
 
           {trafficFilter === 'unverified' && role !== 'vendor' && (
-            <div className="mt-8 pt-6 border-t border-[var(--border)]">
-              <h3 className="text-[14px] font-bold text-[var(--text-primary)] mb-4">Unverified Activity</h3>
-              <DataTable
-                columns={[
-                  {
-                    key: 'source',
-                    header: 'Source',
-                    render: () => 'Direct Callback',
-                  },
-                  {
-                    key: 'timestamp',
-                    header: 'Timestamp',
-                    render: () => new Date().toLocaleString(),
-                  },
-                  {
-                    key: 'details',
-                    header: 'Details',
-                    render: () => {
-                      return (
-                        <span className="text-xs text-[var(--text-muted)]">
-                          Invalid session / no tracking referral
-                        </span>
-                      );
-                    },
-                  },
-                ]}
-                data={[]}
-                keyField="timestamp"
-                loading={false}
-                skeleton={false}
-              />
+            <div className="mt-8 pt-6 border-t border-[var(--border)] space-y-6">
+              <div className="flex items-center justify-between">
+                <h3 className="text-base font-bold text-[var(--text-primary)] flex items-center gap-2">
+                  <span>🚫 Unverified Fake Clicks & Traffic Breakdown</span>
+                  <span className="text-xs px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 font-mono">
+                    Security Telemetry
+                  </span>
+                </h3>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* 14-day Trend Breakdown */}
+                <div className="bg-[var(--glass-bg)] border border-[var(--glass-border)] rounded-[var(--radius-lg)] p-5">
+                  <h4 className="text-sm font-bold text-[var(--text-primary)] mb-3">14-Day Direct Hits Velocity</h4>
+                  {(!unverifiedBreakdown?.trend || unverifiedBreakdown.trend.length === 0) ? (
+                    <p className="text-xs text-[var(--text-muted)] py-6 text-center">No unverified hits recorded in the last 14 days.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {unverifiedBreakdown.trend.map((t) => {
+                        const maxH = Math.max(...unverifiedBreakdown.trend.map(x => x.count), 1);
+                        const pctW = Math.round((t.count / maxH) * 100);
+                        return (
+                          <div key={t.date} className="flex items-center gap-3 text-xs">
+                            <span className="w-24 font-mono text-slate-400">{new Date(t.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                            <div className="flex-1 h-3 rounded-full bg-slate-800 overflow-hidden">
+                              <div className="h-full rounded-full bg-rose-500" style={{ width: `${pctW}%` }} />
+                            </div>
+                            <span className="w-12 text-right font-mono font-semibold text-rose-300 tabular-nums">{t.count} hits</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                {/* Top Offending IPs Table */}
+                <div className="bg-[var(--glass-bg)] border border-[var(--glass-border)] rounded-[var(--radius-lg)] p-5">
+                  <h4 className="text-sm font-bold text-[var(--text-primary)] mb-3">Top Offending Networks / IPs</h4>
+                  {(!unverifiedBreakdown?.top_ips || unverifiedBreakdown.top_ips.length === 0) ? (
+                    <p className="text-xs text-[var(--text-muted)] py-6 text-center">No suspicious offending IP clusters identified.</p>
+                  ) : (
+                    <DataTable
+                      bare
+                      columns={[
+                        {
+                          key: 'ip',
+                          header: 'Client IP',
+                          render: (row) => <span className="font-mono text-xs font-semibold text-rose-300">{row.ip}</span>,
+                        },
+                        {
+                          key: 'hit_count',
+                          header: 'Total Fake Clicks',
+                          render: (row) => <span className="font-mono text-xs font-bold text-rose-400 tabular-nums">{row.hit_count}</span>,
+                        },
+                        {
+                          key: 'last_seen',
+                          header: 'Last Seen',
+                          render: (row) => (
+                            <span className="text-xs text-slate-400">
+                              {new Date(row.last_seen).toLocaleDateString()}
+                            </span>
+                          ),
+                        },
+                      ]}
+                      data={unverifiedBreakdown.top_ips}
+                      keyField="ip"
+                    />
+                  )}
+                </div>
+              </div>
             </div>
           )}
 

@@ -12,7 +12,8 @@ import { useAuthState } from '@/lib/useAuthState';
 import { checkAuth, logout, subscribe } from '@/lib/auth';
 import {
   FileText, Users, Activity, CheckCircle, ArrowUpRight, ArrowDownRight,
-  Globe, TrendingUp, BarChart3, Eye, EyeOff, Link as LinkIcon, Target, Clock
+  Globe, TrendingUp, BarChart3, Eye, EyeOff, Link as LinkIcon, Target, Clock,
+  ShieldAlert, AlertTriangle, Flame
 } from 'lucide-react';
 
 /* ─── Types ───────────────────────────────────────────────────────────────── */
@@ -280,6 +281,18 @@ export default function DashboardPage() {
   });
   const [trafficFilter, setTrafficFilter] = useState<'all' | 'verified' | 'unverified'>('all');
 
+  // ── Fraud & Unverified Telemetry ──────────────────────────────────────────
+  const [unverifiedSummary, setUnverifiedSummary] = useState<{
+    total_today: number;
+    yesterday_total: number;
+    trend_pct: number;
+    verified_today: number;
+    unverified_rate_pct: number;
+    threshold_alert: boolean;
+    top_spiking_ips: { ip: string; hits_1h: number }[];
+  } | null>(null);
+  const [unverifiedLive, setUnverifiedLive] = useState<any[]>([]);
+
   useEffect(() => {
     const unsub = subscribe(() => {});
     checkAuth();
@@ -287,8 +300,26 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
-    if (isAuthenticated) loadData();
+    if (isAuthenticated) {
+      loadData();
+      loadUnverifiedTelemetry();
+      const interval = setInterval(loadUnverifiedTelemetry, 10000);
+      return () => clearInterval(interval);
+    }
   }, [isAuthenticated]);
+
+  const loadUnverifiedTelemetry = async () => {
+    try {
+      const [sumRes, liveRes] = await Promise.all([
+        apiClient.get<any>('/dashboard/unverified-summary'),
+        apiClient.get<any>('/dashboard/unverified-live?limit=10'),
+      ]);
+      if (sumRes?.success && sumRes?.data) setUnverifiedSummary(sumRes.data);
+      if (liveRes?.success && liveRes?.data) setUnverifiedLive(liveRes.data);
+    } catch {
+      // silent
+    }
+  };
 
   const loadData = async () => {
     setLoading(true);
@@ -518,12 +549,50 @@ export default function DashboardPage() {
             </span>
           </div>
 
+          {/* ── Unverified Spike Alert Banner ──────────────────────────── */}
+          {unverifiedSummary?.threshold_alert && (
+            <div id="unverified-alert-banner" className="mb-6 p-4 rounded-xl bg-rose-50 border border-rose-200 text-rose-900 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-3 animate-pulse">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-rose-100 flex items-center justify-center shrink-0">
+                  <Flame className="w-5 h-5 text-rose-600" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold flex items-center gap-2">
+                    <span>High Fraud / Unverified Click Alert</span>
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-rose-200 text-rose-800 font-mono">
+                      {unverifiedSummary.unverified_rate_pct}% Unverified Rate
+                    </span>
+                  </h4>
+                  <p className="text-xs text-rose-700 mt-0.5">
+                    Elevated direct/unverified callback volume detected today ({unverifiedSummary.total_today} hits).
+                    {unverifiedSummary.top_spiking_ips?.length > 0 && ` Offending IP: ${unverifiedSummary.top_spiking_ips[0].ip} (${unverifiedSummary.top_spiking_ips[0].hits_1h} hits/hr).`}
+                  </p>
+                </div>
+              </div>
+              <Link
+                href="/dashboard/responses?type=unverified"
+                className="px-3.5 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs transition-colors shrink-0 flex items-center gap-1.5"
+              >
+                <span>Triage Fake Clicks</span>
+                <ArrowUpRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          )}
+
           {/* ── KPI Cards ───────────────────────────────────────────────── */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
             <StatCard label="Active Projects" value={activeProjects} icon={FileText} iconBg="var(--icon-blue-bg)" iconColor="var(--chart-blue)" />
             <StatCard label="Total Clicks" value={fmt(totalClicks)} icon={Activity} iconBg="var(--icon-cyan-bg)" iconColor="var(--chart-sky)" />
             <StatCard label="Verified Clicks" value={fmt(verifiedClicks)} icon={Eye} iconBg="var(--icon-green-bg)" iconColor="var(--success)" />
-            <StatCard label="Unverified Clicks" value={fmt(unverifiedClicks)} icon={EyeOff} iconBg="var(--icon-amber-bg)" iconColor="var(--warning)" />
+            <StatCard
+              label="Unverified Today"
+              value={fmt(unverifiedSummary?.total_today ?? unverifiedClicks)}
+              change={`${unverifiedSummary?.trend_pct ?? 0}% vs yesterday`}
+              trendType={((unverifiedSummary?.trend_pct ?? 0) > 0) ? 'down' : 'neutral'}
+              icon={ShieldAlert}
+              iconBg="var(--icon-amber-bg)"
+              iconColor="#E11D48"
+            />
             <StatCard label="Starts" value={fmt(starts)} icon={Target} iconBg="var(--icon-purple-bg)" iconColor="var(--chart-purple)" />
             <StatCard
               label="Completes"
@@ -701,6 +770,61 @@ export default function DashboardPage() {
                 data={vendorPerformance}
                 keyField="id"
                 onRowClick={(row) => window.location.href = `/dashboard/vendors?highlight=${row.id}`}
+              />
+            )}
+          </div>
+
+          {/* ── Unverified Hits Live Feed Card (10s Auto-Refresh) ─────── */}
+          <div id="unverified-live-feed" className="bg-rose-50/40 border border-rose-200/80 rounded-[var(--radius-card)] shadow-sm overflow-hidden mb-8 animate-slide-up">
+            <div className="px-5 py-4 bg-gradient-to-r from-rose-500/10 via-rose-500/5 to-transparent border-b border-rose-200/60 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping" />
+                <h3 className="text-[14px] font-bold text-rose-950 flex items-center gap-2">
+                  <span>Unverified & Direct Hits Live Feed</span>
+                  <span className="text-[11px] font-mono font-normal px-2 py-0.5 rounded bg-rose-100 text-rose-700">
+                    Auto-refreshing (10s)
+                  </span>
+                </h3>
+              </div>
+              <Link href="/dashboard/responses?type=unverified" className="text-[12px] font-semibold text-rose-600 hover:text-rose-700 hover:underline flex items-center gap-1">
+                View All Unverified ({unverifiedSummary?.total_today ?? 0}) <ArrowUpRight className="w-3 h-3" />
+              </Link>
+            </div>
+            {unverifiedLive.length === 0 ? (
+              <div className="p-8 text-center text-xs text-rose-600/70">
+                🛡️ No unverified callback attempts detected in the live window. All incoming traffic has valid tokens.
+              </div>
+            ) : (
+              <DataTable
+                bare
+                columns={[
+                  { key: 'status', header: '', className: 'w-[28px]', render: () => (
+                    <span className="inline-block w-2.5 h-2.5 rounded-full bg-rose-500" title="Unverified direct callback" />
+                  )},
+                  { key: 'uid', header: 'Participant UID', render: (row) => (
+                    <span className="font-mono text-xs font-semibold text-rose-900 select-all">{row.uid || '—'}</span>
+                  )},
+                  { key: 'project', header: 'Project Code', render: (row) => (
+                    <span className="font-mono text-xs text-slate-700 bg-white/80 px-2 py-0.5 rounded border border-rose-200">
+                      {row.project_code || 'DIRECT'}
+                    </span>
+                  )},
+                  { key: 'ip_address', header: 'Client IP', render: (row) => (
+                    <span className="font-mono text-xs text-slate-600">{row.ip_address || '—'}</span>
+                  )},
+                  { key: 'reason', header: 'Rejection Reason', render: (row) => (
+                    <span className="text-xs text-rose-700 truncate max-w-[220px] block" title={row.rejection_reason}>
+                      {row.rejection_reason || 'Direct hit — no tracking session token'}
+                    </span>
+                  )},
+                  { key: 'time', header: 'Detected At', render: (row) => (
+                    <span className="text-xs text-slate-500 tabular-nums">
+                      {new Date(row.created_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                    </span>
+                  )},
+                ]}
+                data={unverifiedLive}
+                keyField="id"
               />
             )}
           </div>

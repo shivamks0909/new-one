@@ -1,9 +1,20 @@
 import { Pool, QueryResult } from 'pg';
+import crypto from 'crypto';
 import { config } from '../config';
 
 // Reads connection string from environment â€” never hardcoded
 const DB_URL = config.databaseUrl;
 const USE_SQLITE = !DB_URL || DB_URL.includes('sqlite') || process.env.USE_SQLITE === 'true';
+
+const BASE62_CHARS = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+export function generateLinkCode(): string {
+  const bytes = crypto.randomBytes(12);
+  let result = '';
+  for (let i = 0; i < 12; i++) {
+    result += BASE62_CHARS[bytes[i] % 62];
+  }
+  return 'lnk_' + result;
+}
 
 export class Database {
   public pool: Pool;
@@ -463,7 +474,7 @@ export class Database {
        RETURNING *`,
       [
         link.study_id, link.vendor_id, link.link_code,
-        link.public_token || ('tok_' + Math.random().toString(36).substring(7)),
+        link.public_token || ('tok_' + crypto.randomBytes(8).toString('hex')),
         link.base_url, link.destination_url ?? '', link.uid_mode ?? 'PROVIDED_UID',
         link.callback_profile_id ?? null, link.status ?? 'ACTIVE',
       ]
@@ -1154,7 +1165,7 @@ export class Database {
 
     if (filters.study_id) {
       params.push(filters.study_id);
-      where += ` AND (r.study_id::text = $${params.length} OR s.study_code = $${params.length} OR s.external_offer_id = $${params.length})`;
+      where += ` AND (r.study_id::text = $${params.length} OR r.project_id::text = $${params.length} OR s.study_code = $${params.length} OR s.external_offer_id = $${params.length} OR (r.raw_payload->>'pid') ILIKE $${params.length})`;
     }
     if (filters.vendor_id) {
       params.push(filters.vendor_id);
@@ -1189,6 +1200,8 @@ export class Database {
         s.study_code ILIKE $${params.length} OR
         s.title ILIKE $${params.length} OR
         COALESCE(s.external_offer_id, '') ILIKE $${params.length} OR
+        COALESCE(r.raw_payload->>'pid', '') ILIKE $${params.length} OR
+        COALESCE(r.rejection_reason, '') ILIKE $${params.length} OR
         COALESCE(sess.user_agent, '') ILIKE $${params.length} OR
         COALESCE(sess.ip_hash, '') ILIKE $${params.length} OR
         COALESCE(re.ip_address::text, '') ILIKE $${params.length}
@@ -1631,6 +1644,217 @@ export class Database {
     return project;
   }
 
+  // ── Atomic Multi-Country Project Wizard Creation ────────────────────────────
+  async createProjectAtomic(payload: {
+    name: string;
+    project_code: string;
+    client_id: string;
+    description?: string;
+    base_survey_url: string;
+    uid_param: string;
+    callback_url_base?: string;
+    countries: Array<{
+      country_code: string;
+      country_name: string;
+      currency: string;
+      client_rate: number;
+      vendor_rate: number;
+      target_completes: number;
+      survey_url?: string;
+      est_loi?: number | null;
+      fieldwork_days?: number | null;
+      vendors: Array<{
+        vendor_id: string;
+        vendor_name?: string;
+        quota: number;
+        vendor_cpi?: number;
+      }>;
+    }>;
+  }, userId?: string, userEmail?: string, ip?: string): Promise<any> {
+    const client = await this.pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      // 1. Verify Client existence
+      const { rows: clientRows } = await client.query(
+        'SELECT id, name, status FROM clients WHERE id = $1',
+        [payload.client_id]
+      );
+      if (!clientRows[0]) {
+        throw new Error(`Client with ID ${payload.client_id} does not exist`);
+      }
+      if (clientRows[0].status !== 'ACTIVE') {
+        throw new Error(`Client "${clientRows[0].name}" is not active`);
+      }
+      const clientName = clientRows[0].name;
+
+      // 2. Verify Project Code Uniqueness
+      const { rows: existingCode } = await client.query(
+        'SELECT id FROM projects WHERE UPPER(project_code) = UPPER($1)',
+        [payload.project_code]
+      );
+      if (existingCode[0]) {
+        throw new Error(`Project code "${payload.project_code}" already exists`);
+      }
+
+      // Compute project-level default rates from first country
+      const firstCountry = payload.countries[0];
+      const defaultClientRate = firstCountry ? firstCountry.client_rate : 70;
+      const defaultVendorRate = firstCountry ? firstCountry.vendor_rate : 50;
+      const defaultCurrency = firstCountry ? firstCountry.currency : 'USD';
+
+      // 3. Insert Project
+      const { rows: projectRows } = await client.query(
+        `INSERT INTO projects
+           (project_code, name, description, client_id, client_name, created_by,
+            client_rate, vendor_rate, currency, status, base_survey_url, survey_url,
+            uid_param, callback_url_base, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'ACTIVE', $10, $11, $12, $13, NOW(), NOW())
+         RETURNING *`,
+        [
+          payload.project_code,
+          payload.name.trim(),
+          payload.description?.trim() || null,
+          payload.client_id,
+          clientName,
+          userId || null,
+          defaultClientRate,
+          defaultVendorRate,
+          defaultCurrency,
+          payload.base_survey_url.trim(),
+          payload.base_survey_url.trim(),
+          payload.uid_param.trim(),
+          payload.callback_url_base?.trim() || null,
+        ]
+      );
+      const project = projectRows[0];
+
+      // 4. Ensure backing study exists (for foreign key constraints)
+      await client.query(
+        `INSERT INTO studies (study_code, client_id, title, description, status, created_by, created_at, updated_at)
+         VALUES ($1, $2, $3, $4, 'LIVE', $5, NOW(), NOW())
+         ON CONFLICT (study_code) DO UPDATE SET title = EXCLUDED.title, updated_at = NOW()`,
+        [payload.project_code, payload.client_id, payload.name.trim(), payload.description?.trim() || null, userId || 'system']
+      );
+
+      // 5. Insert Countries and Links
+      const createdCountries: any[] = [];
+      const crypto = require('crypto');
+
+      for (const c of payload.countries) {
+        const countrySurveyUrl = (c.survey_url && c.survey_url.trim()) ? c.survey_url.trim() : payload.base_survey_url.trim();
+
+        // Insert project_countries
+        const { rows: countryRows } = await client.query(
+          `INSERT INTO project_countries
+             (project_id, country_code, country_name, client_rate, vendor_rate, currency,
+              target_completes, survey_url, est_loi, fieldwork_days, uid_param, status, created_at, updated_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'ACTIVE', NOW(), NOW())
+           RETURNING *`,
+          [
+            project.id,
+            c.country_code.toUpperCase(),
+            c.country_name,
+            c.client_rate,
+            c.vendor_rate,
+            c.currency || 'USD',
+            c.target_completes,
+            countrySurveyUrl,
+            c.est_loi || null,
+            c.fieldwork_days || null,
+            payload.uid_param.trim(),
+          ]
+        );
+        const country = countryRows[0];
+        country.links = [];
+
+        if (c.vendors && c.vendors.length > 0) {
+          // Vendor-specific links
+          for (const v of c.vendors) {
+            // Verify vendor exists
+            const { rows: vendorRows } = await client.query(
+              'SELECT id, name, vendor_code FROM vendors WHERE id = $1',
+              [v.vendor_id]
+            );
+            const vendorName = vendorRows[0]?.name || v.vendor_name || 'Vendor';
+            const vendorCode = vendorRows[0]?.vendor_code || v.vendor_id.slice(0, 4);
+
+            const linkCode = generateLinkCode();
+            const vendorCpi = v.vendor_cpi !== undefined ? v.vendor_cpi : c.vendor_rate;
+
+            // Insert project_links
+            const { rows: linkRows } = await client.query(
+              `INSERT INTO project_links
+                 (country_id, link_code, link_name, url, uid_mode, uid_param,
+                  vendor_id, target_completes, vendor_cpi, status, created_at, updated_at)
+               VALUES ($1, $2, $3, $4, 'PROVIDED_UID', $5, $6, $7, $8, 'ACTIVE', NOW(), NOW())
+               RETURNING *`,
+              [
+                country.id,
+                linkCode,
+                `${c.country_name} — ${vendorName}`,
+                countrySurveyUrl,
+                payload.uid_param.trim(),
+                v.vendor_id,
+                v.quota,
+                vendorCpi,
+              ]
+            );
+            const link = linkRows[0];
+
+            // Insert link_vendor_assignments
+            await client.query(
+              `INSERT INTO link_vendor_assignments
+                 (link_id, vendor_id, vendor_cpi, target_completes, max_completes, status, created_at, updated_at)
+               VALUES ($1, $2, $3, $4, $5, 'ACTIVE', NOW(), NOW())
+               ON CONFLICT (link_id, vendor_id) DO UPDATE SET
+                 vendor_cpi = EXCLUDED.vendor_cpi,
+                 target_completes = EXCLUDED.target_completes,
+                 max_completes = EXCLUDED.max_completes,
+                 updated_at = NOW()`,
+              [link.id, v.vendor_id, vendorCpi, v.quota, v.quota]
+            );
+
+            country.links.push({
+              ...link,
+              vendor_name: vendorName,
+              vendor_code: vendorCode,
+            });
+          }
+        }
+
+        createdCountries.push(country);
+      }
+
+      // 6. Record Audit Log
+      await client.query(
+        `INSERT INTO audit_logs ("user", action, entity, entity_id, before, after, ip, timestamp)
+         VALUES ($1, 'PROJECT_CREATED_WIZARD', 'project', $2, NULL, $3::jsonb, $4, NOW())`,
+        [
+          userEmail || userId || 'system',
+          project.id,
+          JSON.stringify({
+            project_code: project.project_code,
+            name: project.name,
+            client_id: payload.client_id,
+            countries_count: payload.countries.length,
+          }),
+          ip || '127.0.0.1',
+        ]
+      );
+
+      await client.query('COMMIT');
+
+      project.countries = createdCountries;
+      return project;
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  }
+
   async getProjects(filters?: { status?: string; client_id?: string }): Promise<any[]> {
     let sql = 'SELECT p.*, c.name as client_name FROM projects p LEFT JOIN clients c ON c.id = p.client_id';
     const conds: string[] = []; const params: any[] = [];
@@ -1653,7 +1877,7 @@ export class Database {
   async updateProject(id: string, fields: Partial<any>): Promise<any | null> {
     const allowed = [
       'name', 'description', 'status', 'client_id', 'client_rate', 'vendor_rate', 'currency',
-      'client_name', 'survey_url', 'uid_param', 'uid_placeholder',
+      'client_name', 'survey_url', 'base_survey_url', 'callback_url_base', 'uid_param', 'uid_placeholder',
     ];
     const sets: string[] = []; const params: any[] = [];
     for (const key of allowed) {
@@ -1676,14 +1900,23 @@ export class Database {
 
     const updated = await this.updateProject(id, { status: 'PAUSED' });
 
-    // Sync backing study status
+    // Sync backing study, countries, and links status
     try {
       await this.pool.query(
         "UPDATE studies SET status = 'PAUSED', updated_at = NOW() WHERE study_code = $1",
         [project.project_code]
       );
+      await this.pool.query(
+        "UPDATE project_countries SET status = 'PAUSED', updated_at = NOW() WHERE project_id = $1",
+        [project.id]
+      );
+      await this.pool.query(
+        `UPDATE project_links SET status = 'PAUSED', updated_at = NOW()
+         WHERE country_id IN (SELECT id FROM project_countries WHERE project_id = $1)`,
+        [project.id]
+      );
     } catch (e: any) {
-      console.warn('[DB] Warning syncing backing study status on pause:', e?.message);
+      console.warn('[DB] Warning syncing backing study/countries/links status on pause:', e?.message);
     }
 
     // Write audit log
@@ -1709,14 +1942,23 @@ export class Database {
 
     const updated = await this.updateProject(id, { status: 'ACTIVE' });
 
-    // Sync backing study status
+    // Sync backing study, countries, and links status
     try {
       await this.pool.query(
         "UPDATE studies SET status = 'LIVE', updated_at = NOW() WHERE study_code = $1",
         [project.project_code]
       );
+      await this.pool.query(
+        "UPDATE project_countries SET status = 'ACTIVE', updated_at = NOW() WHERE project_id = $1",
+        [project.id]
+      );
+      await this.pool.query(
+        `UPDATE project_links SET status = 'ACTIVE', updated_at = NOW()
+         WHERE country_id IN (SELECT id FROM project_countries WHERE project_id = $1)`,
+        [project.id]
+      );
     } catch (e: any) {
-      console.warn('[DB] Warning syncing backing study status on resume:', e?.message);
+      console.warn('[DB] Warning syncing backing study/countries/links status on resume:', e?.message);
     }
 
     // Write audit log
@@ -1731,6 +1973,37 @@ export class Database {
     });
 
     return { project: updated, alreadyActive: false };
+  }
+
+  async archiveProject(id: string, user: string = 'admin', ip?: string): Promise<{ project: any; alreadyArchived?: boolean }> {
+    const project = await this.getProjectById(id);
+    if (!project) throw new Error('Project not found');
+    if (project.status === 'ARCHIVED') {
+      return { project, alreadyArchived: true };
+    }
+
+    const updated = await this.updateProject(id, { status: 'ARCHIVED' });
+
+    try {
+      await this.pool.query(
+        "UPDATE studies SET status = 'ARCHIVED', updated_at = NOW() WHERE study_code = $1",
+        [project.project_code]
+      );
+    } catch (e: any) {
+      console.warn('[DB] Warning syncing backing study status on archive:', e?.message);
+    }
+
+    await this.createAuditLog({
+      user,
+      action: 'PROJECT_ARCHIVED',
+      entity: 'project',
+      entity_id: project.id,
+      before: { status: project.status, project_code: project.project_code, name: project.name },
+      after: { status: 'ARCHIVED', project_code: project.project_code, name: project.name },
+      ip: this.parseValidInet(ip),
+    });
+
+    return { project: updated, alreadyArchived: false };
   }
 
   async deleteProject(id: string): Promise<boolean> {
@@ -1793,7 +2066,10 @@ export class Database {
   }
 
   async updateCountry(id: string, fields: Partial<any>): Promise<any | null> {
-    const allowed = ['country_name', 'status'];
+    const allowed = [
+      'country_name', 'status', 'survey_url', 'client_rate', 'vendor_rate',
+      'currency', 'target_completes', 'est_loi', 'fieldwork_days', 'uid_param',
+    ];
     const sets: string[] = []; const params: any[] = [];
     for (const key of allowed) {
       if (fields[key] !== undefined) { params.push(fields[key]); sets.push(`${key} = $${params.length}`); }
@@ -1806,7 +2082,20 @@ export class Database {
     return rows[0] ?? null;
   }
 
-  async deleteCountry(id: string): Promise<boolean> {
+  async deleteCountry(id: string, userEmail?: string, ip?: string): Promise<boolean> {
+    const { rows: compRows } = await this.pool.query(
+      `SELECT COUNT(*)::int as cnt
+       FROM responses r
+       JOIN sessions s ON s.id = r.session_id
+       JOIN project_links pl ON (pl.id = s.tracking_link_id OR pl.id::text = s.metadata_json->>'link_id')
+       WHERE pl.country_id = $1
+         AND (r.final_status = 'COMPLETE' OR r.is_counted = true)`,
+      [id]
+    );
+    if (Number(compRows[0]?.cnt || 0) > 0) {
+      throw new Error(`Cannot remove country: ${compRows[0].cnt} completes recorded`);
+    }
+
     const { rowCount } = await this.pool.query('DELETE FROM project_countries WHERE id = $1', [id]);
     return (rowCount ?? 0) > 0;
   }
@@ -1895,6 +2184,293 @@ export class Database {
       'DELETE FROM link_vendor_assignments WHERE link_id = $1 AND vendor_id = $2', [linkId, vendorId]
     );
     return (rowCount ?? 0) > 0;
+  }
+
+  async getProjectDetailEnriched(projectId: string): Promise<any | null> {
+    const project = await this.getProjectById(projectId);
+    if (!project) return null;
+
+    const { rows: countries } = await this.pool.query(
+      `SELECT pc.*,
+              (
+                SELECT COUNT(*)::int
+                FROM responses r
+                JOIN sessions s ON s.id = r.session_id
+                JOIN project_links pl ON (pl.id = s.tracking_link_id OR pl.id::text = s.metadata_json->>'link_id')
+                WHERE pl.country_id = pc.id
+                  AND (r.final_status = 'COMPLETE' OR r.is_counted = true)
+              ) as total_completes,
+              (
+                SELECT COUNT(*)::int
+                FROM fake_click_events f
+                WHERE (f.project_id = pc.project_id OR f.study_id = pc.project_id)
+                  AND (f.raw_payload->>'country' = pc.country_code OR f.raw_payload->>'country' ILIKE pc.country_name)
+              ) as unverified_hits
+       FROM project_countries pc
+       WHERE pc.project_id = $1
+       ORDER BY pc.country_name ASC`,
+      [projectId]
+    );
+
+    const baseUrl = config.appBaseUrl.replace(/\/$/, '');
+
+    for (const c of countries) {
+      const { rows: links } = await this.pool.query(
+        `SELECT pl.*,
+                v.name AS vendor_name,
+                v.vendor_code,
+                COALESCE(lva.vendor_cpi, pl.vendor_cpi, 0) AS vendor_cpi,
+                COALESCE(lva.target_completes, pl.target_completes, 0) AS vendor_quota,
+                (
+                  SELECT COUNT(*)::int
+                  FROM responses r
+                  JOIN sessions s ON s.id = r.session_id
+                  WHERE (s.tracking_link_id = pl.id OR s.metadata_json->>'link_id' = pl.id::text)
+                    AND (r.final_status = 'COMPLETE' OR r.is_counted = true)
+                ) AS completes_count
+         FROM project_links pl
+         LEFT JOIN vendors v ON v.id = pl.vendor_id
+         LEFT JOIN link_vendor_assignments lva ON lva.link_id = pl.id AND lva.vendor_id = pl.vendor_id
+         WHERE pl.country_id = $1
+         ORDER BY pl.created_at ASC`,
+        [c.id]
+      );
+
+      for (const l of links) {
+        const vParam = l.vendor_code || (l.vendor_name ? l.vendor_name.toLowerCase().replace(/\\s+/g, '_') : l.vendor_id);
+        if (vParam) {
+          l.full_url = `${baseUrl}/track?code=${project.project_code}&country=${c.country_code}&vendor=${vParam}&uid={UID}`;
+        } else {
+          l.full_url = `${baseUrl}/track?code=${project.project_code}&country=${c.country_code}&uid={UID}`;
+        }
+      }
+
+      c.links = links;
+      c.total_completes = Number(c.total_completes) || links.reduce((sum: number, l: any) => sum + (Number(l.completes_count) || 0), 0);
+      c.margin_pct = (c.client_rate && Number(c.client_rate) > 0)
+        ? Math.round(((Number(c.client_rate) - (Number(c.vendor_rate) || 0)) / Number(c.client_rate)) * 100)
+        : 0;
+    }
+
+    project.countries = countries;
+    return project;
+  }
+
+  async addVendorToCountry(
+    countryId: string,
+    data: { vendor_id: string; quota: number; vendor_cpi?: number },
+    userEmail?: string,
+    ip?: string
+  ): Promise<any> {
+    const { rows: countryRows } = await this.pool.query(
+      'SELECT pc.*, p.project_code, p.base_survey_url, p.uid_param FROM project_countries pc JOIN projects p ON p.id = pc.project_id WHERE pc.id = $1',
+      [countryId]
+    );
+    const country = countryRows[0];
+    if (!country) throw new Error('Country not found');
+
+    const { rows: vendorRows } = await this.pool.query(
+      'SELECT id, name, vendor_code, status FROM vendors WHERE id = $1',
+      [data.vendor_id]
+    );
+    const vendor = vendorRows[0];
+    if (!vendor) throw new Error('Vendor not found');
+    if (vendor.status && vendor.status !== 'ACTIVE') throw new Error('Vendor is not active');
+
+    const { rows: existingAssign } = await this.pool.query(
+      'SELECT pl.id FROM project_links pl WHERE pl.country_id = $1 AND pl.vendor_id = $2',
+      [countryId, data.vendor_id]
+    );
+    if (existingAssign.length > 0) {
+      throw new Error(`Vendor ${vendor.name} is already assigned to this country`);
+    }
+
+    const { rows: existingQuotas } = await this.pool.query(
+      'SELECT COALESCE(SUM(target_completes), 0) as total_quota FROM project_links WHERE country_id = $1',
+      [countryId]
+    );
+    const currentSum = Number(existingQuotas[0]?.total_quota || 0);
+    const countryTarget = Number(country.target_completes || 0);
+    if (countryTarget > 0 && currentSum + Number(data.quota) > countryTarget) {
+      throw new Error(`Total vendor quota (${currentSum + Number(data.quota)}) cannot exceed country target (${countryTarget})`);
+    }
+
+    const linkCode = generateLinkCode();
+    const vendorCpi = data.vendor_cpi !== undefined ? data.vendor_cpi : Number(country.vendor_rate || 0);
+    const surveyUrl = (country.survey_url && country.survey_url.trim()) || country.base_survey_url || '';
+    const uidParam = (country.uid_param && country.uid_param.trim()) || 'uid';
+
+    const { rows: linkRows } = await this.pool.query(
+      `INSERT INTO project_links
+         (country_id, link_code, link_name, url, uid_mode, uid_param,
+          vendor_id, target_completes, vendor_cpi, status, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, 'PROVIDED_UID', $5, $6, $7, $8, 'ACTIVE', NOW(), NOW())
+       RETURNING *`,
+      [
+        country.id,
+        linkCode,
+        `${country.country_name} — ${vendor.name}`,
+        surveyUrl,
+        uidParam,
+        vendor.id,
+        Number(data.quota) || 0,
+        vendorCpi,
+      ]
+    );
+    const link = linkRows[0];
+
+    await this.pool.query(
+      `INSERT INTO link_vendor_assignments
+         (link_id, vendor_id, vendor_cpi, target_completes, max_completes, status, created_at, updated_at)
+       VALUES ($1, $2, $3, $4, $5, 'ACTIVE', NOW(), NOW())
+       ON CONFLICT (link_id, vendor_id) DO UPDATE SET
+         vendor_cpi = EXCLUDED.vendor_cpi, target_completes = EXCLUDED.target_completes,
+         max_completes = EXCLUDED.max_completes, updated_at = NOW()`,
+      [link.id, vendor.id, vendorCpi, Number(data.quota) || 0, Number(data.quota) || 0]
+    );
+
+    await this.createAuditLog({
+      user: userEmail || 'admin',
+      action: 'VENDOR_ASSIGNED_TO_COUNTRY',
+      entity: 'project_links',
+      entity_id: link.id,
+      before: null,
+      after: { country_id: countryId, vendor_id: vendor.id, quota: data.quota, link_code: linkCode },
+      ip: this.parseValidInet(ip),
+    });
+
+    return {
+      ...link,
+      vendor_name: vendor.name,
+      vendor_code: vendor.vendor_code,
+      completes_count: 0,
+    };
+  }
+
+  async updateVendorQuota(
+    linkId: string,
+    vendorId: string,
+    newQuota: number,
+    userEmail?: string,
+    ip?: string
+  ): Promise<any> {
+    const { rows: linkRows } = await this.pool.query(
+      `SELECT pl.*, pc.target_completes as country_target
+       FROM project_links pl
+       JOIN project_countries pc ON pc.id = pl.country_id
+       WHERE pl.id = $1`,
+      [linkId]
+    );
+    const link = linkRows[0];
+    if (!link) throw new Error('Link not found');
+
+    const { rows: otherLinks } = await this.pool.query(
+      'SELECT COALESCE(SUM(target_completes), 0) as other_quota FROM project_links WHERE country_id = $1 AND id != $2',
+      [link.country_id, linkId]
+    );
+    const otherSum = Number(otherLinks[0]?.other_quota || 0);
+    const countryTarget = Number(link.country_target || 0);
+    if (countryTarget > 0 && otherSum + Number(newQuota) > countryTarget) {
+      throw new Error(`Total vendor quota (${otherSum + Number(newQuota)}) exceeds country target (${countryTarget})`);
+    }
+
+    await this.pool.query(
+      'UPDATE project_links SET target_completes = $1, updated_at = NOW() WHERE id = $2',
+      [Number(newQuota), linkId]
+    );
+
+    await this.pool.query(
+      'UPDATE link_vendor_assignments SET target_completes = $1, max_completes = $1, updated_at = NOW() WHERE link_id = $2 AND vendor_id = $3',
+      [Number(newQuota), linkId, vendorId]
+    );
+
+    await this.createAuditLog({
+      user: userEmail || 'admin',
+      action: 'VENDOR_QUOTA_UPDATED',
+      entity: 'project_links',
+      entity_id: linkId,
+      before: { quota: link.target_completes },
+      after: { quota: newQuota },
+      ip: this.parseValidInet(ip),
+    });
+
+    return { success: true, quota: newQuota };
+  }
+
+  async removeVendorFromCountry(
+    linkId: string,
+    vendorId: string,
+    userEmail?: string,
+    ip?: string
+  ): Promise<boolean> {
+    const { rows: compRows } = await this.pool.query(
+      `SELECT COUNT(*)::int as cnt
+       FROM responses r
+       JOIN sessions s ON s.id = r.session_id
+       WHERE (s.tracking_link_id = $1 OR s.metadata_json->>'link_id' = $1)
+         AND (r.final_status = 'COMPLETE' OR r.is_counted = true)`,
+      [linkId]
+    );
+    if (Number(compRows[0]?.cnt || 0) > 0) {
+      throw new Error(`Cannot remove vendor: ${compRows[0].cnt} completes recorded on this link`);
+    }
+
+    await this.pool.query('DELETE FROM link_vendor_assignments WHERE link_id = $1 AND vendor_id = $2', [linkId, vendorId]);
+    await this.pool.query('DELETE FROM project_links WHERE id = $1', [linkId]);
+
+    await this.createAuditLog({
+      user: userEmail || 'admin',
+      action: 'VENDOR_REMOVED_FROM_COUNTRY',
+      entity: 'project_links',
+      entity_id: linkId,
+      before: { linkId, vendorId },
+      after: null,
+      ip: this.parseValidInet(ip),
+    });
+
+    return true;
+  }
+
+  async regenerateLinkCode(
+    linkId: string,
+    userEmail?: string,
+    ip?: string
+  ): Promise<{ link_code: string }> {
+    const { rows: linkRows } = await this.pool.query('SELECT * FROM project_links WHERE id = $1', [linkId]);
+    const link = linkRows[0];
+    if (!link) throw new Error('Link not found');
+
+    const { rows: compRows } = await this.pool.query(
+      `SELECT COUNT(*)::int as cnt
+       FROM responses r
+       JOIN sessions s ON s.id = r.session_id
+       WHERE (s.tracking_link_id = $1 OR s.metadata_json->>'link_id' = $1::text)
+         AND (r.final_status = 'COMPLETE' OR r.is_counted = true)`,
+      [linkId]
+    );
+    if (Number(compRows[0]?.cnt || 0) > 0) {
+      throw new Error(`Cannot regenerate link: ${compRows[0].cnt} completes recorded on this link`);
+    }
+
+    const oldCode = link.link_code;
+    const newCode = generateLinkCode();
+
+    await this.pool.query(
+      'UPDATE project_links SET link_code = $1, updated_at = NOW() WHERE id = $2',
+      [newCode, linkId]
+    );
+
+    await this.createAuditLog({
+      user: userEmail || 'admin',
+      action: 'LINK_CODE_REGENERATED',
+      entity: 'project_links',
+      entity_id: linkId,
+      before: { link_code: oldCode },
+      after: { link_code: newCode },
+      ip: this.parseValidInet(ip),
+    });
+
+    return { link_code: newCode };
   }
 
   // ── Quotas (generic) ───────────────────────────────────────────────────────

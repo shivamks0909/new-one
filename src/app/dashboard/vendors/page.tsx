@@ -107,7 +107,11 @@ export default function VendorsPage() {
   };
 
   const resetForm = () => {
-    const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
+    const buf = new Uint8Array(4);
+    if (typeof window !== 'undefined' && window.crypto) {
+      window.crypto.getRandomValues(buf);
+    }
+    const rand = Array.from(buf).map(b => (b % 36).toString(36)).join('').toUpperCase();
     setVendorForm({
       vendor_code: `VND-${rand}`,
       name: '',

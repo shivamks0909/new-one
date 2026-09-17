@@ -1,5 +1,4 @@
-import React from 'react';
-import { renderRedirectStatusPage } from '@/lib/redirectStatusPage';
+import { redirect } from 'next/navigation';
 
 export interface PageProps {
   params: {
@@ -14,19 +13,10 @@ export interface PageProps {
 
 export default function RedirectStatusRoute({ params, searchParams }: PageProps) {
   const statusKey = params.status || 'complete';
-  const pid = searchParams.pid || searchParams.code || searchParams.project || searchParams.offerId || 'fwdw42';
-  const uid = searchParams.uid || searchParams.zid || searchParams.id || 'P-12345';
-
-  const html = renderRedirectStatusPage({
-    statusKey,
-    pid,
-    uid,
-  });
-
-  return (
-    <div
-      dangerouslySetInnerHTML={{ __html: html }}
-      style={{ width: '100%', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}
-    />
-  );
+  const cleanParams = new URLSearchParams();
+  for (const [k, v] of Object.entries(searchParams)) {
+    if (v !== undefined) cleanParams.set(k, v);
+  }
+  const qs = cleanParams.toString();
+  redirect(`/api/redirect/${statusKey}${qs ? `?${qs}` : ''}`);
 }

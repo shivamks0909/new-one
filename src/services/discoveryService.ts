@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { db } from '../db';
 import { Study } from '../types';
 import { signRedirectUrl } from './trackingService';
@@ -163,7 +164,7 @@ export class DiscoveryService {
             study_id: study.id,
             vendor_id: vendor.id,
             link_code: `lnk_${cleanOfferId.toLowerCase()}_${vendor.id.slice(0, 4)}`,
-            public_token: `tok_${cleanOfferId.toLowerCase()}_${vendor.id.slice(0, 4)}_${Math.random().toString(36).substring(7)}`,
+            public_token: `tok_${cleanOfferId.toLowerCase()}_${vendor.id.slice(0, 4)}_${crypto.randomBytes(6).toString('hex')}`,
             base_url: surveyUrl,
             uid_mode: 'PROVIDED_UID',
             status: 'ACTIVE'

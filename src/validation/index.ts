@@ -145,3 +145,115 @@ export function validate<T>(
   const errors = result.error.issues.map((e: z.ZodIssue) => `${e.path.join('.')}: ${e.message}`);
   return { success: false, errors };
 }
+
+// ─── Project Creation Wizard ──────────────────────────────────────────────────
+
+export const ALLOWED_CURRENCIES = ['USD', 'INR', 'EUR', 'GBP', 'CAD', 'AUD', 'SGD', 'AED', 'JPY'] as const;
+
+export function isSafePublicHttpsUrl(urlStr: string): boolean {
+  try {
+    const parsed = new URL(urlStr);
+    if (process.env.NODE_ENV !== 'production' && (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1')) {
+      return true;
+    }
+    if (parsed.protocol !== 'https:') return false;
+    const hostname = parsed.hostname.toLowerCase();
+    if (
+      hostname === 'localhost' ||
+      hostname.endsWith('.localhost') ||
+      hostname.endsWith('.local') ||
+      hostname === '127.0.0.1' ||
+      hostname === '::1' ||
+      hostname === '0.0.0.0' ||
+      /^10\./.test(hostname) ||
+      /^192\.168\./.test(hostname) ||
+      /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname) ||
+      hostname === '169.254.169.254' || // AWS/cloud metadata
+      hostname === 'metadata.google.internal'
+    ) {
+      return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export const WizardVendorItemSchema = z.object({
+  vendor_id: z.string().min(1, 'Vendor is required'),
+  vendor_name: z.string().optional(),
+  quota: z.number().int().min(1, 'Quota must be at least 1'),
+  vendor_cpi: z.number().min(0, 'Vendor CPI must be non-negative').optional(),
+});
+
+export const WizardCountryItemSchema = z.object({
+  country_code: z.string().length(2, 'Country code must be 2 letters').transform(v => v.toUpperCase()),
+  country_name: z.string().min(1, 'Country name is required'),
+  currency: z.enum(ALLOWED_CURRENCIES).default('USD'),
+  client_rate: z.number().positive('Client rate must be greater than 0'),
+  vendor_rate: z.number().min(0, 'Vendor rate must be non-negative'),
+  target_completes: z.number().int().positive('Target completes must be greater than 0'),
+  survey_url: z.string().optional().refine(
+    (val) => !val || isSafePublicHttpsUrl(val),
+    { message: 'Survey URL must be a valid public HTTPS URL' }
+  ),
+  est_loi: z.number().int().positive('Est. LOI must be positive integer').optional().nullable(),
+  fieldwork_days: z.number().int().positive('Fieldwork days must be positive integer').optional().nullable(),
+  vendors: z.array(WizardVendorItemSchema).default([]),
+}).refine(
+  (data) => data.vendor_rate <= data.client_rate,
+  {
+    message: 'Vendor rate cannot exceed client rate (negative margin)',
+    path: ['vendor_rate'],
+  }
+).refine(
+  (data) => {
+    // If vendors are assigned, their quotas must sum to country target completes
+    if (data.vendors && data.vendors.length > 0) {
+      const sum = data.vendors.reduce((acc, v) => acc + v.quota, 0);
+      return sum === data.target_completes;
+    }
+    return true; // Internal study with 0 vendors is allowed
+  },
+  {
+    message: 'Sum of vendor quotas must equal country target completes',
+    path: ['vendors'],
+  }
+).refine(
+  (data) => {
+    // Check no duplicate vendors in same country
+    if (data.vendors && data.vendors.length > 1) {
+      const vendorIds = data.vendors.map(v => v.vendor_id);
+      return new Set(vendorIds).size === vendorIds.length;
+    }
+    return true;
+  },
+  {
+    message: 'Duplicate vendors are not allowed within the same country',
+    path: ['vendors'],
+  }
+);
+
+export const CreateProjectWizardSchema = z.object({
+  name: z.string().min(3, 'Project name must be at least 3 characters').max(120, 'Project name must not exceed 120 characters'),
+  project_code: z.string()
+    .min(3, 'Project code must be at least 3 characters')
+    .max(50, 'Project code must not exceed 50 characters')
+    .regex(/^[A-Z0-9-]+$/, 'Project code must only contain uppercase alphanumeric characters and hyphens')
+    .transform(v => v.toUpperCase()),
+  client_id: z.string().min(1, 'Client is required'),
+  description: z.string().max(1000).optional().default(''),
+  base_survey_url: z.string().min(1, 'Base survey URL is required').refine(
+    isSafePublicHttpsUrl,
+    { message: 'Base survey URL must be a valid public HTTPS URL' }
+  ),
+  uid_param: z.string()
+    .min(1, 'UID parameter name is required')
+    .max(50, 'UID parameter name too long')
+    .regex(/^[a-zA-Z0-9_-]+$/, 'UID param must contain only letters, numbers, hyphens, and underscores')
+    .default('uid'),
+  callback_url_base: z.string().optional().default(''),
+  countries: z.array(WizardCountryItemSchema).min(1, 'At least one country must be selected and configured'),
+});
+
+export type CreateProjectWizardInput = z.infer<typeof CreateProjectWizardSchema>;

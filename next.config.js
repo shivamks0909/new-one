@@ -14,8 +14,16 @@ module.exports = {
   async rewrites() {
     return [
       {
-        source: '/api/:path*',
-        destination: 'http://localhost:3001/api/:path*',
+        source: '/track',
+        destination: '/api/track',
+      },
+      {
+        source: '/s/:projectCode',
+        destination: '/api/s/:projectCode',
+      },
+      {
+        source: '/redirect/:path*',
+        destination: '/api/redirect/:path*',
       },
     ];
   },

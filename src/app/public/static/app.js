@@ -80,6 +80,7 @@ const PAGE_SUBTITLES = {
   "rejection-management": "Accept & reject responses · Manage vendor quality",
   "vendor-settlements": "Vendor payout calculation & Excel settlement reports",
   users: "Manage users, roles, vendors and account access",
+  database: "500 MB Storage Quota Monitor, 1-Click Master Excel Export, and Secure Fieldwork Reset",
   settings: "Platform configuration",
   projects: "Client projects · Survey tracking · OPI launch links",
   "project-detail": "Project detail · OPI launch links per country",
@@ -3950,8 +3951,20 @@ async function renderProjectDetail(projectId) {
   area.innerHTML = '<div class="loading-screen"><div class="spinner-lg"></div></div>';
   try {
     const { data: proj } = await api('/projects/' + projectId);
-    const countriesRes = await api('/projects/' + projectId + '/countries').catch(() => ({ data: [] }));
-    const countries = countriesRes.data || [];
+    var rawCountries = (proj && proj.countries && proj.countries.length > 0) ? proj.countries : [];
+    if (rawCountries.length === 0) {
+      const countriesRes = await api('/projects/' + projectId + '/countries').catch(() => ({ data: [] }));
+      rawCountries = countriesRes.data || [];
+    }
+    const countries = rawCountries.map(function(c) {
+      var l = (c.links && c.links[0]) || {};
+      return {
+        ...c,
+        survey_url: l.url || c.survey_url,
+        target_completes: l.target_completes || c.target_completes,
+        vendor_name: l.vendor_name || c.vendor_name,
+      };
+    });
     const baseUrl = window.location.origin;
     const isPaused = proj.status === 'PAUSED';
     const isAdmin = currentUser && (currentUser.role === 'ADMIN' || currentUser.role === 'SUPER_ADMIN');
@@ -4321,7 +4334,9 @@ var _cpCountries = [];
 var _cpVendorList = [];
 
 async function showCreateProjectModal() {
-  _cpCountries = [];
+  _cpCountries = [
+    { code: 'IN', name: 'India', survey_url: '', uid_param: null, uid_placeholder: null, vendor_id: null, target_completes: 500 }
+  ];
   // Pre-load vendor list for dropdowns
   try {
     var vRes = await api('/vendors?active=true');
@@ -4342,21 +4357,37 @@ async function showCreateProjectModal() {
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
         <div class="form-group">
           <label>Client Rate (₹)</label>
-          <input type="number" id="cp-client-rate" placeholder="70" min="0" step="0.01" style="width:100%;">
+          <input type="number" id="cp-client-rate" placeholder="70" min="0" step="0.01" value="70" style="width:100%;">
         </div>
         <div class="form-group">
           <label>Vendor Rate (₹)</label>
-          <input type="number" id="cp-vendor-rate" placeholder="50" min="0" step="0.01" style="width:100%;">
+          <input type="number" id="cp-vendor-rate" placeholder="50" min="0" step="0.01" value="50" style="width:100%;">
         </div>
       </div>
       <div class="form-group">
         <label style="font-weight:600;font-size:0.9rem;letter-spacing:0.01em;">Countries &amp; Survey Links</label>
-        <p style="font-size:0.78rem;color:var(--text-muted);margin:0.25rem 0 0.75rem;">Each country has its own client survey URL. OPI tracking link is auto-generated per country.</p>
+        <p style="font-size:0.78rem;color:var(--text-muted);margin:0.25rem 0 0.75rem;">Enter your client survey URL for each country. OPI tracking link is auto-generated per country.</p>
         <div id="cp-country-cards" style="display:flex;flex-direction:column;gap:0.85rem;"></div>
-        <div style="display:flex;gap:0.5rem;margin-top:0.75rem;">
-          <input type="text" id="cp-country-input" placeholder="Country code (IN, FR, DE...)" style="flex:1;" maxlength="3"
+        <div style="display:flex;gap:0.5rem;margin-top:0.75rem;align-items:center;flex-wrap:wrap;">
+          <select id="cp-country-preset" onchange="cpAddPresetCountry(this.value)" style="flex:1;min-width:180px;font-size:0.82rem;padding:7px 10px;border:1px solid var(--border-default);border-radius:6px;background:var(--bg-input);">
+            <option value="">+ Add Another Country (Select)...</option>
+            <option value="US">United States (US)</option>
+            <option value="GB">United Kingdom (GB)</option>
+            <option value="DE">Germany (DE)</option>
+            <option value="FR">France (FR)</option>
+            <option value="CA">Canada (CA)</option>
+            <option value="AU">Australia (AU)</option>
+            <option value="SG">Singapore (SG)</option>
+            <option value="AE">UAE (AE)</option>
+            <option value="JP">Japan (JP)</option>
+            <option value="BR">Brazil (BR)</option>
+            <option value="MX">Mexico (MX)</option>
+            <option value="ID">Indonesia (ID)</option>
+          </select>
+          <span style="font-size:0.75rem;color:var(--text-muted);">or</span>
+          <input type="text" id="cp-country-input" placeholder="Code (e.g. IT)" style="width:80px;text-transform:uppercase;font-size:0.82rem;padding:7px 8px;" maxlength="3"
             onkeydown="if(event.key==='Enter'){event.preventDefault();cpAddCountry();}">
-          <button type="button" class="btn btn-secondary" onclick="cpAddCountry()" style="white-space:nowrap;">+ Add Country</button>
+          <button type="button" class="btn btn-secondary" onclick="cpAddCountry()" style="white-space:nowrap;padding:7px 12px;font-size:0.82rem;">Add</button>
         </div>
         <div id="cp-countries-error" style="color:var(--color-danger);font-size:0.75rem;margin-top:0.3rem;"></div>
       </div>
@@ -4364,6 +4395,7 @@ async function showCreateProjectModal() {
     `<button class="btn btn-secondary" onclick="hideModal()">Cancel</button>
      <button class="btn btn-primary" id="cp-submit-btn" onclick="submitCreateProject()">Create Project</button>`
   );
+  cpRenderCards();
 }
 
 function cpVendorOptions(selectedId) {
@@ -4451,19 +4483,34 @@ async function cpAnalyzeUrl(i, url) {
   }
 }
 
+function cpAddPresetCountry(code) {
+  if (!code) return;
+  var input = document.getElementById('cp-country-input');
+  if (input) input.value = code;
+  cpAddCountry();
+  var preset = document.getElementById('cp-country-preset');
+  if (preset) preset.value = '';
+}
+
 function cpAddCountry() {
   var input = document.getElementById('cp-country-input');
   var errEl = document.getElementById('cp-countries-error');
   if (!input) return;
-  var code = input.value.trim().toUpperCase();
-  if (!code) return;
-  if (code.length < 2 || code.length > 3) { if(errEl) errEl.textContent = 'Country code must be 2–3 chars (e.g. IN, FR, DE)'; return; }
-  if (_cpCountries.some(function(c) { return c.code === code; })) { if(errEl) errEl.textContent = code + ' already added'; return; }
+  var raw = input.value.trim();
+  if (!raw) return;
+
+  var nameMap = {'IN':'India','FR':'France','DE':'Germany','US':'United States','GB':'United Kingdom','UK':'United Kingdom','AU':'Australia','CA':'Canada','SG':'Singapore','AE':'UAE','PH':'Philippines','TH':'Thailand','MY':'Malaysia','ID':'Indonesia','NG':'Nigeria','ZA':'South Africa','BR':'Brazil','MX':'Mexico','AR':'Argentina','CO':'Colombia','PL':'Poland','IT':'Italy','ES':'Spain','NL':'Netherlands','SE':'Sweden','NO':'Norway','DK':'Denmark','FI':'Finland','BE':'Belgium','CH':'Switzerland','AT':'Austria','JP':'Japan','KR':'South Korea','CN':'China','TW':'Taiwan','HK':'Hong Kong','VN':'Vietnam'};
+  var reverseMap = {'INDIA':'IN','FRANCE':'FR','GERMANY':'DE','UNITED STATES':'US','USA':'US','UNITED KINGDOM':'GB','AUSTRALIA':'AU','CANADA':'CA','SINGAPORE':'SG','JAPAN':'JP','BRAZIL':'BR','SPAIN':'ES','ITALY':'IT','NETHERLANDS':'NL'};
+
+  var code = raw.toUpperCase();
+  if (reverseMap[code]) code = reverseMap[code];
+  if (code === 'UK') code = 'GB';
+
+  if (code.length < 2 || code.length > 3) { if(errEl) errEl.textContent = 'Enter 2–3 char country code (e.g. IN, US, GB)'; return; }
+  if (_cpCountries.some(function(c) { return c.code === code; })) { if(errEl) errEl.textContent = code + ' is already added'; return; }
   if (errEl) errEl.textContent = '';
-  // Look up name from COUNTRY_MAP equivalent (best-effort)
-  var nameMap = {'IN':'India','FR':'France','DE':'Germany','US':'United States','GB':'United Kingdom','AU':'Australia','CA':'Canada','SG':'Singapore','AE':'UAE','PH':'Philippines','TH':'Thailand','MY':'Malaysia','ID':'Indonesia','NG':'Nigeria','ZA':'South Africa','BR':'Brazil','MX':'Mexico','AR':'Argentina','CO':'Colombia','PL':'Poland','IT':'Italy','ES':'Spain','NL':'Netherlands','SE':'Sweden','NO':'Norway','DK':'Denmark','FI':'Finland','BE':'Belgium','CH':'Switzerland','AT':'Austria','JP':'Japan','KR':'South Korea','CN':'China','TW':'Taiwan','HK':'Hong Kong','VN':'Vietnam'};
   var name = nameMap[code] || code;
-  _cpCountries.push({ code: code, name: name, survey_url: '', uid_param: null, uid_placeholder: null, vendor_id: null, target_completes: null });
+  _cpCountries.push({ code: code, name: name, survey_url: '', uid_param: null, uid_placeholder: null, vendor_id: null, target_completes: 500 });
   input.value = '';
   cpRenderCards();
 }
@@ -4494,7 +4541,11 @@ async function submitCreateProject() {
     var urlEl = document.getElementById('cp-url-' + i);
     var vendorEl = document.getElementById('cp-vendor-' + i);
     var targetEl = document.getElementById('cp-target-' + i);
-    if (urlEl) c.survey_url = urlEl.value.trim();
+    var rawUrl = urlEl ? urlEl.value.trim() : '';
+    if (rawUrl && !/^https?:\/\//i.test(rawUrl)) {
+      rawUrl = 'https://' + rawUrl;
+    }
+    c.survey_url = rawUrl;
     if (vendorEl) c.vendor_id = vendorEl.value || null;
     if (targetEl) c.target_completes = targetEl.value ? parseInt(targetEl.value) : null;
   });
@@ -4528,7 +4579,7 @@ async function submitCreateProject() {
       }),
     });
     hideModal();
-    showToast('Project ' + result.data.project.project_code + ' created!', 'success');
+    showToast('Project ' + result.data.project.project_code + ' created successfully!', 'success');
     await renderProjectDetail(result.data.project.id);
     if ($('#page-title')) $('#page-title').textContent = 'Projects';
   } catch (e) {
@@ -4589,8 +4640,9 @@ function openCreateStudyModal() {
 async function submitCreateStudy() {
   const form = $("#create-study-form");
   const data = Object.fromEntries(new FormData(form));
-  data.target_completes = parseInt(data.target_completes);
-  data.incidence_rate = data.incidence_rate ? parseFloat(data.incidence_rate) : null;
+  data.title = data.name || data.title || 'Untitled Study';
+  data.target_completes = data.target_completes ? parseInt(data.target_completes) : 500;
+  data.incidence_rate = data.incidence_rate ? parseFloat(data.incidence_rate) : 50;
   try {
     await api("/studies", { method: "POST", body: JSON.stringify(data) });
     hideModal();
@@ -4712,6 +4764,9 @@ async function showPage(page) {
       break;
     case "redirect-links":
       await renderRedirectLinks();
+      break;
+    case "database":
+      await renderDatabase();
       break;
     case "settings":
       await renderSettings();
@@ -5052,7 +5107,7 @@ async function renderRedirectLinks() {
             </div>
             <div class="form-group" style="margin:0;">
               <label style="font-size:0.8rem;">Respondent UID</label>
-              <input type="text" id="sim-uid" value="TEST_UID_${Math.floor(Math.random()*90000+10000)}" style="width:100%;">
+              <input type="text" id="sim-uid" value="TEST_UID_${(window.crypto && window.crypto.getRandomValues) ? (window.crypto.getRandomValues(new Uint32Array(1))[0] % 90000 + 10000) : Date.now() % 90000 + 10000}" style="width:100%;">
             </div>
             <div class="form-group" style="margin:0;">
               <label style="font-size:0.8rem;">Outcome Type</label>
@@ -5125,7 +5180,10 @@ function renderRedirectCard(title, pathTemplate, description, accentColor, sampl
   const origin = window.location.origin;
   const fullUrl = origin + pathTemplate;
   const sampleUrl = origin + pathTemplate.replace("{PID}", encodeURIComponent(samplePid)).replace("{UID}", "RESP_12345");
-  const cardId = "red-" + Math.random().toString(36).slice(2, 8);
+  const randSuffix = (window.crypto && window.crypto.getRandomValues)
+    ? Array.from(window.crypto.getRandomValues(new Uint8Array(4)), b => b.toString(16).padStart(2, '0')).join('')
+    : Date.now().toString(36);
+  const cardId = "red-" + randSuffix;
   return `
     <div class="section-card" style="border-left: 4px solid ${accentColor};">
       <div class="section-card-body" style="padding:18px 20px;">
@@ -5179,3 +5237,189 @@ async function simulateCallbackTrigger() {
 }
 window.renderRedirectLinks = renderRedirectLinks;
 window.simulateCallbackTrigger = simulateCallbackTrigger;
+
+// ——— Database & Storage Management —————————————————————————————————————————
+async function renderDatabase() {
+  showLoading();
+  try {
+    const res = await api("/database/stats");
+    const data = res.data || {};
+    const usage = data.usagePercent || 0;
+    const isWarn = usage >= 75;
+    const isCrit = usage >= 90;
+    const statusColor = isCrit ? "var(--color-danger)" : isWarn ? "var(--color-warning)" : "var(--color-primary)";
+
+    const html = `
+      <div class="stats-grid" style="margin-bottom:24px;">
+        <div class="stat-card">
+          <div class="stat-card-icon icon-accent">🗄️</div>
+          <div class="stat-label">Database Storage</div>
+          <div class="stat-value">${escapeHtml(data.dbSizePretty || data.storageUsedPretty || "0 MB")}</div>
+          <div class="stat-change" style="color:${statusColor}; font-weight:700;">${usage}% of 500 MB Free Tier</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-icon icon-success">📁</div>
+          <div class="stat-label">Total Projects</div>
+          <div class="stat-value">${escapeHtml(data.counts?.projects ?? data.projectCount ?? 0)}</div>
+          <div class="stat-change">Registered studies</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-icon icon-info">📋</div>
+          <div class="stat-label">Total Responses</div>
+          <div class="stat-value">${escapeHtml(data.counts?.responses ?? data.responseCount ?? 0)}</div>
+          <div class="stat-change">${escapeHtml(data.counts?.completes ?? data.completeCount ?? 0)} completes logged</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-card-icon icon-warning">🛡️</div>
+          <div class="stat-label">Fake Clicks Prevented</div>
+          <div class="stat-value">${escapeHtml(data.counts?.fakeClicks ?? data.fakeClickCount ?? 0)}</div>
+          <div class="stat-change">Fraud detections blocked</div>
+        </div>
+      </div>
+
+      <!-- Storage Quota Gauge -->
+      <div class="section-card" style="margin-bottom:24px; border-left: 4px solid ${statusColor};">
+        <div class="section-card-body">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <h4 style="margin:0; font-size:1rem; font-weight:700;">Supabase Free Storage Limit (500 MB)</h4>
+            <span style="font-weight:700; font-size:1rem; color:${statusColor};">${usage}% Used</span>
+          </div>
+          <div style="background:var(--bg-muted); height:16px; border-radius:8px; overflow:hidden; border:1px solid var(--border-light);">
+            <div style="background:${statusColor}; height:100%; width:${Math.min(100, usage)}%; transition:width 0.4s ease;"></div>
+          </div>
+          <div style="display:flex; justify-content:space-between; font-size:0.8rem; color:var(--text-muted); margin-top:8px;">
+            <span>Current: ${escapeHtml(data.storageUsedPretty || "0 MB")}</span>
+            <span>Max Safe Quota: 500.00 MB</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions Banner -->
+      <div class="grid-2" style="margin-bottom:24px;">
+        <div class="section-card" style="border-top: 3px solid var(--color-success);">
+          <div class="section-card-body">
+            <h4 style="margin:0 0 6px 0; font-size:1rem; font-weight:700; color:var(--text-primary);">📥 1-Click Master Excel Export</h4>
+            <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:16px;">
+              Download a complete multi-tab formatted Excel sheet containing all Projects, Responses, Sessions, and Audit Logs before cleaning up.
+            </p>
+            <a href="/api/database/export?token=${encodeURIComponent(authToken || '')}" class="btn btn-primary" style="text-decoration:none; display:inline-flex; align-items:center; gap:8px;">
+              📊 Export Full System Data (.xlsx)
+            </a>
+          </div>
+        </div>
+
+        <div class="section-card" style="border-top: 3px solid var(--color-danger);">
+          <div class="section-card-body">
+            <h4 style="margin:0 0 6px 0; font-size:1rem; font-weight:700; color:var(--color-danger);">⚠️ 1-Click Fieldwork Reset</h4>
+            <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:16px;">
+              Safely reset and purge high-volume fieldwork logs and session history to restore 500 MB quota instantly.
+            </p>
+            <button class="btn btn-danger" onclick="openResetDatabaseModal()">
+              🗑️ Open Fieldwork Reset Center
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Table Size Distribution -->
+      <div class="section-card">
+        <div class="section-card-header">
+          <h3>Database Tables & Disk Allocation</h3>
+          <span style="font-size:0.8125rem; color:var(--text-muted);">Real-time PostgreSQL disk consumption</span>
+        </div>
+        <div class="section-card-body no-pad">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Table Name</th>
+                <th>Disk Size</th>
+                <th>Approx Bytes</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${(data.tableSizes || []).map(t => `
+                <tr>
+                  <td class="font-mono font-semibold">${escapeHtml(t.tableName)}</td>
+                  <td><span class="badge" style="background:var(--bg-muted); color:var(--text-primary);">${escapeHtml(t.sizePretty)}</span></td>
+                  <td class="font-mono">${Number(t.bytes).toLocaleString()} B</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+
+    $("#content-area").innerHTML = html;
+  } catch (err) {
+    showError("#content-area", err.message);
+    showToast("Failed to load database stats: " + err.message, "error");
+  }
+}
+
+function openResetDatabaseModal() {
+  const bodyHtml = `
+    <div style="color:var(--text-primary); font-size:0.9rem;">
+      <p style="color:var(--color-danger); font-weight:700; margin-bottom:10px;">
+        CRITICAL WARNING: This operation will permanently wipe selected fieldwork data to restore database quota.
+      </p>
+      <p style="margin-bottom:14px;">Select the scope of data you wish to reset:</p>
+      <div style="display:flex; flex-direction:column; gap:10px; margin-bottom:18px;">
+        <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+          <input type="radio" name="reset-scope" value="fieldwork_only" checked>
+          <span><strong>Fieldwork Only (Recommended):</strong> Clears responses, sessions, fake clicks & logs. Preserves projects, clients & vendors.</span>
+        </label>
+        <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+          <input type="radio" name="reset-scope" value="full_reset">
+          <span><strong>Full System Reset:</strong> Clears all data including projects. Preserves only Administrator users.</span>
+        </label>
+      </div>
+      <div class="form-group" style="margin-bottom:0;">
+        <label style="font-size:0.85rem; font-weight:600;">Type <code>RESET DATABASE</code> to confirm:</label>
+        <input type="text" id="reset-confirm-input" placeholder="RESET DATABASE" style="width:100%; border:1px solid var(--color-danger); padding:8px 12px; border-radius:6px;">
+      </div>
+      <div id="reset-error" style="color:var(--color-danger); font-size:0.8rem; margin-top:8px; display:none;"></div>
+    </div>
+  `;
+  showModal(
+    "⚠️ Reset Database & Fieldwork",
+    bodyHtml,
+    `
+      <button class="btn btn-secondary" onclick="hideModal()">Cancel</button>
+      <button class="btn btn-danger" onclick="executeDatabaseReset()">Confirm Reset</button>
+    `
+  );
+}
+
+async function executeDatabaseReset() {
+  const input = document.getElementById("reset-confirm-input")?.value.trim();
+  const scope = document.querySelector('input[name="reset-scope"]:checked')?.value || "fieldwork_only";
+  const errEl = document.getElementById("reset-error");
+  if (input !== "RESET DATABASE") {
+    if (errEl) {
+      errEl.textContent = "Confirmation phrase does not match 'RESET DATABASE'";
+      errEl.style.display = "block";
+    }
+    return;
+  }
+  try {
+    const res = await api("/database/reset", {
+      method: "POST",
+      body: JSON.stringify({ confirmation: input, scope }),
+    });
+    hideModal();
+    showToast(res.message || "Database reset completed successfully!", "success");
+    renderDatabase();
+  } catch (e) {
+    if (errEl) {
+      errEl.textContent = e.message;
+      errEl.style.display = "block";
+    }
+    showToast("Reset failed: " + e.message, "error");
+  }
+}
+
+window.renderDatabase = renderDatabase;
+window.openResetDatabaseModal = openResetDatabaseModal;
+window.executeDatabaseReset = executeDatabaseReset;
+

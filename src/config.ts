@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import crypto from 'crypto';
 
 /**
  * Central application configuration.
@@ -21,7 +22,7 @@ export const config = {
   // Server
   port: parseInt(optionalEnv('PORT', '3000'), 10),
   nodeEnv: optionalEnv('NODE_ENV', 'development'),
-  appBaseUrl: optionalEnv('APP_BASE_URL', 'http://localhost:3000'),
+  appBaseUrl: optionalEnv('APP_BASE_URL', 'https://opi.opinioninsights.in').replace(/\/$/, ''),
 
   // Database — reads DATABASE_URL from env; fallback to SUPABASE_DB_URL
   databaseUrl: (() => {
@@ -35,11 +36,34 @@ export const config = {
   supabaseUrl: optionalEnv('SUPABASE_URL', ''),
   supabaseAnonKey: optionalEnv('SUPABASE_ANON_KEY', ''),
   supabaseServiceRoleKey: optionalEnv('SUPABASE_SERVICE_ROLE_KEY', ''),
-
   // Security
-  authSecret: optionalEnv('AUTH_SECRET', 'oi-platform-auth-secret-prod-secure-32chars'),
-  callbackHmacSecret: optionalEnv('CALLBACK_SECRET', 'oi-callback-hmac-secret-prod-secure-32c'),
-  redirectHmacSecret: optionalEnv('REDIRECT_HMAC_SECRET', 'oi-redirect-hmac-secret-prod-secure-32c'),
+  authSecret: (() => {
+    const val = process.env.AUTH_SECRET;
+    const isDefault = !val || val === 'oi-platform-auth-secret-prod-secure-32chars';
+    if (isDefault && (process.env.NODE_ENV === 'production' || process.env.VERCEL)) {
+      console.warn('⚠️ [SECURITY WARNING] Insecure default AUTH_SECRET in production! Generating ephemeral secure random secret.');
+      return crypto.randomBytes(32).toString('hex');
+    }
+    return val || 'oi-platform-auth-secret-prod-secure-32chars';
+  })(),
+  callbackHmacSecret: (() => {
+    const val = process.env.CALLBACK_SECRET;
+    const isDefault = !val || val === 'oi-callback-hmac-secret-prod-secure-32c';
+    if (isDefault && (process.env.NODE_ENV === 'production' || process.env.VERCEL)) {
+      console.warn('⚠️ [SECURITY WARNING] Insecure default CALLBACK_SECRET in production! Generating ephemeral secure random secret.');
+      return crypto.randomBytes(32).toString('hex');
+    }
+    return val || 'oi-callback-hmac-secret-prod-secure-32c';
+  })(),
+  redirectHmacSecret: (() => {
+    const val = process.env.REDIRECT_HMAC_SECRET;
+    const isDefault = !val || val === 'oi-redirect-hmac-secret-prod-secure-32c';
+    if (isDefault && (process.env.NODE_ENV === 'production' || process.env.VERCEL)) {
+      console.warn('⚠️ [SECURITY WARNING] Insecure default REDIRECT_HMAC_SECRET in production! Generating ephemeral secure random secret.');
+      return crypto.randomBytes(32).toString('hex');
+    }
+    return val || 'oi-redirect-hmac-secret-prod-secure-32c';
+  })(),
 
   // Redirect Signature
   redirectSignatureTtlSeconds: parseInt(optionalEnv('REDIRECT_SIGNATURE_TTL_SECONDS', '300'), 10),
@@ -54,10 +78,15 @@ export const config = {
 
 
   // Credential Vault — AES-256 master key (32 bytes = 64 hex chars)
-  vaultEncryptionKey: optionalEnv(
-    'VAULT_ENCRYPTION_KEY',
-    '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef'
-  ),
+  vaultEncryptionKey: (() => {
+    const val = process.env.VAULT_ENCRYPTION_KEY;
+    const isDefault = !val || val === '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
+    if (isDefault && (process.env.NODE_ENV === 'production' || process.env.VERCEL)) {
+      console.warn('⚠️ [SECURITY WARNING] Insecure default VAULT_ENCRYPTION_KEY in production! Generating ephemeral 256-bit random key.');
+      return crypto.randomBytes(32).toString('hex');
+    }
+    return val || '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef';
+  })(),
 
   // LimeSurvey Integration
   limeSurveyRpcUrl: optionalEnv('LS_RPC_URL', 'http://localhost:8080/index.php/admin/remotecontrol/handle'),

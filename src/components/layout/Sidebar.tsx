@@ -48,6 +48,10 @@ function UsersIcon() {
 function AuditIcon() {
   return <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>;
 }
+function DatabaseIcon() {
+  return <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>;
+}
+
 function SettingsIcon() {
   return <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-1.066 2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><circle cx="12" cy="12" r="3" /></svg>;
 }
@@ -67,6 +71,7 @@ const allNavItems: NavItem[] = [
   { href: '/dashboard/analytics', label: 'Analytics', icon: <AnalyticsIcon />, group: 'ANALYTICS', roles: ['SUPER_ADMIN', 'ADMIN', 'OPERATOR', 'ANALYST'] },
   { href: '/dashboard/finance', label: 'Finance', icon: <FinanceIcon />, group: 'ANALYTICS', roles: ['SUPER_ADMIN', 'ADMIN'] },
   // SYSTEM
+  { href: '/dashboard/database', label: 'Database & Storage', icon: <DatabaseIcon />, group: 'SYSTEM', roles: ['SUPER_ADMIN', 'ADMIN'] },
   { href: '/dashboard/audit', label: 'Audit Log', icon: <AuditIcon />, group: 'SYSTEM', roles: ['SUPER_ADMIN', 'ADMIN'] },
   { href: '/dashboard/settings', label: 'Settings', icon: <SettingsIcon />, group: 'SYSTEM', roles: ['SUPER_ADMIN', 'ADMIN'] },
 ];

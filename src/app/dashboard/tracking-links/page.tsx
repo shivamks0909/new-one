@@ -187,7 +187,11 @@ export default function TrackingLinksPage() {
   };
 
   const generateRandomCode = () => {
-    const rand = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const buf = new Uint8Array(6);
+    if (typeof window !== 'undefined' && window.crypto) {
+      window.crypto.getRandomValues(buf);
+    }
+    const rand = Array.from(buf).map(b => (b % 36).toString(36)).join('').toUpperCase();
     setForm((prev) => ({ ...prev, link_code: `TL-${rand}` }));
   };
 

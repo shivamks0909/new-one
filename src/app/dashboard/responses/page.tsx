@@ -14,11 +14,12 @@ import { checkAuth, logout, subscribe } from '@/lib/auth';
 interface ResponseItem {
   id: string;
   session_id?: string;
-  study_id: string;
+  study_id?: string;
   study_title?: string;
   study_code?: string;
   project_code?: string;
-  vendor_id: string;
+  project_name?: string;
+  vendor_id?: string;
   vendor_name?: string;
   vendor_code?: string;
   uid: string;
@@ -31,6 +32,13 @@ interface ResponseItem {
   user_agent?: string;
   landing_url?: string;
   country_detected?: string;
+  country?: string;
+  is_unverified?: boolean;
+  rejection_reason?: string;
+  is_reviewed?: boolean;
+  reviewed_at?: string;
+  reviewed_by?: string;
+  review_notes?: string;
 }
 
 function formatDateTime(dateStr?: string) {
@@ -58,11 +66,15 @@ export default function ResponsesPage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
+  const [verifiedCount, setVerifiedCount] = useState(0);
+  const [unverifiedCount, setUnverifiedCount] = useState(0);
+  const [activeTab, setActiveTab] = useState<'all' | 'verified' | 'unverified'>('all');
   
   const [statusFilter, setStatusFilter] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedResponse, setSelectedResponse] = useState<ResponseItem | null>(null);
   const [copiedUid, setCopiedUid] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
   const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
@@ -75,7 +87,7 @@ export default function ResponsesPage() {
     if (isAuthenticated) {
       loadResponses();
     }
-  }, [isAuthenticated, page, statusFilter]);
+  }, [isAuthenticated, page, statusFilter, activeTab]);
 
   const loadResponses = async () => {
     setLoading(true);
@@ -85,7 +97,13 @@ export default function ResponsesPage() {
         limit: 30,
       };
 
-      if (statusFilter) params.status = statusFilter;
+      if (activeTab === 'unverified') {
+        params.type = 'unverified';
+      } else if (activeTab === 'verified') {
+        params.type = 'verified';
+      }
+
+      if (statusFilter && activeTab !== 'unverified') params.status = statusFilter;
       if (searchQuery.trim()) params.search = searchQuery.trim();
       
       // Strict role isolation: VENDOR users are restricted to their assigned vendor_id
@@ -101,10 +119,54 @@ export default function ResponsesPage() {
       setResponses(rows);
       setTotalPages(meta.pages || Math.max(1, Math.ceil((meta.total || rows.length) / 30)));
       setTotalCount(meta.total ?? rows.length);
+      if (meta.verifiedTotal !== undefined) setVerifiedCount(meta.verifiedTotal);
+      if (meta.unverifiedTotal !== undefined) setUnverifiedCount(meta.unverifiedTotal);
     } catch (err: any) {
       showToast(err.message || 'Failed to load responses', 'error');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleMarkReviewed = async (hitId: string) => {
+    setActionLoading(true);
+    try {
+      await apiClient.post(`/unverified/${hitId}/mark-reviewed`, { notes: 'Marked reviewed by operator' });
+      showToast('Hit marked as reviewed', 'success');
+      loadResponses();
+      if (selectedResponse?.id === hitId) {
+        setSelectedResponse(prev => prev ? { ...prev, is_reviewed: true } : null);
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Failed to mark reviewed', 'error');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleWhitelistIp = async (hitId: string) => {
+    setActionLoading(true);
+    try {
+      await apiClient.post(`/unverified/${hitId}/whitelist-ip`, { reason: 'Operator verified clean traffic' });
+      showToast('IP whitelisted successfully', 'success');
+      loadResponses();
+    } catch (err: any) {
+      showToast(err.message || 'Failed to whitelist IP', 'error');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleBlockIp = async (hitId: string) => {
+    setActionLoading(true);
+    try {
+      await apiClient.post(`/unverified/${hitId}/block-ip`, { reason: 'Operator blacklisted fraudulent IP' });
+      showToast('IP blocked permanently', 'success');
+      loadResponses();
+    } catch (err: any) {
+      showToast(err.message || 'Failed to block IP', 'error');
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -186,6 +248,47 @@ export default function ResponsesPage() {
         </Button>
       }
     >
+      {/* ── Top Tabs Strip ────────────────────────────────────────── */}
+      <div className="flex items-center gap-2 mb-4 border-b border-[var(--glass-border)] pb-3">
+        <button
+          id="tab-responses-all"
+          onClick={() => { setActiveTab('all'); setPage(1); }}
+          className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all cursor-pointer ${
+            activeTab === 'all'
+              ? 'bg-[var(--accent-1)] text-white shadow-md'
+              : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)]'
+          }`}
+        >
+          All ({totalCount.toLocaleString()})
+        </button>
+
+        <button
+          id="tab-responses-verified"
+          onClick={() => { setActiveTab('verified'); setPage(1); }}
+          className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+            activeTab === 'verified'
+              ? 'bg-emerald-600 text-white shadow-md'
+              : 'text-emerald-400 hover:bg-emerald-500/10'
+          }`}
+        >
+          <span>✓ Verified</span>
+          {verifiedCount > 0 && <span className="text-xs px-1.5 py-0.5 rounded-full bg-emerald-700/60 font-mono">({verifiedCount})</span>}
+        </button>
+
+        <button
+          id="tab-responses-unverified"
+          onClick={() => { setActiveTab('unverified'); setPage(1); }}
+          className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+            activeTab === 'unverified'
+              ? 'bg-rose-600 text-white shadow-md'
+              : 'text-rose-400 hover:bg-rose-500/10'
+          }`}
+        >
+          <span>🚫 Unverified Fake Clicks</span>
+          {unverifiedCount > 0 && <span className="text-xs px-1.5 py-0.5 rounded-full bg-rose-700/60 font-mono">({unverifiedCount})</span>}
+        </button>
+      </div>
+
       {/* Search & Filter Bar */}
       <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between mb-6 p-4 rounded-xl bg-[var(--glass-bg)] border border-[var(--glass-border)]">
         <form onSubmit={handleSearchSubmit} className="flex-1 min-w-[280px] flex gap-2">
@@ -200,22 +303,24 @@ export default function ResponsesPage() {
         </form>
 
         <div className="flex flex-wrap gap-2.5 items-center">
-          <select
-            value={statusFilter}
-            onChange={(e) => {
-              setStatusFilter(e.target.value);
-              setPage(1);
-            }}
-            className="px-3 py-2 bg-[var(--bg-tertiary)] border border-[var(--glass-border)] rounded-[var(--radius-sm)] text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-1)]"
-            aria-label="Filter by disposition status"
-          >
-            <option value="">All Dispositions</option>
-            <option value="COMPLETE">Complete (Qualified)</option>
-            <option value="TERMINATE">Terminated (Screened Out)</option>
-            <option value="QUOTA_FULL">Quota Full</option>
-            <option value="SECURITY_REJECT">Security Reject (Quality Term)</option>
-            <option value="EXPIRED">Survey Closed / Expired</option>
-          </select>
+          {activeTab !== 'unverified' && (
+            <select
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setPage(1);
+              }}
+              className="px-3 py-2 bg-[var(--bg-tertiary)] border border-[var(--glass-border)] rounded-[var(--radius-sm)] text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent-1)]"
+              aria-label="Filter by disposition status"
+            >
+              <option value="">All Dispositions</option>
+              <option value="COMPLETE">Complete (Qualified)</option>
+              <option value="TERMINATE">Terminated (Screened Out)</option>
+              <option value="QUOTA_FULL">Quota Full</option>
+              <option value="SECURITY_REJECT">Security Reject (Quality Term)</option>
+              <option value="EXPIRED">Survey Closed / Expired</option>
+            </select>
+          )}
 
           {(statusFilter || searchQuery) && (
             <Button
@@ -245,6 +350,8 @@ export default function ResponsesPage() {
           <p className="text-sm text-[var(--text-secondary)]">
             {statusFilter || searchQuery
               ? "No responses match the active filter criteria."
+              : activeTab === 'unverified'
+              ? "No unverified fake clicks logged! All traffic is genuine and token-authenticated."
               : "Responses will appear in real-time as panel participants complete survey sessions."}
           </p>
         </div>
@@ -256,10 +363,15 @@ export default function ResponsesPage() {
               header: 'Participant UID',
               render: (row: ResponseItem) => {
                 const uidVal = row.normalized_uid || row.uid || '—';
+                const isUnv = row.is_unverified || row.final_status === 'UNVERIFIED';
                 return (
-                  <div className="flex items-center gap-2 py-1">
+                  <div className={`flex items-center gap-2 py-1 ${isUnv ? 'text-rose-400' : ''}`}>
                     <span
-                      className="font-mono text-xs font-semibold px-2 py-0.5 rounded bg-[var(--bg-tertiary)] border border-[var(--glass-border)] text-[var(--accent-1)] select-all"
+                      className={`font-mono text-xs font-semibold px-2 py-0.5 rounded border select-all ${
+                        isUnv
+                          ? 'bg-rose-950/60 border-rose-500/40 text-rose-300'
+                          : 'bg-[var(--bg-tertiary)] border-[var(--glass-border)] text-[var(--accent-1)]'
+                      }`}
                       title={uidVal}
                     >
                       {uidVal}
@@ -284,7 +396,7 @@ export default function ResponsesPage() {
                     {row.project_code || row.study_code || '—'}
                   </span>
                   <span className="text-xs text-[var(--text-muted)] truncate max-w-[180px] mt-0.5">
-                    {row.study_title || 'Direct Survey'}
+                    {row.project_name || row.study_title || 'Direct Survey'}
                   </span>
                 </div>
               ),
@@ -295,7 +407,7 @@ export default function ResponsesPage() {
               render: (row: ResponseItem) => (
                 <div className="flex flex-col py-0.5">
                   <span className="font-medium text-sm text-[var(--text-primary)]">
-                    {row.vendor_name || 'Direct Panel'}
+                    {row.vendor_name || 'Direct / External'}
                   </span>
                   {row.vendor_code && (
                     <span className="font-mono text-xs text-[var(--text-muted)]">
@@ -308,9 +420,17 @@ export default function ResponsesPage() {
             {
               key: 'status',
               header: 'Disposition',
-              render: (row: ResponseItem) => (
-                <StatusBadge status={row.final_status || 'UNKNOWN'} />
-              ),
+              render: (row: ResponseItem) => {
+                if (row.is_unverified || row.final_status === 'UNVERIFIED') {
+                  return (
+                    <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-500/20 text-rose-300 border border-rose-500/40">
+                      <span>🚫</span>
+                      <span>UNVERIFIED</span>
+                    </div>
+                  );
+                }
+                return <StatusBadge status={row.final_status || 'UNKNOWN'} />;
+              },
             },
             {
               key: 'ip_country',
@@ -320,9 +440,9 @@ export default function ResponsesPage() {
                   <span className="font-mono text-[var(--text-primary)]">
                     {row.ip_address || '—'}
                   </span>
-                  {row.country_detected && (
+                  {(row.country_detected || row.country) && (
                     <span className="text-[var(--text-muted)]">
-                      {row.country_detected}
+                      {row.country_detected || row.country}
                     </span>
                   )}
                 </div>
@@ -342,11 +462,12 @@ export default function ResponsesPage() {
               header: '',
               render: (row: ResponseItem) => (
                 <Button
-                  variant="ghost"
+                  variant={row.is_unverified || row.final_status === 'UNVERIFIED' ? 'primary' : 'ghost'}
                   size="sm"
                   onClick={() => setSelectedResponse(row)}
+                  className={row.is_unverified || row.final_status === 'UNVERIFIED' ? 'bg-rose-600 hover:bg-rose-500 text-white' : ''}
                 >
-                  Inspect
+                  {row.is_unverified || row.final_status === 'UNVERIFIED' ? 'Triage 🛡️' : 'Inspect'}
                 </Button>
               ),
             },
@@ -361,26 +482,44 @@ export default function ResponsesPage() {
         />
       )}
 
-      {/* Modal: Detailed Response Inspection */}
+      {/* Modal: Detailed Response & Triage Slide-over */}
       {selectedResponse && (
         <Modal
           isOpen={!!selectedResponse}
           onClose={() => setSelectedResponse(null)}
-          title="Response Inspection Audit"
+          title={selectedResponse.is_unverified || selectedResponse.final_status === 'UNVERIFIED' ? "🚫 Unverified Fake Click Triage Audit" : "Response Inspection Audit"}
         >
           <div className="space-y-4 text-sm">
-            <div className="flex items-center justify-between p-3 rounded-lg bg-[var(--bg-tertiary)] border border-[var(--glass-border)]">
+            <div className={`flex items-center justify-between p-3 rounded-lg border ${
+              selectedResponse.is_unverified || selectedResponse.final_status === 'UNVERIFIED'
+                ? 'bg-rose-950/30 border-rose-500/40 text-rose-200'
+                : 'bg-[var(--bg-tertiary)] border-[var(--glass-border)]'
+            }`}>
               <div>
-                <span className="text-xs text-[var(--text-muted)] block">Final Disposition</span>
-                <StatusBadge status={selectedResponse.final_status} />
+                <span className="text-xs text-[var(--text-muted)] block">Disposition Status</span>
+                {selectedResponse.is_unverified || selectedResponse.final_status === 'UNVERIFIED' ? (
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40">
+                    <span>🚫</span>
+                    <span>UNVERIFIED FAKE CLICK</span>
+                  </span>
+                ) : (
+                  <StatusBadge status={selectedResponse.final_status} />
+                )}
               </div>
               <div className="text-right">
-                <span className="text-xs text-[var(--text-muted)] block">Terminal Event</span>
+                <span className="text-xs text-[var(--text-muted)] block">Detected Time</span>
                 <span className="text-xs font-mono text-[var(--text-primary)]">
                   {formatDateTime(selectedResponse.terminal_at || selectedResponse.created_at)}
                 </span>
               </div>
             </div>
+
+            {selectedResponse.rejection_reason && (
+              <div className="p-3 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs">
+                <strong className="block font-semibold mb-0.5">Fraud Rejection Detail:</strong>
+                <span>{selectedResponse.rejection_reason}</span>
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-3 p-3.5 rounded-lg bg-[var(--bg-primary)] border border-[var(--glass-border)]">
               <div className="col-span-2">
@@ -395,28 +534,28 @@ export default function ResponsesPage() {
                   {selectedResponse.project_code || selectedResponse.study_code || '—'}
                 </span>
                 <span className="text-[11px] text-[var(--text-muted)] mt-0.5 block">
-                  {selectedResponse.study_title || selectedResponse.study_id}
+                  {selectedResponse.project_name || selectedResponse.study_title || selectedResponse.study_id}
                 </span>
               </div>
               <div>
                 <span className="text-xs text-[var(--text-muted)] block mb-0.5">Sample Vendor</span>
                 <span className="text-xs font-medium text-[var(--text-primary)] block">
-                  {selectedResponse.vendor_name || 'Direct'}
+                  {selectedResponse.vendor_name || 'Direct / External'}
                 </span>
                 <span className="font-mono text-[11px] text-[var(--text-muted)]">
-                  {selectedResponse.vendor_code || selectedResponse.vendor_id}
+                  {selectedResponse.vendor_code || selectedResponse.vendor_id || '—'}
                 </span>
               </div>
               <div>
                 <span className="text-xs text-[var(--text-muted)] block mb-0.5">IP Address</span>
-                <span className="font-mono text-xs text-[var(--text-primary)]">
+                <span className="font-mono text-xs text-[var(--text-primary)] font-semibold">
                   {selectedResponse.ip_address || '—'}
                 </span>
               </div>
               <div>
                 <span className="text-xs text-[var(--text-muted)] block mb-0.5">Detected Country</span>
                 <span className="text-xs text-[var(--text-primary)]">
-                  {selectedResponse.country_detected || 'Global / Unknown'}
+                  {selectedResponse.country_detected || selectedResponse.country || 'Global / Unknown'}
                 </span>
               </div>
               {selectedResponse.session_id && (
@@ -436,6 +575,44 @@ export default function ResponsesPage() {
                 </div>
               )}
             </div>
+
+            {/* Operator Actions for Unverified Hits */}
+            {(selectedResponse.is_unverified || selectedResponse.final_status === 'UNVERIFIED') && (
+              <div className="p-3.5 rounded-lg bg-slate-900 border border-slate-800 space-y-3">
+                <span className="text-xs font-bold text-slate-300 block uppercase tracking-wider">
+                  Operator Triage Actions
+                </span>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={actionLoading || selectedResponse.is_reviewed}
+                    onClick={() => handleMarkReviewed(selectedResponse.id)}
+                    className="text-xs"
+                  >
+                    {selectedResponse.is_reviewed ? '✓ Reviewed' : 'Mark Reviewed'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={actionLoading}
+                    onClick={() => handleWhitelistIp(selectedResponse.id)}
+                    className="text-xs text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10"
+                  >
+                    Whitelist IP ({selectedResponse.ip_address})
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={actionLoading}
+                    onClick={() => handleBlockIp(selectedResponse.id)}
+                    className="text-xs text-rose-400 border-rose-500/30 hover:bg-rose-500/10"
+                  >
+                    Block IP Permanently
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
           <Modal.Footer>
             <Button variant="primary" onClick={() => setSelectedResponse(null)}>

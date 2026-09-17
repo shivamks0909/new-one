@@ -64,7 +64,11 @@ export function verifyJwt(token: string, secret: string): any {
       .createHmac('sha256', secret)
       .update(signingInput)
       .digest('base64url');
-    if (expectedSig !== parts[2]) return null;
+    const expectedBuf = Buffer.from(expectedSig);
+    const actualBuf = Buffer.from(parts[2]);
+    if (expectedBuf.length !== actualBuf.length || !crypto.timingSafeEqual(expectedBuf, actualBuf)) {
+      return null;
+    }
     const payload = JSON.parse(base64urlDecode(parts[1]));
     if (payload.exp && Date.now() / 1000 > payload.exp) return null;
     return payload;
@@ -94,20 +98,31 @@ export async function authenticate(req: AuthRequest, res: Response, next: NextFu
     return next();
   }
 
-  const supabasePayload = verifyJwt(token, config.supabaseAnonKey);
-  if (supabasePayload) {
-    try {
-      const user = await db.getUserByAuthId(supabasePayload.sub || '');
-      req.user = {
-        id: user?.id || supabasePayload.sub,
-        role: user?.role || 'OPERATOR',
-        email: user?.email || supabasePayload.email || '',
-        vendor_id: user?.vendor_id || null,
-      };
-    } catch {
-      req.user = { id: supabasePayload.sub, role: 'OPERATOR', email: supabasePayload.email || '' };
+  if (config.supabaseAnonKey) {
+    const supabasePayload = verifyJwt(token, config.supabaseAnonKey);
+    if (supabasePayload) {
+      try {
+        const user = await db.getUserByAuthId(supabasePayload.sub || '');
+        if (!user) {
+          return res.status(403).json({
+            success: false,
+            error: { code: 'FORBIDDEN', message: 'User is not provisioned in platform database' },
+          });
+        }
+        req.user = {
+          id: user.id,
+          role: user.role,
+          email: user.email,
+          vendor_id: user.vendor_id || null,
+        };
+        return next();
+      } catch {
+        return res.status(401).json({
+          success: false,
+          error: { code: 'INVALID_TOKEN', message: 'Failed to verify external user' },
+        });
+      }
     }
-    return next();
   }
 
   return res.status(401).json({

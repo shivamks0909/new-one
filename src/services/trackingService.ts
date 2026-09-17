@@ -241,8 +241,15 @@ export function generateSessionToken(): string {
   return 'SES_' + crypto.randomBytes(16).toString('hex');
 }
 
+const BASE62_CHARS = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
 export function generateLinkCode(): string {
-  return 'lnk_' + crypto.randomBytes(6).toString('hex');
+  const bytes = crypto.randomBytes(12);
+  let result = '';
+  for (let i = 0; i < 12; i++) {
+    result += BASE62_CHARS[bytes[i] % 62];
+  }
+  return 'lnk_' + result;
 }
 
 // ─── IP Hashing ───────────────────────────────────────────────────────────────

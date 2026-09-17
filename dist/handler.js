@@ -19120,14 +19120,14 @@ var require_etag = __commonJS({
   "node_modules/etag/index.js"(exports2, module2) {
     "use strict";
     module2.exports = etag;
-    var crypto9 = require("crypto");
+    var crypto12 = require("crypto");
     var Stats = require("fs").Stats;
     var toString = Object.prototype.toString;
     function entitytag(entity) {
       if (entity.length === 0) {
         return '"0-2jmj7l5rSw0yVb/vlWAYkK/YBwk"';
       }
-      var hash2 = crypto9.createHash("sha1").update(entity, "utf8").digest("base64").substring(0, 27);
+      var hash2 = crypto12.createHash("sha1").update(entity, "utf8").digest("base64").substring(0, 27);
       var len = typeof entity === "string" ? Buffer.byteLength(entity, "utf8") : entity.length;
       return '"' + len.toString(16) + "-" + hash2 + '"';
     }
@@ -20857,16 +20857,16 @@ var require_router = __commonJS({
         return new Router(options);
       }
       const opts = options || {};
-      function router3(req, res, next) {
-        router3.handle(req, res, next);
+      function router4(req, res, next) {
+        router4.handle(req, res, next);
       }
-      Object.setPrototypeOf(router3, this);
-      router3.caseSensitive = opts.caseSensitive;
-      router3.mergeParams = opts.mergeParams;
-      router3.params = {};
-      router3.strict = opts.strict;
-      router3.stack = [];
-      return router3;
+      Object.setPrototypeOf(router4, this);
+      router4.caseSensitive = opts.caseSensitive;
+      router4.mergeParams = opts.mergeParams;
+      router4.params = {};
+      router4.strict = opts.strict;
+      router4.stack = [];
+      return router4;
     }
     Router.prototype = function() {
     };
@@ -21254,7 +21254,7 @@ var require_application = __commonJS({
     var app2 = exports2 = module2.exports = {};
     var trustProxyDefaultSymbol = "@@symbol:trust_proxy_default";
     app2.init = function init() {
-      var router3 = null;
+      var router4 = null;
       this.cache = /* @__PURE__ */ Object.create(null);
       this.engines = /* @__PURE__ */ Object.create(null);
       this.settings = /* @__PURE__ */ Object.create(null);
@@ -21263,13 +21263,13 @@ var require_application = __commonJS({
         configurable: true,
         enumerable: true,
         get: function getrouter() {
-          if (router3 === null) {
-            router3 = new Router({
+          if (router4 === null) {
+            router4 = new Router({
               caseSensitive: this.enabled("case sensitive routing"),
               strict: this.enabled("strict routing")
             });
           }
-          return router3;
+          return router4;
         }
       });
     };
@@ -21340,15 +21340,15 @@ var require_application = __commonJS({
       if (fns.length === 0) {
         throw new TypeError("app.use() requires a middleware function");
       }
-      var router3 = this.router;
+      var router4 = this.router;
       fns.forEach(function(fn2) {
         if (!fn2 || !fn2.handle || !fn2.set) {
-          return router3.use(path3, fn2);
+          return router4.use(path3, fn2);
         }
         debug(".use app under %s", path3);
         fn2.mountpath = path3;
         fn2.parent = this;
-        router3.use(path3, function mounted_app(req, res, next) {
+        router4.use(path3, function mounted_app(req, res, next) {
           var orig = req.app;
           fn2.handle(req, res, function(err) {
             Object.setPrototypeOf(req, orig.request);
@@ -22677,17 +22677,17 @@ var require_content_disposition = __commonJS({
 // node_modules/cookie-signature/index.js
 var require_cookie_signature = __commonJS({
   "node_modules/cookie-signature/index.js"(exports2) {
-    var crypto9 = require("crypto");
+    var crypto12 = require("crypto");
     exports2.sign = function(val, secret) {
       if ("string" != typeof val) throw new TypeError("Cookie value must be provided as a string.");
       if (null == secret) throw new TypeError("Secret key must be provided.");
-      return val + "." + crypto9.createHmac("sha256", secret).update(val).digest("base64").replace(/\=+$/, "");
+      return val + "." + crypto12.createHmac("sha256", secret).update(val).digest("base64").replace(/\=+$/, "");
     };
     exports2.unsign = function(input2, secret) {
       if ("string" != typeof input2) throw new TypeError("Signed cookie string must be provided.");
       if (null == secret) throw new TypeError("Secret key must be provided.");
       var tentativeValue = input2.slice(0, input2.lastIndexOf(".")), expectedInput = exports2.sign(tentativeValue, secret), expectedBuffer = Buffer.from(expectedInput), inputBuffer = Buffer.from(input2);
-      return expectedBuffer.length === inputBuffer.length && crypto9.timingSafeEqual(expectedBuffer, inputBuffer) ? tentativeValue : false;
+      return expectedBuffer.length === inputBuffer.length && crypto12.timingSafeEqual(expectedBuffer, inputBuffer) ? tentativeValue : false;
     };
   }
 });
@@ -24320,7 +24320,7 @@ var require_main = __commonJS({
     var fs3 = require("fs");
     var path3 = require("path");
     var os = require("os");
-    var crypto9 = require("crypto");
+    var crypto12 = require("crypto");
     var TIPS = [
       "\u25C8 encrypted .env [www.dotenvx.com]",
       "\u25C8 secrets for agents [www.dotenvx.com]",
@@ -24564,7 +24564,7 @@ var require_main = __commonJS({
       const authTag = ciphertext.subarray(-16);
       ciphertext = ciphertext.subarray(12, -16);
       try {
-        const aesgcm = crypto9.createDecipheriv("aes-256-gcm", key, nonce);
+        const aesgcm = crypto12.createDecipheriv("aes-256-gcm", key, nonce);
         aesgcm.setAuthTag(authTag);
         return `${aesgcm.update(ciphertext)}${aesgcm.final()}`;
       } catch (error61) {
@@ -27563,7 +27563,7 @@ var require_data_validations = __commonJS({
 var require_encryptor = __commonJS({
   "node_modules/exceljs/lib/utils/encryptor.js"(exports2, module2) {
     "use strict";
-    var crypto9 = require("crypto");
+    var crypto12 = require("crypto");
     var Encryptor = {
       /**
        * Calculate a hash of the concatenated buffers with the given algorithm.
@@ -27571,7 +27571,7 @@ var require_encryptor = __commonJS({
        * @returns {Buffer} The hash
        */
       hash(algorithm, ...buffers) {
-        const hash2 = crypto9.createHash(algorithm);
+        const hash2 = crypto12.createHash(algorithm);
         hash2.update(Buffer.concat(buffers));
         return hash2.digest();
       },
@@ -27587,7 +27587,7 @@ var require_encryptor = __commonJS({
        */
       convertPasswordToHash(password, hashAlgorithm, saltValue, spinCount) {
         hashAlgorithm = hashAlgorithm.toLowerCase();
-        const hashes = crypto9.getHashes();
+        const hashes = crypto12.getHashes();
         if (hashes.indexOf(hashAlgorithm) < 0) {
           throw new Error(`Hash algorithm '${hashAlgorithm}' not supported!`);
         }
@@ -27605,7 +27605,7 @@ var require_encryptor = __commonJS({
        * @param size The size argument is a number indicating the number of bytes to generate.
        */
       randomBytes(size) {
-        return crypto9.randomBytes(size);
+        return crypto12.randomBytes(size);
       }
     };
     module2.exports = Encryptor;
@@ -88006,7 +88006,7 @@ var require_tmp = __commonJS({
     var fs3 = require("fs");
     var os = require("os");
     var path3 = require("path");
-    var crypto9 = require("crypto");
+    var crypto12 = require("crypto");
     var _c = { fs: fs3.constants, os: os.constants };
     var RANDOM_CHARS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
     var TEMPLATE_PATTERN = /XXXXXX/;
@@ -88186,9 +88186,9 @@ var require_tmp = __commonJS({
     function _randomChars(howMany) {
       let value = [], rnd = null;
       try {
-        rnd = crypto9.randomBytes(howMany);
+        rnd = crypto12.randomBytes(howMany);
       } catch (e) {
-        rnd = crypto9.pseudoRandomBytes(howMany);
+        rnd = crypto12.pseudoRandomBytes(howMany);
       }
       for (let i = 0; i < howMany; i++) {
         value.push(RANDOM_CHARS[rnd[i] % RANDOM_CHARS.length]);
@@ -89146,7 +89146,7 @@ var require_workbook_reader = __commonJS({
 // node_modules/exceljs/lib/exceljs.nodejs.js
 var require_exceljs_nodejs = __commonJS({
   "node_modules/exceljs/lib/exceljs.nodejs.js"(exports2, module2) {
-    var ExcelJS2 = {
+    var ExcelJS3 = {
       Workbook: require_workbook(),
       ModelContainer: require_modelcontainer(),
       stream: {
@@ -89156,8 +89156,8 @@ var require_exceljs_nodejs = __commonJS({
         }
       }
     };
-    Object.assign(ExcelJS2, require_enums());
-    module2.exports = ExcelJS2;
+    Object.assign(ExcelJS3, require_enums());
+    module2.exports = ExcelJS3;
   }
 });
 
@@ -90490,7 +90490,7 @@ var require_cert_signatures = __commonJS({
 var require_sasl = __commonJS({
   "node_modules/pg/lib/crypto/sasl.js"(exports2, module2) {
     "use strict";
-    var crypto9 = require_utils7();
+    var crypto12 = require_utils7();
     var { signatureAlgorithmHashFromCertificate } = require_cert_signatures();
     function saslprep(password) {
       const nonAsciiSpace = /[\u00A0\u1680\u2000-\u200B\u202F\u205F\u3000]/g;
@@ -90508,7 +90508,7 @@ var require_sasl = __commonJS({
       if (mechanism === "SCRAM-SHA-256-PLUS" && typeof stream.getPeerCertificate !== "function") {
         throw new Error("SASL: Mechanism SCRAM-SHA-256-PLUS requires a certificate");
       }
-      const clientNonce = crypto9.randomBytes(18).toString("base64");
+      const clientNonce = crypto12.randomBytes(18).toString("base64");
       const gs2Header = mechanism === "SCRAM-SHA-256-PLUS" ? "p=tls-server-end-point" : stream ? "y" : "n";
       return {
         mechanism,
@@ -90550,20 +90550,20 @@ var require_sasl = __commonJS({
         const peerCert = stream.getPeerCertificate().raw;
         let hashName = signatureAlgorithmHashFromCertificate(peerCert);
         if (hashName === "MD5" || hashName === "SHA-1") hashName = "SHA-256";
-        const certHash = await crypto9.hashByName(hashName, peerCert);
+        const certHash = await crypto12.hashByName(hashName, peerCert);
         const bindingData = Buffer.concat([Buffer.from("p=tls-server-end-point,,"), Buffer.from(certHash)]);
         channelBinding = bindingData.toString("base64");
       }
       const clientFinalMessageWithoutProof = "c=" + channelBinding + ",r=" + sv.nonce;
       const authMessage = clientFirstMessageBare + "," + serverFirstMessage + "," + clientFinalMessageWithoutProof;
       const saltBytes = Buffer.from(sv.salt, "base64");
-      const saltedPassword = await crypto9.deriveKey(saslprep(password), saltBytes, sv.iteration);
-      const clientKey = await crypto9.hmacSha256(saltedPassword, "Client Key");
-      const storedKey = await crypto9.sha256(clientKey);
-      const clientSignature = await crypto9.hmacSha256(storedKey, authMessage);
+      const saltedPassword = await crypto12.deriveKey(saslprep(password), saltBytes, sv.iteration);
+      const clientKey = await crypto12.hmacSha256(saltedPassword, "Client Key");
+      const storedKey = await crypto12.sha256(clientKey);
+      const clientSignature = await crypto12.hmacSha256(storedKey, authMessage);
       const clientProof = xorBuffers(Buffer.from(clientKey), Buffer.from(clientSignature)).toString("base64");
-      const serverKey = await crypto9.hmacSha256(saltedPassword, "Server Key");
-      const serverSignatureBytes = await crypto9.hmacSha256(serverKey, authMessage);
+      const serverKey = await crypto12.hmacSha256(saltedPassword, "Server Key");
+      const serverSignatureBytes = await crypto12.hmacSha256(serverKey, authMessage);
       session.message = "SASLResponse";
       session.serverSignature = Buffer.from(serverSignatureBytes).toString("base64");
       session.response = clientFinalMessageWithoutProof + ",p=" + clientProof;
@@ -92797,7 +92797,7 @@ var require_client = __commonJS({
     var Query2 = require_query();
     var defaults2 = require_defaults2();
     var Connection2 = require_connection();
-    var crypto9 = require_utils7();
+    var crypto12 = require_utils7();
     var activeQueryDeprecationNotice = nodeUtils.deprecate(
       () => {
       },
@@ -93052,7 +93052,7 @@ var require_client = __commonJS({
       _handleAuthMD5Password(msg) {
         this._getPassword(async () => {
           try {
-            const hashedPassword = await crypto9.postgresMd5PasswordHash(this.user, this.password, msg.salt);
+            const hashedPassword = await crypto12.postgresMd5PasswordHash(this.user, this.password, msg.salt);
             this.connection.password(hashedPassword);
           } catch (e) {
             this.emit("error", e);
@@ -94471,11 +94471,12 @@ var init_esm = __esm({
 function optionalEnv(name, fallback) {
   return process.env[name] || fallback;
 }
-var config;
+var import_crypto4, config;
 var init_config2 = __esm({
   "src/config.ts"() {
     "use strict";
     init_config();
+    import_crypto4 = __toESM(require("crypto"));
     config = {
       // Server
       port: parseInt(optionalEnv("PORT", "3000"), 10),
@@ -94493,9 +94494,33 @@ var init_config2 = __esm({
       supabaseAnonKey: optionalEnv("SUPABASE_ANON_KEY", ""),
       supabaseServiceRoleKey: optionalEnv("SUPABASE_SERVICE_ROLE_KEY", ""),
       // Security
-      authSecret: optionalEnv("AUTH_SECRET", "oi-platform-auth-secret-prod-secure-32chars"),
-      callbackHmacSecret: optionalEnv("CALLBACK_SECRET", "oi-callback-hmac-secret-prod-secure-32c"),
-      redirectHmacSecret: optionalEnv("REDIRECT_HMAC_SECRET", "oi-redirect-hmac-secret-prod-secure-32c"),
+      authSecret: (() => {
+        const val = process.env.AUTH_SECRET;
+        const isDefault = !val || val === "oi-platform-auth-secret-prod-secure-32chars";
+        if (isDefault && (process.env.NODE_ENV === "production" || "true")) {
+          console.warn("\u26A0\uFE0F [SECURITY WARNING] Insecure default AUTH_SECRET in production! Generating ephemeral secure random secret.");
+          return import_crypto4.default.randomBytes(32).toString("hex");
+        }
+        return val || "oi-platform-auth-secret-prod-secure-32chars";
+      })(),
+      callbackHmacSecret: (() => {
+        const val = process.env.CALLBACK_SECRET;
+        const isDefault = !val || val === "oi-callback-hmac-secret-prod-secure-32c";
+        if (isDefault && (process.env.NODE_ENV === "production" || "true")) {
+          console.warn("\u26A0\uFE0F [SECURITY WARNING] Insecure default CALLBACK_SECRET in production! Generating ephemeral secure random secret.");
+          return import_crypto4.default.randomBytes(32).toString("hex");
+        }
+        return val || "oi-callback-hmac-secret-prod-secure-32c";
+      })(),
+      redirectHmacSecret: (() => {
+        const val = process.env.REDIRECT_HMAC_SECRET;
+        const isDefault = !val || val === "oi-redirect-hmac-secret-prod-secure-32c";
+        if (isDefault && (process.env.NODE_ENV === "production" || "true")) {
+          console.warn("\u26A0\uFE0F [SECURITY WARNING] Insecure default REDIRECT_HMAC_SECRET in production! Generating ephemeral secure random secret.");
+          return import_crypto4.default.randomBytes(32).toString("hex");
+        }
+        return val || "oi-redirect-hmac-secret-prod-secure-32c";
+      })(),
       // Redirect Signature
       redirectSignatureTtlSeconds: parseInt(optionalEnv("REDIRECT_SIGNATURE_TTL_SECONDS", "300"), 10),
       // Session
@@ -94508,10 +94533,15 @@ var init_config2 = __esm({
       rateLimitCallbackMax: 100,
       // max 100 callbacks per window per IP
       // Credential Vault — AES-256 master key (32 bytes = 64 hex chars)
-      vaultEncryptionKey: optionalEnv(
-        "VAULT_ENCRYPTION_KEY",
-        "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
-      ),
+      vaultEncryptionKey: (() => {
+        const val = process.env.VAULT_ENCRYPTION_KEY;
+        const isDefault = !val || val === "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+        if (isDefault && (process.env.NODE_ENV === "production" || "true")) {
+          console.warn("\u26A0\uFE0F [SECURITY WARNING] Insecure default VAULT_ENCRYPTION_KEY in production! Generating ephemeral 256-bit random key.");
+          return import_crypto4.default.randomBytes(32).toString("hex");
+        }
+        return val || "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
+      })(),
       // LimeSurvey Integration
       limeSurveyRpcUrl: optionalEnv("LS_RPC_URL", "http://localhost:8080/index.php/admin/remotecontrol/handle"),
       limeSurveyPublicUrl: optionalEnv("LS_BASE_URL", "http://localhost:8080"),
@@ -94569,7 +94599,7 @@ function initDatabase(authSecret) {
   `);
   const userCount = get("SELECT COUNT(*) as count FROM users");
   if (userCount.count === 0) {
-    const u = () => import_crypto4.default.randomUUID();
+    const u = () => import_crypto5.default.randomUUID();
     const n = (/* @__PURE__ */ new Date()).toISOString();
     const pw = hashPassword("admin123", authSecret);
     const cA = u(), cB = u(), vP = u(), vT = u(), s1 = u(), s2 = u();
@@ -94597,10 +94627,10 @@ function initDatabase(authSecret) {
     run(`INSERT INTO survey_questions (id, study_id, group_id, ls_question_id, question_code, question_text, question_type, question_type_name, is_mandatory, question_order, answer_options, attributes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [u(), s2, g3, 8, "Q2", "How many vehicles does your household own?", "N", "numeric", 1, 2, JSON.stringify([]), "{}", n, n]);
     run(`INSERT INTO survey_questions (id, study_id, group_id, ls_question_id, question_code, question_text, question_type, question_type_name, is_mandatory, question_order, answer_options, attributes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [u(), s2, g4, 9, "Q3", "How satisfied are you with your vehicle? (1-10)", "N", "numeric", 1, 1, JSON.stringify([]), "{}", n, n]);
     run(`INSERT INTO survey_questions (id, study_id, group_id, ls_question_id, question_code, question_text, question_type, question_type_name, is_mandatory, question_order, answer_options, attributes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [u(), s2, g4, 10, "Q4", "What improvements would you like to see?", "U", "long_text", 0, 2, JSON.stringify([]), "{}", n, n]);
-    run(`INSERT INTO tracking_links (id, study_id, vendor_id, link_code, public_token, base_url, destination_url, uid_mode, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [u(), s1, vP, "BEV001", "tok_bev_" + import_crypto4.default.randomBytes(8).toString("hex"), "https://survey.oi.io", "https://survey.oi.io/s/bev001", "PROVIDED_UID", "ACTIVE", n, n]);
-    run(`INSERT INTO tracking_links (id, study_id, vendor_id, link_code, public_token, base_url, destination_url, uid_mode, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [u(), s2, vT, "AUTO001", "tok_auto_" + import_crypto4.default.randomBytes(8).toString("hex"), "https://survey.oi.io", "https://survey.oi.io/s/auto001", "PROVIDED_UID", "ACTIVE", n, n]);
+    run(`INSERT INTO tracking_links (id, study_id, vendor_id, link_code, public_token, base_url, destination_url, uid_mode, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [u(), s1, vP, "BEV001", "tok_bev_" + import_crypto5.default.randomBytes(8).toString("hex"), "https://survey.oi.io", "https://survey.oi.io/s/bev001", "PROVIDED_UID", "ACTIVE", n, n]);
+    run(`INSERT INTO tracking_links (id, study_id, vendor_id, link_code, public_token, base_url, destination_url, uid_mode, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [u(), s2, vT, "AUTO001", "tok_auto_" + import_crypto5.default.randomBytes(8).toString("hex"), "https://survey.oi.io", "https://survey.oi.io/s/auto001", "PROVIDED_UID", "ACTIVE", n, n]);
     const sess1 = u();
-    run(`INSERT INTO sessions (id, session_token, study_id, vendor_id, uid, normalized_uid, ip_hash, user_agent, landing_url, current_status, started_at, last_seen_at, expires_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [sess1, "sess_" + import_crypto4.default.randomBytes(8).toString("hex"), s1, vP, "uid_bev_001", "uid_bev_001", "hash1", "Mozilla/5.0", "https://survey.oi.io/s/bev001", "STARTED", n, n, new Date(Date.now() + 18e5).toISOString(), n, n]);
+    run(`INSERT INTO sessions (id, session_token, study_id, vendor_id, uid, normalized_uid, ip_hash, user_agent, landing_url, current_status, started_at, last_seen_at, expires_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [sess1, "sess_" + import_crypto5.default.randomBytes(8).toString("hex"), s1, vP, "uid_bev_001", "uid_bev_001", "hash1", "Mozilla/5.0", "https://survey.oi.io/s/bev001", "STARTED", n, n, new Date(Date.now() + 18e5).toISOString(), n, n]);
     run(`INSERT INTO responses (id, session_id, study_id, vendor_id, uid, final_status, is_counted, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, [u(), sess1, s1, vP, "uid_bev_001", "COMPLETED", 1, n, n]);
     run(`INSERT INTO quotas (id, study_id, name, target, achieved, remaining, status, criteria_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [u(), s1, "Age 18-24 Male", 100, 12, 88, "OPEN", JSON.stringify({ age: "18-24", gender: "Male" }), n, n]);
     run(`INSERT INTO quotas (id, study_id, name, target, achieved, remaining, status, criteria_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [u(), s1, "Age 25-34 Female", 100, 45, 55, "OPEN", JSON.stringify({ age: "25-34", gender: "Female" }), n, n]);
@@ -94608,18 +94638,18 @@ function initDatabase(authSecret) {
     console.log("Seed data: 2 companies, 2 vendors, 3 users, 2 studies, 4 groups, 10 questions, 2 links, 1 session, 1 response, 3 quotas");
   }
 }
-var import_better_sqlite3, import_path, import_crypto4, import_fs, DB_PATH, _db, hashPassword, sqliteDb;
+var import_better_sqlite3, import_path, import_crypto5, import_fs, DB_PATH, _db, hashPassword, sqliteDb;
 var init_sqlite = __esm({
   "src/db/sqlite.ts"() {
     "use strict";
     import_better_sqlite3 = __toESM(require("better-sqlite3"));
     import_path = __toESM(require("path"));
-    import_crypto4 = __toESM(require("crypto"));
+    import_crypto5 = __toESM(require("crypto"));
     import_fs = __toESM(require("fs"));
     DB_PATH = process.env.SQLITE_DB_PATH ? process.env.SQLITE_DB_PATH : "true" ? import_path.default.join("/tmp", "app.db") : import_path.default.join(process.cwd(), "data/app.db");
     _db = null;
     hashPassword = (password, secret) => {
-      return import_crypto4.default.createHmac("sha256", secret).update(password).digest("hex");
+      return import_crypto5.default.createHmac("sha256", secret).update(password).digest("hex");
     };
     sqliteDb = {
       pool: {
@@ -94636,7 +94666,7 @@ var init_sqlite = __esm({
       getUserById: async (id) => get("SELECT * FROM users WHERE id = ?", [id]),
       getAllUsers: async () => all("SELECT * FROM users ORDER BY created_at"),
       createUser: async (user) => {
-        const id = import_crypto4.default.randomUUID();
+        const id = import_crypto5.default.randomUUID();
         const now = (/* @__PURE__ */ new Date()).toISOString();
         run(
           "INSERT INTO users (id, auth_user_id, full_name, email, password_hash, role, vendor_id, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
@@ -94664,7 +94694,7 @@ var init_sqlite = __esm({
       getClient: async (id) => get("SELECT * FROM clients WHERE id = ?", [id]),
       getAllClients: async () => all("SELECT * FROM clients ORDER BY created_at"),
       createClient: async (c) => {
-        const id = import_crypto4.default.randomUUID();
+        const id = import_crypto5.default.randomUUID();
         const now = (/* @__PURE__ */ new Date()).toISOString();
         run(
           "INSERT INTO clients (id, client_code, name, company_name, contact_name, contact_email, contact_phone, notes, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
@@ -94692,7 +94722,7 @@ var init_sqlite = __esm({
       getVendor: async (id) => get("SELECT * FROM vendors WHERE id = ?", [id]),
       getAllVendors: async () => all("SELECT * FROM vendors ORDER BY created_at"),
       createVendor: async (v) => {
-        const id = import_crypto4.default.randomUUID();
+        const id = import_crypto5.default.randomUUID();
         const now = (/* @__PURE__ */ new Date()).toISOString();
         run(
           "INSERT INTO vendors (id, vendor_code, name, contact_name, contact_email, status, notes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
@@ -94720,7 +94750,7 @@ var init_sqlite = __esm({
       getStudy: async (id) => get("SELECT * FROM studies WHERE id = ?", [id]),
       getAllStudies: async () => all("SELECT * FROM studies ORDER BY created_at"),
       createStudy: async (s) => {
-        const id = import_crypto4.default.randomUUID();
+        const id = import_crypto5.default.randomUUID();
         const now = (/* @__PURE__ */ new Date()).toISOString();
         run(
           "INSERT INTO studies (id, study_code, client_id, title, description, country, market, language, survey_url, survey_platform, target_completes, loi_minutes, incidence_rate, client_cpi, start_at, end_at, status, created_by, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
@@ -94747,7 +94777,7 @@ var init_sqlite = __esm({
       },
       getStudyVendors: async (studyId) => all("SELECT * FROM study_vendors WHERE study_id = ?", [studyId]),
       linkStudyVendor: async (sv) => {
-        const id = import_crypto4.default.randomUUID();
+        const id = import_crypto5.default.randomUUID();
         const now = (/* @__PURE__ */ new Date()).toISOString();
         run(
           "INSERT INTO study_vendors (id, study_id, vendor_id, vendor_cpi, target_completes, max_completes, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
@@ -94777,7 +94807,7 @@ var init_sqlite = __esm({
       getTrackingLinkByCode: async (code) => get("SELECT * FROM tracking_links WHERE link_code = ?", [code]),
       getTrackingLinksForStudy: async (studyId) => all("SELECT * FROM tracking_links WHERE study_id = ?", [studyId]),
       createTrackingLink: async (tl) => {
-        const id = import_crypto4.default.randomUUID();
+        const id = import_crypto5.default.randomUUID();
         const now = (/* @__PURE__ */ new Date()).toISOString();
         run(
           "INSERT INTO tracking_links (id, study_id, vendor_id, link_code, public_token, base_url, destination_url, uid_mode, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
@@ -94805,7 +94835,7 @@ var init_sqlite = __esm({
       getSessionByToken: async (token) => get("SELECT * FROM sessions WHERE session_token = ?", [token]),
       getSessionsForStudy: async (studyId, limit = 100, offset = 0) => all("SELECT * FROM sessions WHERE study_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?", [studyId, limit, offset]),
       createSession: async (s) => {
-        const id = import_crypto4.default.randomUUID();
+        const id = import_crypto5.default.randomUUID();
         const now = (/* @__PURE__ */ new Date()).toISOString();
         run(
           "INSERT INTO sessions (id, session_token, study_id, vendor_id, tracking_link_id, uid, normalized_uid, external_uid, ip_hash, user_agent, country_detected, referrer, landing_url, initial_status, current_status, started_at, last_seen_at, expires_at, metadata_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
@@ -94828,7 +94858,7 @@ var init_sqlite = __esm({
         return get("SELECT * FROM sessions WHERE id = ?", [id]);
       },
       createResponseEvent: async (e) => {
-        const id = import_crypto4.default.randomUUID();
+        const id = import_crypto5.default.randomUUID();
         const now = (/* @__PURE__ */ new Date()).toISOString();
         run(
           "INSERT INTO response_events (id, session_id, study_id, vendor_id, uid, event_type, source, raw_payload, normalized_payload, event_key, ip_address, user_agent, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
@@ -94859,7 +94889,7 @@ var init_sqlite = __esm({
         return { rows: dataRes, total: countRes?.count || 0 };
       },
       createResponse: async (r) => {
-        const id = import_crypto4.default.randomUUID();
+        const id = import_crypto5.default.randomUUID();
         const now = (/* @__PURE__ */ new Date()).toISOString();
         run(
           "INSERT INTO responses (id, session_id, study_id, vendor_id, uid, final_status, first_terminal_event, terminal_at, is_counted, rejection_reason, callback_source, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
@@ -94883,7 +94913,7 @@ var init_sqlite = __esm({
       },
       getQuotasForStudy: async (studyId) => all("SELECT * FROM quotas WHERE study_id = ?", [studyId]),
       createQuota: async (q) => {
-        const id = import_crypto4.default.randomUUID();
+        const id = import_crypto5.default.randomUUID();
         const now = (/* @__PURE__ */ new Date()).toISOString();
         run(
           "INSERT INTO quotas (id, study_id, name, target, achieved, remaining, status, criteria_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
@@ -94922,7 +94952,7 @@ var init_sqlite = __esm({
         return { rows: dataRes, total: countRes?.count || 0 };
       },
       createAuditLog: async (log) => {
-        const id = import_crypto4.default.randomUUID();
+        const id = import_crypto5.default.randomUUID();
         const now = (/* @__PURE__ */ new Date()).toISOString();
         run(
           'INSERT INTO audit_logs (id, user_id, "user", action, entity, entity_id, "before", "after", timestamp, ip) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
@@ -94968,7 +94998,7 @@ var init_sqlite = __esm({
       },
       getSurveyGroups: async (studyId) => all("SELECT * FROM survey_groups WHERE study_id = ? ORDER BY group_order", [studyId]),
       createSurveyGroup: async (group) => {
-        const id = import_crypto4.default.randomUUID();
+        const id = import_crypto5.default.randomUUID();
         const now = (/* @__PURE__ */ new Date()).toISOString();
         run(
           "INSERT INTO survey_groups (id, study_id, ls_group_id, title, description, group_order, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
@@ -94996,7 +95026,7 @@ var init_sqlite = __esm({
       getSurveyQuestions: async (studyId) => all("SELECT * FROM survey_questions WHERE study_id = ? ORDER BY question_order", [studyId]),
       getSurveyQuestionById: async (id) => get("SELECT * FROM survey_questions WHERE id = ?", [id]),
       createSurveyQuestion: async (q) => {
-        const id = import_crypto4.default.randomUUID();
+        const id = import_crypto5.default.randomUUID();
         const now = (/* @__PURE__ */ new Date()).toISOString();
         run(
           "INSERT INTO survey_questions (id, study_id, group_id, ls_question_id, question_code, question_text, question_type, question_type_name, is_mandatory, question_order, relevance_expression, answer_options, attributes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
@@ -95054,11 +95084,12 @@ function getDbInstance() {
   }
   return databaseInstance;
 }
-var DB_URL, USE_SQLITE, Database2, databaseInstance, db;
+var import_crypto6, DB_URL, USE_SQLITE, Database2, databaseInstance, db;
 var init_db = __esm({
   "src/db/index.ts"() {
     "use strict";
     init_esm();
+    import_crypto6 = __toESM(require("crypto"));
     init_config2();
     DB_URL = config.databaseUrl;
     USE_SQLITE = !DB_URL || DB_URL.includes("sqlite") || process.env.USE_SQLITE === "true";
@@ -95526,7 +95557,7 @@ var init_db = __esm({
             link.study_id,
             link.vendor_id,
             link.link_code,
-            link.public_token || "tok_" + Math.random().toString(36).substring(7),
+            link.public_token || "tok_" + import_crypto6.default.randomBytes(8).toString("hex"),
             link.base_url,
             link.destination_url ?? "",
             link.uid_mode ?? "PROVIDED_UID",
@@ -96195,7 +96226,7 @@ var init_db = __esm({
         const params = [];
         if (filters.study_id) {
           params.push(filters.study_id);
-          where += ` AND (r.study_id::text = $${params.length} OR s.study_code = $${params.length} OR s.external_offer_id = $${params.length})`;
+          where += ` AND (r.study_id::text = $${params.length} OR r.project_id::text = $${params.length} OR s.study_code = $${params.length} OR s.external_offer_id = $${params.length} OR (r.raw_payload->>'pid') ILIKE $${params.length})`;
         }
         if (filters.vendor_id) {
           params.push(filters.vendor_id);
@@ -96229,6 +96260,8 @@ var init_db = __esm({
         s.study_code ILIKE $${params.length} OR
         s.title ILIKE $${params.length} OR
         COALESCE(s.external_offer_id, '') ILIKE $${params.length} OR
+        COALESCE(r.raw_payload->>'pid', '') ILIKE $${params.length} OR
+        COALESCE(r.rejection_reason, '') ILIKE $${params.length} OR
         COALESCE(sess.user_agent, '') ILIKE $${params.length} OR
         COALESCE(sess.ip_hash, '') ILIKE $${params.length} OR
         COALESCE(re.ip_address::text, '') ILIKE $${params.length}
@@ -97023,10 +97056,11 @@ __export(discoveryService_exports, {
   DiscoveryService: () => DiscoveryService,
   discoveryService: () => discoveryService
 });
-var DiscoveryService, discoveryService;
+var import_crypto7, DiscoveryService, discoveryService;
 var init_discoveryService = __esm({
   "src/services/discoveryService.ts"() {
     "use strict";
+    import_crypto7 = __toESM(require("crypto"));
     init_db();
     init_trackingService();
     DiscoveryService = class {
@@ -97142,7 +97176,7 @@ var init_discoveryService = __esm({
                 study_id: study.id,
                 vendor_id: vendor.id,
                 link_code: `lnk_${cleanOfferId.toLowerCase()}_${vendor.id.slice(0, 4)}`,
-                public_token: `tok_${cleanOfferId.toLowerCase()}_${vendor.id.slice(0, 4)}_${Math.random().toString(36).substring(7)}`,
+                public_token: `tok_${cleanOfferId.toLowerCase()}_${vendor.id.slice(0, 4)}_${import_crypto7.default.randomBytes(6).toString("hex")}`,
                 base_url: surveyUrl,
                 uid_mode: "PROVIDED_UID",
                 status: "ACTIVE"
@@ -97292,13 +97326,13 @@ function applyStateTransition(currentStatus, newStatus) {
 function generateIdempotencyKey(studyId, vendorId, normalizedUid, normalizedStatus, externalTransactionId) {
   const parts = [studyId, vendorId, normalizedUid, normalizedStatus];
   if (externalTransactionId) parts.push(externalTransactionId);
-  return crypto6.createHash("sha256").update(parts.join("|")).digest("hex");
+  return crypto9.createHash("sha256").update(parts.join("|")).digest("hex");
 }
 function validateCallbackSignature(payload, receivedSignature, secret) {
   if (!receivedSignature) return false;
-  const expected = crypto6.createHmac("sha256", secret).update(payload).digest("hex");
+  const expected = crypto9.createHmac("sha256", secret).update(payload).digest("hex");
   try {
-    return crypto6.timingSafeEqual(
+    return crypto9.timingSafeEqual(
       Buffer.from(receivedSignature.replace(/^sha256=/, ""), "hex"),
       Buffer.from(expected, "hex")
     );
@@ -97307,14 +97341,14 @@ function validateCallbackSignature(payload, receivedSignature, secret) {
   }
 }
 function generateNonce() {
-  return crypto6.randomBytes(8).toString("hex");
+  return crypto9.randomBytes(8).toString("hex");
 }
 function signRedirectUrl(params) {
   const ts = Math.floor(Date.now() / 1e3);
   const nonce = generateNonce();
   const payload = { pid: params.pid, uid: params.uid, ts, nonce, outcome: params.outcome };
   const payloadStr = JSON.stringify(payload);
-  const sig = crypto6.createHmac("sha256", config.redirectHmacSecret).update(payloadStr).digest("hex");
+  const sig = crypto9.createHmac("sha256", config.redirectHmacSecret).update(payloadStr).digest("hex");
   const encoded = Buffer.from(payloadStr).toString("base64url");
   return `${encoded}.${sig}`;
 }
@@ -97329,9 +97363,9 @@ function verifyRedirectSignature(sigParam) {
   } catch {
     return null;
   }
-  const expectedSig = crypto6.createHmac("sha256", config.redirectHmacSecret).update(payloadStr).digest("hex");
+  const expectedSig = crypto9.createHmac("sha256", config.redirectHmacSecret).update(payloadStr).digest("hex");
   try {
-    if (!crypto6.timingSafeEqual(Buffer.from(receivedSig, "hex"), Buffer.from(expectedSig, "hex"))) {
+    if (!crypto9.timingSafeEqual(Buffer.from(receivedSig, "hex"), Buffer.from(expectedSig, "hex"))) {
       return null;
     }
   } catch {
@@ -97357,13 +97391,13 @@ function verifyRedirectSignature(sigParam) {
   return payload;
 }
 function generateSessionToken() {
-  return "SES_" + crypto6.randomBytes(16).toString("hex");
+  return "SES_" + crypto9.randomBytes(16).toString("hex");
 }
 function generateLinkCode() {
-  return "lnk_" + crypto6.randomBytes(6).toString("hex");
+  return "lnk_" + crypto9.randomBytes(6).toString("hex");
 }
 function hashIp(ip) {
-  return crypto6.createHmac("sha256", config.authSecret).update(ip).digest("hex");
+  return crypto9.createHmac("sha256", config.authSecret).update(ip).digest("hex");
 }
 function isSessionExpired(session) {
   return /* @__PURE__ */ new Date() > new Date(session.expires_at);
@@ -97570,7 +97604,7 @@ async function resolveOrCreateSession(studyId, vendorId, trackingLinkId, rawUid,
     after: { session_token: sessionToken, uid: original, study_id: studyId, vendor_id: vendorId },
     ip: ipAddress
   });
-  const landingKey = crypto6.createHash("sha256").update(`${studyId}|${vendorId}|${normalized}|LANDING`).digest("hex");
+  const landingKey = crypto9.createHash("sha256").update(`${studyId}|${vendorId}|${normalized}|LANDING`).digest("hex");
   await db.createResponseEvent({
     session_id: session.id,
     study_id: studyId,
@@ -97606,7 +97640,7 @@ async function verifySessionExists(studyId, vendorId, rawUid) {
   return { valid: true, session };
 }
 async function processCallback(provider, studyId, vendorId, rawUid, rawStatus, transactionId, rawPayload, requestMeta) {
-  const requestId = crypto6.randomBytes(8).toString("hex");
+  const requestId = crypto9.randomBytes(8).toString("hex");
   const normalizedStatus = normalizeStatus(rawStatus);
   const { normalized: normalizedUid, original: uid, error: uidError } = normalizeUid(rawUid);
   if (uidError) {
@@ -97772,11 +97806,11 @@ async function processCallback(provider, studyId, vendorId, rawUid, rawStatus, t
     ip_mismatch_reason: ipMismatchReason
   };
 }
-var crypto6, MAX_UID_LENGTH, STATUS_MAP, TERMINAL_STATES, USED_NONCES, NONCE_CLEANUP_INTERVAL_MS, NONCE_MAX_AGE_MS, TrackingService, trackingService;
+var crypto9, MAX_UID_LENGTH, STATUS_MAP, TERMINAL_STATES, USED_NONCES, NONCE_CLEANUP_INTERVAL_MS, NONCE_MAX_AGE_MS, TrackingService, trackingService;
 var init_trackingService = __esm({
   "src/services/trackingService.ts"() {
     "use strict";
-    crypto6 = __toESM(require("crypto"));
+    crypto9 = __toESM(require("crypto"));
     init_db();
     init_config2();
     MAX_UID_LENGTH = 255;
@@ -99640,13 +99674,13 @@ __export(index_exports, {
   default: () => index_default
 });
 module.exports = __toCommonJS(index_exports);
-var import_express3 = __toESM(require_express2());
+var import_express4 = __toESM(require_express2());
 var import_cors = __toESM(require_lib3());
 
 // src/routes/index.ts
 init_config();
-var import_express2 = __toESM(require_express2());
-var import_exceljs = __toESM(require_excel());
+var import_express3 = __toESM(require_express2());
+var import_exceljs2 = __toESM(require_excel());
 init_db();
 
 // src/services/callbackService.ts
@@ -99773,12 +99807,12 @@ init_trackingService();
 init_db();
 
 // src/services/encryptionService.ts
-var crypto7 = __toESM(require("crypto"));
+var crypto10 = __toESM(require("crypto"));
 init_config2();
 function encryptCredential(plaintext) {
   const key = Buffer.from(config.vaultEncryptionKey, "hex");
-  const iv = crypto7.randomBytes(16);
-  const cipher = crypto7.createCipheriv("aes-256-gcm", key, iv);
+  const iv = crypto10.randomBytes(16);
+  const cipher = crypto10.createCipheriv("aes-256-gcm", key, iv);
   let encrypted = cipher.update(plaintext, "utf8", "hex");
   encrypted += cipher.final("hex");
   const authTag = cipher.getAuthTag().toString("hex");
@@ -99786,7 +99820,7 @@ function encryptCredential(plaintext) {
 }
 function decryptCredential(encrypted, iv, authTag) {
   const key = Buffer.from(config.vaultEncryptionKey, "hex");
-  const decipher = crypto7.createDecipheriv("aes-256-gcm", key, Buffer.from(iv, "hex"));
+  const decipher = crypto10.createDecipheriv("aes-256-gcm", key, Buffer.from(iv, "hex"));
   decipher.setAuthTag(Buffer.from(authTag, "hex"));
   let decrypted = decipher.update(encrypted, "hex", "utf8");
   decrypted += decipher.final("utf8");
@@ -99873,979 +99907,8 @@ async function getAuditLog(vaultId, limit = 50) {
   return db.getVaultAuditLog(vaultId, limit);
 }
 
-// src/lib/redirectStatusPage.ts
-var STATUS_CONFIG = {
-  complete: {
-    id: "complete",
-    badgeIndex: 0,
-    eyebrow: "Fieldwork Telemetry",
-    title: "Survey Successfully<br/>Completed!",
-    description: "Thank you for your valuable input. Your responses help us create a brighter, more informed future.",
-    ctaText: "Back to Home \u2192",
-    ctaUrl: "https://opinioninsights.in",
-    verificationBadgeText: "This response was submitted via an unverified / direct link.",
-    verificationType: "unverified",
-    statusBadgeText: "COMPLETED",
-    statusBadgeColor: "#059669",
-    statusBadgeBg: "#D1FAE5",
-    dispositionText: "Complete",
-    verificationStatusText: "UNVERIFIED / DIRECT LINK",
-    verificationStatusBg: "#FFEDD5",
-    verificationStatusColor: "#C2410C",
-    responseStatusText: "COMPLETE",
-    responseStatusBg: "#D1FAE5",
-    responseStatusColor: "#059669",
-    processingStatusText: "PROCESSED",
-    processingStatusBg: "#D1FAE5",
-    processingStatusColor: "#059669",
-    defaultLoi: "7m 24s",
-    reportSubtitle: "YOUR OPINION MAKES A DIFFERENCE",
-    iconType: "check",
-    characterState: "happy"
-  },
-  terminate: {
-    id: "terminate",
-    badgeIndex: 1,
-    eyebrow: "Survey Update",
-    title: "Survey<br/>Terminated",
-    description: "Unfortunately, this survey session has been terminated.<br/><br/>This may happen if you did not meet the study requirements or based on the screening criteria for this project.<br/><br/>We appreciate your time and interest in sharing your opinions with us.",
-    ctaText: "Back to Home \u2192",
-    ctaUrl: "https://opinioninsights.in",
-    verificationBadgeText: "UNVERIFIED / DIRECT LINK",
-    verificationType: "unverified",
-    statusBadgeText: "TERMINATED",
-    statusBadgeColor: "#DC2626",
-    statusBadgeBg: "#FEE2E2",
-    dispositionText: "Terminate",
-    verificationStatusText: "UNVERIFIED / DIRECT LINK",
-    verificationStatusBg: "#FFEDD5",
-    verificationStatusColor: "#C2410C",
-    responseStatusText: "INCOMPLETE",
-    responseStatusBg: "#E0E7FF",
-    responseStatusColor: "#3730A3",
-    processingStatusText: "PROCESSED",
-    processingStatusBg: "#D1FAE5",
-    processingStatusColor: "#059669",
-    defaultLoi: "2m 13s",
-    reportSubtitle: "YOUR OPINION STILL MATTERS",
-    noticeFooter: "If you believe this was a mistake, please contact our support team with your Participant UID.",
-    iconType: "cross",
-    characterState: "crying"
-  },
-  quotafull: {
-    id: "quotafull",
-    badgeIndex: 2,
-    eyebrow: "Fieldwork Telemetry",
-    title: "Quota Limit<br/>Reached",
-    description: "The target response limit for this survey has been achieved. The survey is now closed for this segment. We thank you for your participation attempt.",
-    ctaText: "Back to Home \u2192",
-    ctaUrl: "https://opinioninsights.in",
-    verificationBadgeText: "UNVERIFIED / DIRECT LINK",
-    verificationType: "unverified",
-    statusBadgeText: "QUOTA FULL",
-    statusBadgeColor: "#D97706",
-    statusBadgeBg: "#FEF3C7",
-    dispositionText: "Quota Reached",
-    verificationStatusText: "UNVERIFIED",
-    verificationStatusBg: "#FEF3C7",
-    verificationStatusColor: "#D97706",
-    responseStatusText: "EXPIRED",
-    responseStatusBg: "#FEF3C7",
-    responseStatusColor: "#D97706",
-    processingStatusText: "CLOSED",
-    processingStatusBg: "#FEF3C7",
-    processingStatusColor: "#D97706",
-    defaultLoi: "7m 24s",
-    reportSubtitle: "RESPONSES POWER A BRIGHTER TOMORROW",
-    iconType: "stop_hand",
-    characterState: "quota"
-  },
-  qualityfail: {
-    id: "qualityfail",
-    badgeIndex: 3,
-    eyebrow: "Quality Control",
-    title: "Response Quality<br/>Check Failed",
-    description: "Our comprehensive analysis flagged this session for failing quality control filters or consistency verification. We appreciate your interest in participating.",
-    ctaText: "Back to Home \u2192",
-    ctaUrl: "https://opinioninsights.in",
-    verificationBadgeText: "UNVERIFIED / DIRECT LINK",
-    verificationType: "unverified",
-    statusBadgeText: "QUALITY FAIL",
-    statusBadgeColor: "#7C3AED",
-    statusBadgeBg: "#EDE9FE",
-    dispositionText: "Quality Fail",
-    verificationStatusText: "UNVERIFIED",
-    verificationStatusBg: "#FFEDD5",
-    verificationStatusColor: "#C2410C",
-    responseStatusText: "FAILED",
-    responseStatusBg: "#FEE2E2",
-    responseStatusColor: "#DC2626",
-    processingStatusText: "REVIEWED",
-    processingStatusBg: "#EDE9FE",
-    processingStatusColor: "#7C3AED",
-    defaultLoi: "1m 45s",
-    reportSubtitle: "QUALITY METRICS TELEMETRY",
-    noticeFooter: "Flagged by automated data-integrity and anti-fraud verification filters.",
-    iconType: "quality_check",
-    characterState: "quality"
-  },
-  securityfail: {
-    id: "securityfail",
-    badgeIndex: 4,
-    eyebrow: "Security Validation",
-    title: "Security Check<br/>Failed",
-    description: "Security and integrity validation checks failed for this session. Direct access or automated parameters were blocked to ensure data quality.",
-    ctaText: "Back to Home \u2192",
-    ctaUrl: "https://opinioninsights.in",
-    verificationBadgeText: "SECURITY VALIDATION FAILED",
-    verificationType: "failed",
-    statusBadgeText: "SECURITY FAIL",
-    statusBadgeColor: "#DC2626",
-    statusBadgeBg: "#FEE2E2",
-    dispositionText: "Security Fail",
-    verificationStatusText: "FAILED",
-    verificationStatusBg: "#FEE2E2",
-    verificationStatusColor: "#DC2626",
-    responseStatusText: "BLOCKED",
-    responseStatusBg: "#FEE2E2",
-    responseStatusColor: "#DC2626",
-    processingStatusText: "CLOSED",
-    processingStatusBg: "#F1F5F9",
-    processingStatusColor: "#475569",
-    defaultLoi: "0m 32s",
-    reportSubtitle: "SECURITY INTEGRITY SYSTEM",
-    noticeFooter: "Automated security filters detected anomalous connection signatures.",
-    iconType: "shield_lock",
-    characterState: "security"
-  },
-  geoblock: {
-    id: "geoblock",
-    badgeIndex: 5,
-    eyebrow: "Geographic Eligibility",
-    title: "Participation<br/>Unavailable",
-    description: "This survey study is restricted to participants in specific geographic regions. Your location is outside the active sampling area for this study.",
-    ctaText: "Back to Home \u2192",
-    ctaUrl: "https://opinioninsights.in",
-    verificationBadgeText: "GEOGRAPHIC RESTRICTION",
-    verificationType: "unverified",
-    statusBadgeText: "GEO BLOCK",
-    statusBadgeColor: "#0284C7",
-    statusBadgeBg: "#E0F2FE",
-    dispositionText: "Geographic Restriction",
-    verificationStatusText: "UNVERIFIED",
-    verificationStatusBg: "#FFEDD5",
-    verificationStatusColor: "#C2410C",
-    responseStatusText: "BLOCKED",
-    responseStatusBg: "#FEE2E2",
-    responseStatusColor: "#DC2626",
-    processingStatusText: "CLOSED",
-    processingStatusBg: "#F1F5F9",
-    processingStatusColor: "#475569",
-    defaultLoi: "0m 15s",
-    reportSubtitle: "GEOGRAPHIC SAMPLING REGION",
-    noticeFooter: "Sampling criteria require participants to originate from approved geographic regions.",
-    iconType: "geoblock",
-    characterState: "geoblock"
-  }
-};
-function renderIllustrationSvg(config3) {
-  const { iconType, characterState } = config3;
-  let floatingIconSvg = "";
-  if (iconType === "check") {
-    floatingIconSvg = `
-      <g transform="translate(195, 12)">
-        <circle cx="32" cy="32" r="32" fill="#10B981" />
-        <path d="M22 32 L29 39 L43 23" fill="none" stroke="#FFFFFF" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round" />
-        <!-- yellow rays -->
-        <line x1="8" y1="18" x2="2" y2="12" stroke="#FBBF24" stroke-width="3.5" stroke-linecap="round" />
-        <line x1="56" y1="18" x2="62" y2="12" stroke="#FBBF24" stroke-width="3.5" stroke-linecap="round" />
-        <line x1="4" y1="36" x2="-3" y2="36" stroke="#FBBF24" stroke-width="3.5" stroke-linecap="round" />
-        <line x1="60" y1="36" x2="67" y2="36" stroke="#FBBF24" stroke-width="3.5" stroke-linecap="round" />
-      </g>`;
-  } else if (iconType === "cross") {
-    floatingIconSvg = `
-      <g transform="translate(195, 15)">
-        <circle cx="30" cy="30" r="30" fill="#EF4444" />
-        <path d="M20 20 L40 40 M40 20 L20 40" stroke="#FFFFFF" stroke-width="5.5" stroke-linecap="round" />
-      </g>`;
-  } else if (iconType === "stop_hand") {
-    floatingIconSvg = `
-      <g transform="translate(195, 12)">
-        <circle cx="30" cy="30" r="30" fill="#F59E0B" />
-        <rect x="22" y="16" width="16" height="26" rx="4" fill="#FFFFFF" />
-        <line x1="30" y1="16" x2="30" y2="40" stroke="#F59E0B" stroke-width="3" stroke-linecap="round" />
-        <line x1="26" y1="22" x2="26" y2="38" stroke="#F59E0B" stroke-width="2.5" stroke-linecap="round" />
-        <line x1="34" y1="22" x2="34" y2="38" stroke="#F59E0B" stroke-width="2.5" stroke-linecap="round" />
-      </g>`;
-  } else if (iconType === "quality_check") {
-    floatingIconSvg = `
-      <g transform="translate(195, 15)">
-        <circle cx="30" cy="30" r="30" fill="#8B5CF6" />
-        <path d="M20 22 L26 22 M20 30 L34 30 M20 38 L30 38" stroke="#FFFFFF" stroke-width="3.5" stroke-linecap="round" />
-        <path d="M36 20 L40 24 L48 16" fill="none" stroke="#34D399" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
-      </g>`;
-  } else if (iconType === "shield_lock") {
-    floatingIconSvg = `
-      <g transform="translate(195, 15)">
-        <circle cx="30" cy="30" r="30" fill="#DC2626" />
-        <path d="M30 16 L42 21.5 V31 C42 38 30 43 30 43 C30 43 18 38 18 31 V21.5 L30 16 Z" fill="none" stroke="#FFFFFF" stroke-width="3" />
-        <rect x="24" y="27" width="12" height="10" rx="2" fill="#FFFFFF" />
-        <path d="M26 27 V24 C26 21.8 27.8 20 30 20 C32.2 20 34 21.8 34 24 V27" fill="none" stroke="#FFFFFF" stroke-width="2.5" />
-      </g>`;
-  } else {
-    floatingIconSvg = `
-      <g transform="translate(195, 15)">
-        <circle cx="30" cy="30" r="30" fill="#0284C7" />
-        <circle cx="30" cy="30" r="18" fill="none" stroke="#FFFFFF" stroke-width="3" />
-        <ellipse cx="30" cy="30" rx="10" ry="18" fill="none" stroke="#FFFFFF" stroke-width="2.5" />
-        <line x1="12" y1="30" x2="48" y2="30" stroke="#FFFFFF" stroke-width="2.5" />
-        <path d="M30 18 C30 18 24 24 24 28 C24 31.3 26.7 34 30 34 C33.3 34 36 31.3 36 28 C36 24 30 18 30 18 Z" fill="#EF4444" />
-      </g>`;
-  }
-  let characterSvg = "";
-  if (characterState === "happy") {
-    characterSvg = `
-      <!-- Beanbag chair -->
-      <path d="M100 160 C100 105, 240 105, 250 160 C255 195, 220 225, 175 225 C130 225, 95 195, 100 160 Z" fill="#7C3AED" />
-
-      <!-- Legs cross-legged -->
-      <path d="M125 185 C125 210, 225 210, 225 185" fill="none" stroke="#1E1B4B" stroke-width="16" stroke-linecap="round" />
-
-      <!-- Torso in coral shirt -->
-      <path d="M155 135 L165 185 L185 185 L195 135 Z" fill="#FF5838" />
-
-      <!-- Long dark hair behind body -->
-      <path d="M152 98 C152 75, 198 75, 198 98 C206 125, 196 160, 196 160 L154 160 C154 160, 144 125, 152 98 Z" fill="#1E152A" />
-
-      <!-- Face head & skin -->
-      <circle cx="175" cy="108" r="16" fill="#FCD34D" />
-      <!-- Bangs -->
-      <path d="M161 98 C166 90, 184 90, 189 98 C182 102, 168 102, 161 98 Z" fill="#1E152A" />
-      <!-- Eyes & Smile -->
-      <circle cx="169" cy="107" r="2" fill="#1E152A" />
-      <circle cx="181" cy="107" r="2" fill="#1E152A" />
-      <path d="M170 114 Q175 120 180 114" fill="none" stroke="#1E152A" stroke-width="2" stroke-linecap="round" />
-
-      <!-- Arms raised in victory \u{1F64C} -->
-      <path d="M160 142 L135 110 L122 85" fill="none" stroke="#FCD34D" stroke-width="7" stroke-linecap="round" />
-      <path d="M190 142 L215 110 L228 85" fill="none" stroke="#FCD34D" stroke-width="7" stroke-linecap="round" />
-
-      <!-- Laptop on lap -->
-      <rect x="145" y="162" width="60" height="28" rx="4" fill="#E2E8F0" />
-      <polygon points="140,190 210,190 205,194 145,194" fill="#94A3B8" />
-      <circle cx="175" cy="176" r="5" fill="#10B981" />
-      <path d="M172 176 L174 178 L179 173" fill="none" stroke="#FFFFFF" stroke-width="1.5" />
-    `;
-  } else if (characterState === "crying") {
-    characterSvg = `
-      <!-- Beanbag chair -->
-      <path d="M100 160 C100 105, 240 105, 250 160 C255 195, 220 225, 175 225 C130 225, 95 195, 100 160 Z" fill="#7C3AED" />
-
-      <!-- Knees pulled up in dark pants -->
-      <path d="M135 170 C125 195, 150 215, 175 215 C200 215, 225 195, 215 170 Z" fill="#1E1B4B" />
-
-      <!-- Coral Shirt -->
-      <path d="M155 140 L160 180 L190 180 L195 140 Z" fill="#FF5838" />
-
-      <!-- Long dark hair -->
-      <path d="M152 102 C152 80, 198 80, 198 102 C206 125, 196 155, 196 155 L154 155 C154 155, 144 125, 152 102 Z" fill="#1E152A" />
-
-      <!-- Head & Face -->
-      <circle cx="175" cy="112" r="16" fill="#FCD34D" />
-
-      <!-- Hands covering face -->
-      <path d="M152 150 L164 122 L172 122" fill="none" stroke="#FCD34D" stroke-width="6" stroke-linecap="round" />
-      <path d="M198 150 L186 122 L178 122" fill="none" stroke="#FCD34D" stroke-width="6" stroke-linecap="round" />
-
-      <!-- Sad eyes & Tears -->
-      <path d="M168 110 Q170 107 172 110" fill="none" stroke="#1E152A" stroke-width="1.8" />
-      <path d="M178 110 Q180 107 182 110" fill="none" stroke="#1E152A" stroke-width="1.8" />
-      <circle cx="167" cy="116" r="2.5" fill="#60A5FA" />
-      <circle cx="183" cy="116" r="2.5" fill="#60A5FA" />
-      <path d="M167 118 V126" stroke="#60A5FA" stroke-width="1.2" stroke-dasharray="2,2" />
-      <path d="M183 118 V126" stroke="#60A5FA" stroke-width="1.2" stroke-dasharray="2,2" />
-
-      <!-- Laptop on floor closed -->
-      <rect x="210" y="180" width="45" height="24" rx="3" fill="#CBD5E1" transform="rotate(12 210 180)" />
-    `;
-  } else if (characterState === "quota") {
-    characterSvg = `
-      <!-- Rain cloud overhead -->
-      <g transform="translate(130, 48)">
-        <path d="M10 20 Q10 8 26 8 Q36 -2 52 8 Q68 2 78 16 Q88 18 88 28 Q88 38 72 38 L10 38 Z" fill="#94A3B8" opacity="0.85" />
-        <!-- raindrops -->
-        <line x1="20" y1="42" x2="16" y2="54" stroke="#60A5FA" stroke-width="2.2" stroke-linecap="round" />
-        <line x1="42" y1="42" x2="38" y2="58" stroke="#60A5FA" stroke-width="2.2" stroke-linecap="round" />
-        <line x1="64" y1="42" x2="60" y2="53" stroke="#60A5FA" stroke-width="2.2" stroke-linecap="round" />
-        <line x1="80" y1="42" x2="76" y2="55" stroke="#60A5FA" stroke-width="2.2" stroke-linecap="round" />
-      </g>
-
-      <!-- Beanbag chair -->
-      <path d="M100 160 C100 105, 240 105, 250 160 C255 195, 220 225, 175 225 C130 225, 95 195, 100 160 Z" fill="#7C3AED" />
-
-      <!-- Legs in dark pants -->
-      <path d="M135 180 L160 215 L190 215 L215 180 Z" fill="#1E1B4B" />
-      <path d="M155 140 L160 180 L190 180 L195 140 Z" fill="#FF5838" />
-
-      <!-- Long hair -->
-      <path d="M152 105 C152 85, 198 85, 198 105 C206 125, 196 155, 196 155 L154 155 Z" fill="#1E152A" />
-
-      <!-- Head & face disappointed -->
-      <circle cx="175" cy="115" r="16" fill="#FCD34D" />
-      <circle cx="169" cy="114" r="2" fill="#1E152A" />
-      <circle cx="181" cy="114" r="2" fill="#1E152A" />
-      <path d="M170 122 Q175 117 180 122" fill="none" stroke="#1E152A" stroke-width="2" stroke-linecap="round" />
-
-      <!-- Laptop on lap -->
-      <rect x="150" y="165" width="50" height="24" rx="3" fill="#E2E8F0" />
-    `;
-  } else {
-    characterSvg = `
-      <!-- Beanbag chair -->
-      <path d="M100 160 C100 105, 240 105, 250 160 C255 195, 220 225, 175 225 C130 225, 95 195, 100 160 Z" fill="#7C3AED" />
-
-      <!-- Legs -->
-      <path d="M135 180 L160 215 L190 215 L215 180 Z" fill="#1E1B4B" />
-      <path d="M155 140 L160 180 L190 180 L195 140 Z" fill="#FF5838" />
-      <path d="M152 105 C152 85, 198 85, 198 105 C206 125, 196 155, 196 155 L154 155 Z" fill="#1E152A" />
-      <circle cx="175" cy="115" r="16" fill="#FCD34D" />
-      <circle cx="169" cy="114" r="2" fill="#1E152A" />
-      <circle cx="181" cy="114" r="2" fill="#1E152A" />
-      <path d="M170 122 Q175 117 180 122" fill="none" stroke="#1E152A" stroke-width="2" stroke-linecap="round" />
-
-      <!-- Laptop -->
-      <rect x="148" y="160" width="54" height="26" rx="4" fill="#E2E8F0" />
-      <rect x="152" y="164" width="46" height="18" fill="#1E293B" />
-      <circle cx="175" cy="173" r="4" fill="#EF4444" />
-    `;
-  }
-  return `
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 340 260" width="100%" height="100%" preserveAspectRatio="xMidYMid meet">
-    <defs>
-      <clipPath id="archClip">
-        <path d="M30 260 V120 C30 40, 100 10, 170 10 C240 10, 310 40, 310 120 V260 Z" />
-      </clipPath>
-    </defs>
-
-    <!-- Curved Arch Background Container -->
-    <path d="M20 260 V120 C20 30, 95 0, 170 0 C245 0, 320 30, 320 120 V260 Z" fill="#F1F5FE" />
-
-    <g clip-path="url(#archClip)">
-      <!-- Background Window -->
-      <rect x="230" y="45" width="70" height="90" rx="8" fill="#FFFFFF" opacity="0.6" stroke="#CBD5E1" stroke-width="2" />
-      <line x1="265" y1="45" x2="265" y2="135" stroke="#CBD5E1" stroke-width="1.5" />
-      <line x1="230" y1="90" x2="300" y2="90" stroke="#CBD5E1" stroke-width="1.5" />
-      <!-- Soft Leaf behind window -->
-      <path d="M275 60 C290 60, 295 80, 280 95 C270 90, 265 75, 275 60 Z" fill="#C7D2FE" opacity="0.7" />
-
-      <!-- Houseplant on left -->
-      <path d="M40 220 L50 260 L85 260 L95 220 Z" fill="#FFFFFF" stroke="#E2E8F0" stroke-width="2" /> <!-- Pot -->
-      <!-- Leaves -->
-      <path d="M67 220 C40 180, 30 140, 45 110 C65 140, 70 180, 67 220 Z" fill="#10B981" />
-      <path d="M67 220 C60 170, 70 130, 95 100 C100 135, 85 185, 67 220 Z" fill="#059669" />
-      <path d="M67 220 C85 185, 115 160, 125 135 C115 170, 90 200, 67 220 Z" fill="#047857" />
-
-      <!-- Side Table on right -->
-      <path d="M245 190 L240 260 M295 190 L300 260" stroke="#78350F" stroke-width="4" stroke-linecap="round" />
-      <rect x="235" y="180" width="70" height="12" rx="3" fill="#B45309" />
-      <!-- Books on table -->
-      <rect x="250" y="168" width="40" height="6" rx="1" fill="#F59E0B" />
-      <rect x="248" y="174" width="44" height="6" rx="1" fill="#7C3AED" />
-
-      ${characterSvg}
-    </g>
-
-    ${floatingIconSvg}
-  </svg>`;
-}
-function renderRedirectStatusPage(params) {
-  const {
-    statusKey,
-    pid = "fwdw42",
-    uid = "P-12345",
-    isGenuine = false,
-    timestamp,
-    loi
-  } = params;
-  const normalizedKey = (statusKey || "complete").toLowerCase();
-  const configKey = STATUS_CONFIG[normalizedKey] ? normalizedKey : normalizedKey.includes("term") ? "terminate" : normalizedKey.includes("quota") ? "quotafull" : normalizedKey.includes("qual") ? "qualityfail" : normalizedKey.includes("sec") ? "securityfail" : normalizedKey.includes("geo") ? "geoblock" : "complete";
-  const config3 = STATUS_CONFIG[configKey];
-  const formattedTimestamp = timestamp || (/* @__PURE__ */ new Date()).toLocaleString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true
-  });
-  const formattedLoi = loi || config3.defaultLoi;
-  const dotRoutes = [
-    "/redirect/complete",
-    "/redirect/terminate",
-    "/redirect/quotafull",
-    "/redirect/qualityfail",
-    "/redirect/securityfail",
-    "/redirect/geoblock"
-  ];
-  const paginationDotsHtml = dotRoutes.map((route, idx) => {
-    const isActive = idx === config3.badgeIndex;
-    const url2 = `${route}?pid=${encodeURIComponent(pid)}&uid=${encodeURIComponent(uid)}`;
-    return `
-      <a href="${url2}" class="dot-link ${isActive ? "active" : ""}" title="View State ${idx + 1}">
-        <span class="dot-inner"></span>
-      </a>
-    `;
-  }).join("");
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Opinion Insights \u2014 ${config3.eyebrow}</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --bg-lavender: #EBF0FE;
-      --hero-coral: #FA5337;
-      --hero-shadow: rgba(250, 83, 55, 0.28);
-      --navy-dark: #1E152A;
-      --navy-hover: #2E2240;
-      --text-white: #FFFFFF;
-      --text-muted: rgba(255, 255, 255, 0.9);
-      --card-white: #FFFFFF;
-      --border-gray: #E2E8F0;
-    }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-
-    body {
-      font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-      background-color: var(--bg-lavender);
-      color: var(--navy-dark);
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 24px 16px;
-      overflow-x: hidden;
-    }
-
-    .viewport-wrapper {
-      width: 100%;
-      max-width: 1280px;
-      margin: 0 auto;
-    }
-
-    /* Main Hero Coral Container */
-    .hero-container {
-      background-color: var(--hero-coral);
-      border-radius: 36px;
-      box-shadow: 0 24px 60px var(--hero-shadow);
-      padding: 32px 48px 40px 48px;
-      color: var(--text-white);
-      position: relative;
-      overflow: hidden;
-    }
-
-    /* Header Navigation */
-    .top-header {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 36px;
-    }
-
-    .header-left {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 1rem;
-      font-weight: 700;
-      cursor: pointer;
-      user-select: none;
-    }
-
-    .hamburger-icon {
-      width: 20px;
-      height: 14px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-    }
-
-    .hamburger-icon span {
-      display: block;
-      height: 2.5px;
-      width: 100%;
-      background-color: #FFFFFF;
-      border-radius: 2px;
-    }
-
-    .header-brand {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      text-decoration: none;
-      color: #FFFFFF;
-    }
-
-    .brand-logo-icon {
-      width: 32px;
-      height: 32px;
-      background: #FFFFFF;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .brand-logo-icon svg {
-      width: 18px;
-      height: 18px;
-      fill: var(--hero-coral);
-    }
-
-    .brand-title {
-      font-size: 1.25rem;
-      font-weight: 800;
-      letter-spacing: -0.01em;
-    }
-
-    .header-right {
-      display: flex;
-      align-items: center;
-      gap: 20px;
-      font-size: 0.95rem;
-      font-weight: 700;
-    }
-
-    .header-link {
-      color: #FFFFFF;
-      text-decoration: none;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    /* Grid Layout */
-    .hero-content-grid {
-      display: grid;
-      grid-template-columns: 1fr 520px;
-      gap: 40px;
-      align-items: start;
-      position: relative;
-    }
-
-    /* Left Content Column */
-    .left-column {
-      display: flex;
-      flex-direction: column;
-      z-index: 2;
-    }
-
-    .eyebrow-label {
-      font-size: 1.0625rem;
-      font-weight: 600;
-      color: rgba(255, 255, 255, 0.92);
-      margin-bottom: 12px;
-      letter-spacing: 0.01em;
-    }
-
-    .hero-headline {
-      font-size: 3.75rem;
-      font-weight: 800;
-      line-height: 1.08;
-      letter-spacing: -0.025em;
-      color: #FFFFFF;
-      margin-bottom: 20px;
-    }
-
-    .hero-description {
-      font-size: 1.0625rem;
-      line-height: 1.6;
-      color: var(--text-muted);
-      max-width: 540px;
-      margin-bottom: 32px;
-      font-weight: 500;
-    }
-
-    .actions-row {
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      margin-bottom: 40px;
-      flex-wrap: wrap;
-    }
-
-    .cta-button {
-      background-color: var(--navy-dark);
-      color: #FFFFFF;
-      font-size: 1rem;
-      font-weight: 700;
-      padding: 14px 28px;
-      border-radius: 99px;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      transition: all 0.2s ease;
-      box-shadow: 0 8px 20px rgba(30, 21, 42, 0.25);
-    }
-
-    .cta-button:hover {
-      background-color: var(--navy-hover);
-      transform: translateY(-2px);
-    }
-
-    .verification-pill {
-      background: rgba(255, 255, 255, 0.22);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      color: #FFFFFF;
-      padding: 10px 20px;
-      border-radius: 99px;
-      font-size: 0.85rem;
-      font-weight: 800;
-      letter-spacing: 0.03em;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    /* Pagination Dots */
-    .pagination-container {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-top: auto;
-    }
-
-    .dot-link {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 16px;
-      height: 16px;
-      text-decoration: none;
-      border-radius: 50%;
-      transition: all 0.2s ease;
-    }
-
-    .dot-inner {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background-color: rgba(255, 255, 255, 0.6);
-      transition: all 0.2s ease;
-    }
-
-    .dot-link.active {
-      border: 2.5px solid #FFFFFF;
-      width: 18px;
-      height: 18px;
-    }
-
-    .dot-link.active .dot-inner {
-      background-color: transparent;
-      width: 0;
-      height: 0;
-    }
-
-    /* Right Illustration & Status Report Column */
-    .right-column {
-      position: relative;
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
-    .illustration-card {
-      width: 100%;
-      height: 280px;
-      position: relative;
-    }
-
-    /* Status Report Card (Overlapping lower right) */
-    .status-report-card {
-      background: #FFFFFF;
-      border-radius: 20px;
-      padding: 20px 24px;
-      color: var(--navy-dark);
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.18);
-      width: 100%;
-      margin-top: -50px;
-      position: relative;
-      z-index: 10;
-    }
-
-    .report-card-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding-bottom: 14px;
-      border-bottom: 1px solid var(--border-gray);
-      margin-bottom: 16px;
-    }
-
-    .report-card-title {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 1.125rem;
-      font-weight: 800;
-      color: var(--navy-dark);
-    }
-
-    .report-card-subtitle {
-      font-size: 0.7rem;
-      font-weight: 800;
-      color: #8E95AD;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-
-    /* 3-Column Report Grid */
-    .report-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 16px 20px;
-    }
-
-    .report-field {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .field-label {
-      font-size: 0.6875rem;
-      font-weight: 800;
-      color: #8E95AD;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-
-    .field-value-text {
-      font-size: 0.9375rem;
-      font-weight: 800;
-      color: #0F172A;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .status-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      padding: 4px 10px;
-      border-radius: 99px;
-      font-size: 0.75rem;
-      font-weight: 800;
-      letter-spacing: 0.02em;
-      width: fit-content;
-      text-transform: uppercase;
-    }
-
-    .status-pill-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background-color: currentColor;
-    }
-
-    .notice-footer-bar {
-      margin-top: 14px;
-      padding: 10px 14px;
-      background-color: #F1F5F9;
-      border-radius: 10px;
-      font-size: 0.775rem;
-      color: #475569;
-      font-weight: 600;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    /* Responsive Breakpoints */
-    @media (max-width: 1024px) {
-      .hero-container { padding: 28px 32px; }
-      .hero-content-grid { grid-template-columns: 1fr; gap: 32px; }
-      .hero-headline { font-size: 3rem; }
-      .status-report-card { margin-top: 0; }
-    }
-
-    @media (max-width: 640px) {
-      body { padding: 12px 8px; }
-      .hero-container { padding: 20px 20px 28px 20px; border-radius: 24px; }
-      .hero-headline { font-size: 2.25rem; }
-      .top-header { margin-bottom: 24px; }
-      .report-grid { grid-template-columns: 1fr; gap: 14px; }
-      .brand-title { font-size: 1.1rem; }
-      .header-right span { display: none; }
-      .actions-row { flex-direction: column; align-items: stretch; }
-      .cta-button { justify-content: center; }
-      .verification-pill { justify-content: center; }
-    }
-  </style>
-</head>
-<body>
-
-<div class="viewport-wrapper">
-  <div class="hero-container">
-
-    <!-- Top Header -->
-    <header class="top-header">
-      <a href="https://opinioninsights.in" class="header-brand">
-        <div class="brand-logo-icon">
-          <svg viewBox="0 0 24 24">
-            <path d="M4 19h16v2H4v-2zm2-4h3v2H6v-2zm5-4h3v6h-3v-6zm5-5h3v11h-3V6z"/>
-          </svg>
-        </div>
-        <span class="brand-title">Opinion Insights</span>
-      </a>
-    </header>
-
-    <!-- Main Content Grid -->
-    <div class="hero-content-grid">
-
-      <!-- Left Column -->
-      <div class="left-column">
-        <span class="eyebrow-label">${config3.eyebrow}</span>
-        <h1 class="hero-headline">${config3.title}</h1>
-        <p class="hero-description">${config3.description}</p>
-
-        <div class="actions-row">
-          <a href="${config3.ctaUrl}" class="cta-button">
-            ${config3.ctaText}
-          </a>
-          <span class="verification-pill">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"></circle>
-              <line x1="12" y1="8" x2="12" y2="12"></line>
-              <line x1="12" y1="16" x2="12.01" y2="16"></line>
-            </svg>
-            ${config3.verificationBadgeText}
-          </span>
-        </div>
-
-        <!-- 6 Pagination Dots -->
-        <div class="pagination-container">
-          ${paginationDotsHtml}
-        </div>
-      </div>
-
-      <!-- Right Column -->
-      <div class="right-column">
-        <div class="illustration-card">
-          ${renderIllustrationSvg(config3)}
-        </div>
-
-        <!-- Status Report Card -->
-        <div class="status-report-card">
-          <div class="report-card-header">
-            <div class="report-card-title">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1E152A" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                <polyline points="14 2 14 8 20 8"></polyline>
-                <line x1="16" y1="13" x2="8" y2="13"></line>
-                <line x1="16" y1="17" x2="8" y2="17"></line>
-                <polyline points="10 9 9 9 8 9"></polyline>
-              </svg>
-              <span>Status Report</span>
-            </div>
-            <span class="report-card-subtitle">${config3.reportSubtitle}</span>
-          </div>
-
-          <div class="report-grid">
-            <!-- Row 1 -->
-            <div class="report-field">
-              <span class="field-label">SURVEY STATUS</span>
-              <span class="status-pill" style="background-color: ${config3.statusBadgeBg}; color: ${config3.statusBadgeColor};">
-                <span class="status-pill-dot"></span>
-                ${config3.statusBadgeText}
-              </span>
-            </div>
-
-            <div class="report-field">
-              <span class="field-label">DISPOSITION</span>
-              <span class="field-value-text">${config3.dispositionText}</span>
-            </div>
-
-            <div class="report-field">
-              <span class="field-label">VERIFICATION STATUS</span>
-              <span class="status-pill" style="background-color: ${config3.verificationStatusBg}; color: ${config3.verificationStatusColor};">
-                <span class="status-pill-dot"></span>
-                ${config3.verificationStatusText}
-              </span>
-            </div>
-
-            <!-- Row 2 -->
-            <div class="report-field">
-              <span class="field-label">PROJECT CODE</span>
-              <span class="field-value-text" id="disp-pid">${pid}</span>
-            </div>
-
-            <div class="report-field">
-              <span class="field-label">PARTICIPANT UID</span>
-              <span class="field-value-text" id="disp-uid">${uid}</span>
-            </div>
-
-            <div class="report-field">
-              <span class="field-label">RESPONSE STATUS</span>
-              <span class="status-pill" style="background-color: ${config3.responseStatusBg}; color: ${config3.responseStatusColor};">
-                <span class="status-pill-dot"></span>
-                ${config3.responseStatusText}
-              </span>
-            </div>
-
-            <!-- Row 3 -->
-            <div class="report-field">
-              <span class="field-label">PROCESSING STATUS</span>
-              <span class="status-pill" style="background-color: ${config3.processingStatusBg}; color: ${config3.processingStatusColor};">
-                <span class="status-pill-dot"></span>
-                ${config3.processingStatusText}
-              </span>
-            </div>
-
-            <div class="report-field">
-              <span class="field-label">TIMESTAMP</span>
-              <span class="field-value-text">${formattedTimestamp}</span>
-            </div>
-
-            <div class="report-field">
-              <span class="field-label">LOI DURATION</span>
-              <span class="field-value-text">${formattedLoi}</span>
-            </div>
-          </div>
-
-          ${config3.noticeFooter ? `
-          <div class="notice-footer-bar">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"></circle>
-              <line x1="12" y1="16" x2="12" y2="12"></line>
-              <line x1="12" y1="8" x2="12.01" y2="8"></line>
-            </svg>
-            <span>${config3.noticeFooter}</span>
-          </div>` : ""}
-        </div>
-
-      </div>
-
-    </div>
-
-  </div>
-</div>
-
-</body>
-</html>`;
-}
-
 // src/auth/middleware.ts
-var import_crypto5 = __toESM(require("crypto"));
+var import_crypto8 = __toESM(require("crypto"));
 init_db();
 init_config2();
 var rateLimitStore = /* @__PURE__ */ new Map();
@@ -100891,8 +99954,12 @@ function verifyJwt(token, secret) {
     const parts = token.split(".");
     if (parts.length !== 3) return null;
     const signingInput = `${parts[0]}.${parts[1]}`;
-    const expectedSig = import_crypto5.default.createHmac("sha256", secret).update(signingInput).digest("base64url");
-    if (expectedSig !== parts[2]) return null;
+    const expectedSig = import_crypto8.default.createHmac("sha256", secret).update(signingInput).digest("base64url");
+    const expectedBuf = Buffer.from(expectedSig);
+    const actualBuf = Buffer.from(parts[2]);
+    if (expectedBuf.length !== actualBuf.length || !import_crypto8.default.timingSafeEqual(expectedBuf, actualBuf)) {
+      return null;
+    }
     const payload = JSON.parse(base64urlDecode(parts[1]));
     if (payload.exp && Date.now() / 1e3 > payload.exp) return null;
     return payload;
@@ -100919,20 +99986,31 @@ async function authenticate(req, res, next) {
     };
     return next();
   }
-  const supabasePayload = verifyJwt(token, config.supabaseAnonKey);
-  if (supabasePayload) {
-    try {
-      const user = await db.getUserByAuthId(supabasePayload.sub || "");
-      req.user = {
-        id: user?.id || supabasePayload.sub,
-        role: user?.role || "OPERATOR",
-        email: user?.email || supabasePayload.email || "",
-        vendor_id: user?.vendor_id || null
-      };
-    } catch {
-      req.user = { id: supabasePayload.sub, role: "OPERATOR", email: supabasePayload.email || "" };
+  if (config.supabaseAnonKey) {
+    const supabasePayload = verifyJwt(token, config.supabaseAnonKey);
+    if (supabasePayload) {
+      try {
+        const user = await db.getUserByAuthId(supabasePayload.sub || "");
+        if (!user) {
+          return res.status(403).json({
+            success: false,
+            error: { code: "FORBIDDEN", message: "User is not provisioned in platform database" }
+          });
+        }
+        req.user = {
+          id: user.id,
+          role: user.role,
+          email: user.email,
+          vendor_id: user.vendor_id || null
+        };
+        return next();
+      } catch {
+        return res.status(401).json({
+          success: false,
+          error: { code: "INVALID_TOKEN", message: "Failed to verify external user" }
+        });
+      }
     }
-    return next();
   }
   return res.status(401).json({
     success: false,
@@ -100962,7 +100040,7 @@ function issueJwt(payload) {
     exp: Math.floor(Date.now() / 1e3) + 8 * 3600
   })).toString("base64url");
   const signingInput = `${header}.${body}`;
-  const sig = import_crypto5.default.createHmac("sha256", config.authSecret).update(signingInput).digest("base64url");
+  const sig = import_crypto8.default.createHmac("sha256", config.authSecret).update(signingInput).digest("base64url");
   return `${header}.${body}.${sig}`;
 }
 
@@ -120340,7 +119418,7 @@ router.post("/surveys/:studyId/publish", authenticate, async (req, res) => {
         await db.updateStudyLsMapping(req.params.studyId, lsSurveyId, "CREATED");
       } catch (lsErr) {
         console.error("[SurveyBuilder] LS createSurvey failed:", lsErr?.message);
-        lsSurveyId = Math.floor(Math.random() * 9e5) + 1e5;
+        lsSurveyId = require("crypto").randomInt(1e5, 1e6);
         await db.updateStudyLsMapping(req.params.studyId, lsSurveyId, "CREATED_LOCAL");
         console.log(`[SurveyBuilder] Using mock LS survey ID: ${lsSurveyId} (LS not running)`);
       }
@@ -120410,6 +119488,421 @@ router.post("/surveys/:studyId/unpublish", authenticate, async (req, res) => {
   }
 });
 var surveyBuilder_default = router;
+
+// src/routes/database.ts
+var import_express2 = __toESM(require_express2());
+var import_exceljs = __toESM(require_excel());
+init_db();
+var router2 = import_express2.default.Router();
+var STORAGE_LIMIT_BYTES = 500 * 1024 * 1024;
+async function authenticateDownload(req, res, next) {
+  const queryToken = req.query.token;
+  if (queryToken && !req.headers.authorization) {
+    req.headers.authorization = `Bearer ${queryToken}`;
+  }
+  return authenticate(req, res, next);
+}
+router2.get("/stats", authenticate, authorize(["SUPER_ADMIN", "ADMIN"]), async (req, res) => {
+  try {
+    let dbSizePretty = "0 MB";
+    let dbSizeBytes = 0;
+    try {
+      const sizeRes = await db.pool.query("SELECT pg_size_pretty(pg_database_size(current_database())) as size, pg_database_size(current_database()) as raw");
+      dbSizePretty = sizeRes.rows[0]?.size || "0 MB";
+      dbSizeBytes = Number(sizeRes.rows[0]?.raw || 0);
+    } catch (e) {
+      console.warn("[DB Stats] Could not query pg_database_size:", e.message);
+    }
+    const usagePercent = Number((dbSizeBytes / STORAGE_LIMIT_BYTES * 100).toFixed(2));
+    let tableSizes = [];
+    try {
+      const tsRes = await db.pool.query(`
+        SELECT 
+          table_name,
+          pg_size_pretty(pg_total_relation_size('"' || table_name || '"')) as size_pretty,
+          pg_total_relation_size('"' || table_name || '"') as bytes
+        FROM information_schema.tables 
+        WHERE table_schema = 'public'
+        ORDER BY bytes DESC
+      `);
+      tableSizes = tsRes.rows.map((r) => ({
+        tableName: r.table_name,
+        sizePretty: r.size_pretty,
+        bytes: Number(r.bytes)
+      }));
+    } catch (e) {
+      console.warn("[DB Stats] Table size query failed:", e.message);
+    }
+    const [projRes, sessRes, respRes, compRes, fakeRes, logsRes, usersRes] = await Promise.all([
+      db.pool.query("SELECT COUNT(*) as c FROM projects").catch(() => ({ rows: [{ c: 0 }] })),
+      db.pool.query("SELECT COUNT(*) as c FROM sessions").catch(() => ({ rows: [{ c: 0 }] })),
+      db.pool.query("SELECT COUNT(*) as c FROM responses").catch(() => ({ rows: [{ c: 0 }] })),
+      db.pool.query("SELECT COUNT(*) as c FROM responses WHERE final_status='COMPLETED'").catch(() => ({ rows: [{ c: 0 }] })),
+      db.pool.query("SELECT COUNT(*) as c FROM fake_click_events").catch(() => ({ rows: [{ c: 0 }] })),
+      db.pool.query("SELECT COUNT(*) as c FROM audit_logs").catch(() => ({ rows: [{ c: 0 }] })),
+      db.pool.query("SELECT COUNT(*) as c FROM users").catch(() => ({ rows: [{ c: 0 }] }))
+    ]);
+    const counts = {
+      projects: Number(projRes.rows[0]?.c || 0),
+      sessions: Number(sessRes.rows[0]?.c || 0),
+      responses: Number(respRes.rows[0]?.c || 0),
+      completes: Number(compRes.rows[0]?.c || 0),
+      fakeClicks: Number(fakeRes.rows[0]?.c || 0),
+      auditLogs: Number(logsRes.rows[0]?.c || 0),
+      users: Number(usersRes.rows[0]?.c || 0)
+    };
+    return res.json({
+      success: true,
+      data: {
+        dbSizePretty,
+        dbSizeBytes,
+        storageLimitBytes: STORAGE_LIMIT_BYTES,
+        storageLimitPretty: "500 MB",
+        usagePercent,
+        counts,
+        tableSizes
+      }
+    });
+  } catch (err) {
+    console.error("[DB Stats] Error:", err);
+    return res.status(500).json({ success: false, error: { message: err.message || "Failed to fetch database stats" } });
+  }
+});
+router2.get("/export", authenticateDownload, authorize(["SUPER_ADMIN", "ADMIN"]), async (req, res) => {
+  try {
+    const wb = new import_exceljs.default.Workbook();
+    wb.creator = "Opinion Insights Fieldwork System";
+    wb.created = /* @__PURE__ */ new Date();
+    const BRAND_DARK = "FF0F172A";
+    const BRAND_TEAL = "FF00BFA5";
+    const BRAND_BORDER = "FFE2E8F0";
+    const ZEBRA_LIGHT = "FFF8FAFC";
+    const applyHeaderStyle = (row, bgArgb = BRAND_DARK) => {
+      row.height = 28;
+      row.eachCell((cell) => {
+        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: bgArgb } };
+        cell.font = { name: "Segoe UI", size: 10, bold: true, color: { argb: "FFFFFFFF" } };
+        cell.alignment = { vertical: "middle", horizontal: "center" };
+        cell.border = {
+          top: { style: "thin", color: { argb: BRAND_BORDER } },
+          bottom: { style: "medium", color: { argb: BRAND_TEAL } }
+        };
+      });
+    };
+    const applyDataRowStyle = (row, isEven) => {
+      row.height = 20;
+      row.eachCell((cell) => {
+        if (typeof cell.value === "string" && /^[=+\-@\t\r]/.test(cell.value)) {
+          cell.value = "'" + cell.value;
+        }
+        cell.font = { name: "Segoe UI", size: 9.5 };
+        cell.border = {
+          top: { style: "thin", color: { argb: BRAND_BORDER } },
+          bottom: { style: "thin", color: { argb: BRAND_BORDER } },
+          left: { style: "thin", color: { argb: BRAND_BORDER } },
+          right: { style: "thin", color: { argb: BRAND_BORDER } }
+        };
+        if (isEven) {
+          cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: ZEBRA_LIGHT } };
+        }
+        cell.alignment = { vertical: "middle" };
+      });
+    };
+    const autoFitColumns = (ws) => {
+      ws.columns.forEach((col) => {
+        let maxLen = 10;
+        col.eachCell({ includeEmpty: true }, (cell) => {
+          const valStr = cell.value ? cell.value.toString() : "";
+          if (valStr.length > maxLen) maxLen = Math.min(valStr.length, 50);
+        });
+        col.width = maxLen + 4;
+      });
+    };
+    const wsSum = wb.addWorksheet("System Overview");
+    wsSum.views = [{ state: "normal" }];
+    const dbSizeRes = await db.pool.query("SELECT pg_size_pretty(pg_database_size(current_database())) as size, pg_database_size(current_database()) as raw").catch(() => ({ rows: [] }));
+    const dbPretty = dbSizeRes.rows[0]?.size || "16 MB";
+    const dbRaw = Number(dbSizeRes.rows[0]?.raw || 0);
+    const pct = (dbRaw / STORAGE_LIMIT_BYTES * 100).toFixed(2);
+    const [projCnt, sessCnt, respCnt, compCnt, fakeCnt] = await Promise.all([
+      db.pool.query("SELECT COUNT(*) as c FROM projects").then((r) => r.rows[0]?.c || 0).catch(() => 0),
+      db.pool.query("SELECT COUNT(*) as c FROM sessions").then((r) => r.rows[0]?.c || 0).catch(() => 0),
+      db.pool.query("SELECT COUNT(*) as c FROM responses").then((r) => r.rows[0]?.c || 0).catch(() => 0),
+      db.pool.query("SELECT COUNT(*) as c FROM responses WHERE final_status='COMPLETED'").then((r) => r.rows[0]?.c || 0).catch(() => 0),
+      db.pool.query("SELECT COUNT(*) as c FROM fake_click_events").then((r) => r.rows[0]?.c || 0).catch(() => 0)
+    ]);
+    wsSum.mergeCells("A1:F1");
+    const titleCell = wsSum.getCell("A1");
+    titleCell.value = "OPINION INSIGHTS \u2014 MASTER DATABASE ARCHIVE";
+    titleCell.font = { name: "Segoe UI", size: 16, bold: true, color: { argb: "FFFFFFFF" } };
+    titleCell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: BRAND_DARK } };
+    titleCell.alignment = { vertical: "middle", horizontal: "center" };
+    wsSum.getRow(1).height = 38;
+    wsSum.addRow([]);
+    wsSum.addRow(["Storage Metric", "Value", "Status", "Limit / Quota", "Usage %"]);
+    applyHeaderStyle(wsSum.getRow(3), BRAND_TEAL);
+    wsSum.addRow(["Database Size", dbPretty, "Healthy", "500 MB", `${pct}%`]);
+    applyDataRowStyle(wsSum.getRow(4), false);
+    wsSum.addRow([]);
+    wsSum.addRow(["Entity / Metric", "Total Records", "Description"]);
+    applyHeaderStyle(wsSum.getRow(6), BRAND_DARK);
+    wsSum.addRow(["Total Projects", projCnt, "Fieldwork projects created"]);
+    applyDataRowStyle(wsSum.getRow(7), false);
+    wsSum.addRow(["Total Survey Sessions", sessCnt, "Unique respondent tracking attempts"]);
+    applyDataRowStyle(wsSum.getRow(8), true);
+    wsSum.addRow(["Total Terminal Responses", respCnt, "Recorded completes, terms, quota hits"]);
+    applyDataRowStyle(wsSum.getRow(9), false);
+    wsSum.addRow(["Verified Completes", compCnt, "Legitimate completed surveys"]);
+    applyDataRowStyle(wsSum.getRow(10), true);
+    wsSum.addRow(["Security Intercepts & Fake Clicks", fakeCnt, "Fraudulent or direct unverified attempts blocked"]);
+    applyDataRowStyle(wsSum.getRow(11), false);
+    autoFitColumns(wsSum);
+    const wsProj = wb.addWorksheet("Projects");
+    wsProj.views = [{ state: "frozen", ySplit: 1 }];
+    wsProj.columns = [
+      { header: "Project Code", key: "project_code" },
+      { header: "Project Name", key: "name" },
+      { header: "Status", key: "status" },
+      { header: "Client", key: "client_name" },
+      { header: "Client Rate", key: "client_rate" },
+      { header: "Vendor Rate", key: "vendor_rate" },
+      { header: "Currency", key: "currency" },
+      { header: "Survey URL", key: "survey_url" },
+      { header: "Created Date", key: "created_at" }
+    ];
+    applyHeaderStyle(wsProj.getRow(1));
+    const projRows = await db.pool.query("SELECT * FROM projects ORDER BY created_at DESC").catch(() => ({ rows: [] }));
+    projRows.rows.forEach((r, idx) => {
+      wsProj.addRow({
+        project_code: r.project_code,
+        name: r.name,
+        status: r.status,
+        client_name: r.client_name,
+        client_rate: Number(r.client_rate || 0),
+        vendor_rate: Number(r.vendor_rate || 0),
+        currency: r.currency || "USD",
+        survey_url: r.survey_url,
+        created_at: r.created_at ? new Date(r.created_at).toISOString().slice(0, 19).replace("T", " ") : ""
+      });
+      applyDataRowStyle(wsProj.lastRow, idx % 2 === 1);
+    });
+    wsProj.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: 9 } };
+    autoFitColumns(wsProj);
+    const wsResp = wb.addWorksheet("Responses");
+    wsResp.views = [{ state: "frozen", ySplit: 1 }];
+    wsResp.columns = [
+      { header: "ID", key: "id" },
+      { header: "Project Code", key: "project_code" },
+      { header: "UID", key: "uid" },
+      { header: "Final Status", key: "final_status" },
+      { header: "Verification Type", key: "verification" },
+      { header: "Client Billing", key: "client_billing_status" },
+      { header: "Vendor Acceptance", key: "vendor_acceptance_status" },
+      { header: "LOI (Sec)", key: "loi_seconds" },
+      { header: "Rejection Reason", key: "rejection_reason" },
+      { header: "Timestamp", key: "created_at" }
+    ];
+    applyHeaderStyle(wsResp.getRow(1), "FF0D9488");
+    const respData = await db.pool.query(`
+      SELECT r.*, p.project_code 
+      FROM responses r 
+      LEFT JOIN projects p ON p.id = r.project_id 
+      ORDER BY r.created_at DESC
+    `).catch(() => ({ rows: [] }));
+    respData.rows.forEach((r, idx) => {
+      const isUnverified = r.callback_source === "DIRECT_UNVERIFIED" || r.rejection_reason?.includes("UNVERIFIED");
+      wsResp.addRow({
+        id: r.id,
+        project_code: r.project_code || "N/A",
+        uid: r.uid,
+        final_status: r.final_status,
+        verification: isUnverified ? "UNVERIFIED" : "VERIFIED",
+        client_billing_status: r.client_billing_status || "PENDING",
+        vendor_acceptance_status: r.vendor_acceptance_status || "PENDING",
+        loi_seconds: r.loi_seconds || 0,
+        rejection_reason: r.rejection_reason || "",
+        created_at: r.created_at ? new Date(r.created_at).toISOString().slice(0, 19).replace("T", " ") : ""
+      });
+      const dRow = wsResp.lastRow;
+      applyDataRowStyle(dRow, idx % 2 === 1);
+      const statusCell = dRow.getCell("final_status");
+      if (r.final_status === "COMPLETED") {
+        statusCell.font = { color: { argb: "FF16A34A" }, bold: true };
+      } else if (r.final_status === "TERMINATED") {
+        statusCell.font = { color: { argb: "FFDC2626" } };
+      } else if (r.final_status === "QUOTA_FULL") {
+        statusCell.font = { color: { argb: "FFD97706" } };
+      }
+    });
+    wsResp.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: 10 } };
+    autoFitColumns(wsResp);
+    const wsSess = wb.addWorksheet("Sessions");
+    wsSess.views = [{ state: "frozen", ySplit: 1 }];
+    wsSess.columns = [
+      { header: "Session Token", key: "session_token" },
+      { header: "UID", key: "uid" },
+      { header: "Status", key: "current_status" },
+      { header: "Country", key: "country_detected" },
+      { header: "IP Address", key: "ip" },
+      { header: "Started At", key: "started_at" },
+      { header: "Completed At", key: "completed_at" }
+    ];
+    applyHeaderStyle(wsSess.getRow(1));
+    const sessData = await db.pool.query(`SELECT * FROM sessions ORDER BY created_at DESC LIMIT 5000`).catch(() => ({ rows: [] }));
+    sessData.rows.forEach((r, idx) => {
+      wsSess.addRow({
+        session_token: r.session_token,
+        uid: r.uid,
+        current_status: r.current_status || r.initial_status,
+        country_detected: r.country_detected || "N/A",
+        ip: r.ip || "Masked",
+        started_at: r.started_at ? new Date(r.started_at).toISOString().slice(0, 19).replace("T", " ") : "",
+        completed_at: r.completed_at ? new Date(r.completed_at).toISOString().slice(0, 19).replace("T", " ") : ""
+      });
+      applyDataRowStyle(wsSess.lastRow, idx % 2 === 1);
+    });
+    wsSess.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: 7 } };
+    autoFitColumns(wsSess);
+    const wsFake = wb.addWorksheet("Security & Intercepts");
+    wsFake.views = [{ state: "frozen", ySplit: 1 }];
+    wsFake.columns = [
+      { header: "Event ID", key: "id" },
+      { header: "Project Code", key: "project_code" },
+      { header: "UID", key: "uid" },
+      { header: "Reason / Detection", key: "rejection_reason" },
+      { header: "IP Address", key: "ip_address" },
+      { header: "User Agent", key: "user_agent" },
+      { header: "Detected At", key: "created_at" }
+    ];
+    applyHeaderStyle(wsFake.getRow(1), "FF991B1B");
+    const fakeData = await db.pool.query(`
+      SELECT f.*, p.project_code 
+      FROM fake_click_events f 
+      LEFT JOIN projects p ON p.id = f.project_id 
+      ORDER BY f.created_at DESC 
+      LIMIT 5000
+    `).catch(() => ({ rows: [] }));
+    fakeData.rows.forEach((r, idx) => {
+      wsFake.addRow({
+        id: r.id,
+        project_code: r.project_code || "DIRECT_ATTEMPT",
+        uid: r.uid,
+        rejection_reason: r.rejection_reason,
+        ip_address: r.ip_address || "N/A",
+        user_agent: (r.user_agent || "").slice(0, 80),
+        created_at: r.created_at ? new Date(r.created_at).toISOString().slice(0, 19).replace("T", " ") : ""
+      });
+      applyDataRowStyle(wsFake.lastRow, idx % 2 === 1);
+    });
+    wsFake.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: 7 } };
+    autoFitColumns(wsFake);
+    const fileName = `OpinionInsights-Database-Export-${(/* @__PURE__ */ new Date()).toISOString().slice(0, 10)}.xlsx`;
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
+    await wb.xlsx.write(res);
+    return res.end();
+  } catch (err) {
+    console.error("[DB Export] Error:", err);
+    return res.status(500).json({ success: false, error: { message: err.message || "Export failed" } });
+  }
+});
+router2.post("/reset", authenticate, authorize(["SUPER_ADMIN", "ADMIN"]), async (req, res) => {
+  const { confirmation, mode = "FIELDWORK_ONLY" } = req.body;
+  if (confirmation !== "RESET-CONFIRM") {
+    return res.status(400).json({
+      success: false,
+      error: { code: "CONFIRMATION_REQUIRED", message: "You must type RESET-CONFIRM to execute database reset." }
+    });
+  }
+  const client = await db.pool.connect();
+  try {
+    await client.query("BEGIN");
+    let summary = {};
+    if (mode === "FIELDWORK_ONLY") {
+      const tablesToClean = [
+        "invoice_line_items",
+        "responses",
+        "response_events",
+        "sessions",
+        "fake_click_events",
+        "vendor_settlements",
+        "invoices",
+        "login_audit",
+        "audit_logs"
+      ];
+      for (const tbl of tablesToClean) {
+        const delRes = await client.query(`DELETE FROM "${tbl}"`);
+        summary[tbl] = delRes.rowCount || 0;
+      }
+    } else if (mode === "FULL_RESET") {
+      const fullTables = [
+        "invoice_line_items",
+        "responses",
+        "response_events",
+        "sessions",
+        "fake_click_events",
+        "vendor_settlements",
+        "invoices",
+        "link_quotas",
+        "link_vendor_assignments",
+        "project_links",
+        "country_quotas",
+        "project_countries",
+        "project_quotas",
+        "rate_audit",
+        "projects",
+        "quotas",
+        "survey_questions",
+        "survey_groups",
+        "tracking_links",
+        "study_vendors",
+        "studies",
+        "login_audit",
+        "audit_logs"
+      ];
+      for (const tbl of fullTables) {
+        try {
+          const delRes = await client.query(`DELETE FROM "${tbl}"`);
+          summary[tbl] = delRes.rowCount || 0;
+        } catch (tblErr) {
+          console.warn(`[Reset] Table ${tbl} deletion notice:`, tblErr.message);
+        }
+      }
+    } else {
+      await client.query("ROLLBACK");
+      return res.status(400).json({ success: false, error: { message: "Invalid reset mode" } });
+    }
+    try {
+      await client.query(`
+        INSERT INTO audit_logs (user_id, action, entity_type, entity_id, details)
+        VALUES ($1, $2, $3, $4, $5)
+      `, [
+        req.user?.id || null,
+        "DATABASE_RESET",
+        "DATABASE",
+        mode,
+        JSON.stringify({ mode, timestamp: (/* @__PURE__ */ new Date()).toISOString(), summary })
+      ]);
+    } catch {
+    }
+    await client.query("COMMIT");
+    return res.json({
+      success: true,
+      data: {
+        mode,
+        message: mode === "FIELDWORK_ONLY" ? "Fieldwork responses, sessions, and logs successfully reset." : "Full project and fieldwork database successfully reset. Admin accounts and clients preserved.",
+        deletedCounts: summary
+      }
+    });
+  } catch (err) {
+    await client.query("ROLLBACK");
+    console.error("[DB Reset] Transaction error:", err);
+    return res.status(500).json({ success: false, error: { message: err.message || "Reset failed" } });
+  } finally {
+    client.release();
+  }
+});
+var database_default = router2;
 
 // src/routes/illustrations.ts
 var REDIRECT_SVGS = {
@@ -120562,7 +120055,8 @@ function getIllustrationDataUri(key) {
 }
 
 // src/routes/index.ts
-var router2 = import_express2.default.Router();
+var router3 = import_express3.default.Router();
+router3.use("/database", database_default);
 function apiError(res, status, code, message) {
   return res.status(status).json({ success: false, error: { code, message } });
 }
@@ -120639,13 +120133,21 @@ function getCountryNameFromCode(code) {
   const c = (code || "").toUpperCase().trim();
   return COUNTRY_MAP[c] || c;
 }
+function escapeHtml(val) {
+  if (val === null || val === void 0) return "";
+  return String(val).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+}
 function resolveRedirectType(type) {
   const t = (type || "").toLowerCase();
   if (t.includes("sec")) return { status: "SECURITY_REJECT", cardKey: "securityfail" };
   if (t.includes("qual")) return { status: "QUALITY_FAIL", cardKey: "qualityfail" };
   if (t.includes("term")) return { status: "TERMINATE", cardKey: "terminate" };
   if (t.includes("quota")) return { status: "QUOTA_FULL", cardKey: "quotafull" };
-  if (t.includes("geo")) return { status: "GEO_BLOCK", cardKey: "geoblock" };
+  if (t.includes("geo") || t.includes("country")) return { status: "COUNTRY_MISMATCH", cardKey: "countrymismatch" };
+  if (t.includes("pause")) return { status: "PAUSED", cardKey: "paused" };
+  if (t.includes("dup")) return { status: "DUPLICATE_ID", cardKey: "duplicate" };
+  if (t.includes("same") || t.includes("ip")) return { status: "SAME_IP", cardKey: "sameip" };
+  if (t.includes("close")) return { status: "CLOSED", cardKey: "closed" };
   return { status: "COMPLETE", cardKey: "complete" };
 }
 async function handleRedirectLanding(req, res, type) {
@@ -120670,8 +120172,7 @@ async function handleRedirectLanding(req, res, type) {
       session = rows[0];
     }
   }
-  if (!session && pid && uid) {
-    const normUid = uid.toUpperCase().trim();
+  if (pid) {
     let { rows: projRows } = await db.pool.query(
       "SELECT * FROM projects WHERE UPPER(project_code) = UPPER($1) OR id::text = $1",
       [pid]
@@ -120688,16 +120189,17 @@ async function handleRedirectLanding(req, res, type) {
       projRows = linkProj;
     }
     project = projRows[0];
-    if (project) {
-      const { rows: sessRows } = await db.pool.query(
-        `SELECT s.* FROM sessions s 
-         WHERE (s.metadata_json->>'project_id' = $1 OR s.study_id IN (SELECT id FROM studies WHERE study_code = $2))
-           AND s.normalized_uid = $3
-         ORDER BY s.created_at DESC LIMIT 1`,
-        [project.id, project.project_code, normUid]
-      );
-      session = sessRows[0];
-    }
+  }
+  if (!session && project && uid) {
+    const normUid = uid.toUpperCase().trim();
+    const { rows: sessRows } = await db.pool.query(
+      `SELECT s.* FROM sessions s 
+       WHERE (s.metadata_json->>'project_id' = $1 OR s.study_id IN (SELECT id FROM studies WHERE study_code = $2))
+         AND s.normalized_uid = $3
+       ORDER BY s.created_at DESC LIMIT 1`,
+      [project.id, project.project_code, normUid]
+    );
+    session = sessRows[0];
   }
   if (!session && uid) {
     const normUid = uid.toUpperCase().trim();
@@ -120725,8 +120227,8 @@ async function handleRedirectLanding(req, res, type) {
     }
   }
   if (!session) {
-    rejectionReason = "NO_SESSION";
-    console.warn(`[Redirect] No session found for pid=${pid} uid=${uid} token=${sessionToken} -> UNVERIFIED (NO_SESSION)`);
+    rejectionReason = "DIRECT_CLIENT_LINK";
+    console.warn(`[Redirect] No session found for pid=${pid} uid=${uid} token=${sessionToken} -> UNVERIFIED (DIRECT_CLIENT_LINK)`);
   } else if (isSessionExpired(session)) {
     rejectionReason = "EXPIRED_SESSION";
     console.warn(`[Redirect] Session expired for session=${session.id} uid=${uid} -> UNVERIFIED (EXPIRED_SESSION)`);
@@ -120743,14 +120245,70 @@ async function handleRedirectLanding(req, res, type) {
   const effectiveProjectCode = project?.project_code || session?.metadata_json?.project_code || pid || "PX-2024-0578";
   const effectiveUid = session?.uid || uid || "UID-7F3A-9C21-B8D6";
   const effectiveSessionToken = session?.session_token || sessionToken || "\u2014";
-  const effectiveCountry = country?.country_name || session?.metadata_json?.country_code || countryParam || "Global";
   if (isGenuine && session) {
     const normUid = session.normalized_uid || effectiveUid.toUpperCase().trim();
     const resolvedProjectId = project?.id || session.metadata_json?.project_id;
     const resolvedVendorId = session.vendor_id;
     const studyId = session.study_id;
-    const crypto9 = require("crypto");
-    const cbKey = crypto9.createHash("sha256").update(`${resolvedProjectId || studyId}|${resolvedVendorId}|${normUid}|${status}|${txid}`).digest("hex");
+    const { rows: existingRespRows } = await db.pool.query(
+      "SELECT * FROM responses WHERE session_id = $1 LIMIT 1",
+      [session.id]
+    );
+    const existingResp = existingRespRows[0];
+    const terminalStatuses = [
+      "TERMINATE",
+      "TERMINATED",
+      "FAILED",
+      "QUOTA_FULL",
+      "QUOTA",
+      "OVER QUOTA",
+      "SECURITY_REJECT",
+      "QUALITY_FAIL",
+      "QUALITY_TERM",
+      "GEO_BLOCK",
+      "EXPIRED",
+      "CLOSED",
+      "SURVEY CLOSED",
+      "PAUSED",
+      "DUPLICATE_ID",
+      "COUNTRY_MISMATCH",
+      "SAME_IP"
+    ];
+    const isAlreadyTerminated = existingResp && (existingResp.first_terminal_event && terminalStatuses.includes(existingResp.first_terminal_event.toUpperCase()) || existingResp.final_status && terminalStatuses.includes(existingResp.final_status.toUpperCase()));
+    if (isAlreadyTerminated && status === "COMPLETE") {
+      console.warn(`[ANTI-FRAUD BLOCKED] Fake COMPLETE attempt on terminated session=${session.id} uid=${effectiveUid} (first_terminal=${existingResp.first_terminal_event}, final_status=${existingResp.final_status})`);
+      await recordFakeClick({
+        study_id: session.study_id || null,
+        vendor_id: resolvedVendorId && resolvedVendorId.length === 36 ? resolvedVendorId : null,
+        project_id: resolvedProjectId || null,
+        uid: effectiveUid,
+        normalized_uid: normUid,
+        rejection_reason: "TERMINATE_TO_COMPLETE_FRAUD_ATTEMPT",
+        raw_payload: {
+          pid: effectiveProjectCode,
+          uid: effectiveUid,
+          attempted_status: "COMPLETE",
+          blocked: true,
+          original_status: existingResp.final_status,
+          first_terminal_event: existingResp.first_terminal_event,
+          session_token: session.session_token
+        },
+        ip_address: rawIp,
+        user_agent: req.get("User-Agent"),
+        provider: "anti_fraud_gate"
+      });
+      const blockedOutcome = existingResp.final_status || "TERMINATE";
+      const redirectParams2 = new URLSearchParams({
+        outcome: blockedOutcome,
+        verified: "true",
+        fraud: "blocked",
+        pid: effectiveProjectCode,
+        uid: effectiveUid
+      });
+      return res.redirect(302, `/survey/status?${redirectParams2.toString()}`);
+    }
+    const crypto12 = require("crypto");
+    const cbKey = crypto12.createHash("sha256").update(`${resolvedProjectId || studyId}|${resolvedVendorId}|${normUid}|${status}|${txid}`).digest("hex");
     const eventInserted = await db.createResponseEvent({
       session_id: session.id,
       study_id: studyId,
@@ -120764,9 +120322,14 @@ async function handleRedirectLanding(req, res, type) {
       ip_address: rawIp,
       user_agent: req.get("User-Agent")
     });
-    if (eventInserted) {
-      const loiSeconds = session.created_at ? Math.max(0, Math.round((Date.now() - new Date(session.created_at).getTime()) / 1e3)) : 0;
-      const isComplete = status === "COMPLETE";
+    const loiSeconds = session.created_at ? Math.max(0, Math.round((Date.now() - new Date(session.created_at).getTime()) / 1e3)) : 0;
+    let effectiveStatus = status;
+    if (status === "COMPLETE" && loiSeconds > 0 && loiSeconds < 15) {
+      console.warn(`[ANTI-FRAUD BLOCKED] Speeder complete attempt (LOI ${loiSeconds}s < 15s threshold) for session=${session.id} uid=${effectiveUid}`);
+      effectiveStatus = "QUALITY_FAIL";
+    }
+    const isComplete = effectiveStatus === "COMPLETE";
+    if (eventInserted || !existingResp) {
       await db.pool.query(
         `UPDATE responses SET
           final_status = $1,
@@ -120779,45 +120342,63 @@ async function handleRedirectLanding(req, res, type) {
           project_id = COALESCE($4, project_id),
           updated_at = NOW()
          WHERE session_id = $5`,
-        [status, isComplete, loiSeconds, resolvedProjectId, session.id]
+        [effectiveStatus, isComplete, loiSeconds, resolvedProjectId, session.id]
       );
       const sessionUpdates = {
-        current_status: status,
+        current_status: effectiveStatus,
         last_seen_at: /* @__PURE__ */ new Date()
       };
       if (isComplete) sessionUpdates.completed_at = /* @__PURE__ */ new Date();
-      if (status === "TERMINATE") sessionUpdates.terminated_at = /* @__PURE__ */ new Date();
+      if (effectiveStatus === "TERMINATE") sessionUpdates.terminated_at = /* @__PURE__ */ new Date();
       await db.updateSession(session.id, sessionUpdates);
     }
+    const redirectParams = new URLSearchParams({
+      outcome: effectiveStatus,
+      verified: "true",
+      pid: effectiveProjectCode,
+      uid: effectiveUid,
+      ip: rawIp,
+      loi: loiSeconds > 0 ? String(Math.ceil(loiSeconds / 60)) : "12"
+    });
+    return res.redirect(302, `/survey/status?${redirectParams.toString()}`);
   } else {
     const normUid = (effectiveUid || "UNKNOWN").toUpperCase().trim();
     const resolvedProjectId = project?.id || session?.metadata_json?.project_id || null;
     const resolvedVendorId = session?.vendor_id || req.query?.vid || req.query?.vendor_id || null;
     await recordFakeClick({
-      study_id: session?.study_id || null,
+      study_id: project?.study_id || session?.study_id || null,
       vendor_id: resolvedVendorId && resolvedVendorId.length === 36 ? resolvedVendorId : null,
       project_id: resolvedProjectId,
       uid: effectiveUid,
       normalized_uid: normUid,
-      rejection_reason: rejectionReason || "NO_SESSION",
-      raw_payload: { pid, uid: effectiveUid, outcome: type, query: req.query, session_token: sessionToken },
+      rejection_reason: rejectionReason || "DIRECT_CLIENT_LINK",
+      raw_payload: {
+        pid: effectiveProjectCode,
+        uid: effectiveUid,
+        outcome: status,
+        type,
+        direct_entry: true,
+        query: req.query,
+        session_token: sessionToken
+      },
       ip_address: rawIp,
       user_agent: req.get("User-Agent"),
-      provider: "external_redirect"
+      provider: "direct_client_redirect"
     });
+    const redirectParams = new URLSearchParams({
+      outcome: status,
+      verified: "false",
+      pid: effectiveProjectCode,
+      uid: effectiveUid,
+      ip: rawIp
+    });
+    return res.redirect(302, `/survey/status?${redirectParams.toString()}`);
   }
-  const pageHtml = renderRedirectStatusPage({
-    statusKey: cardKey,
-    pid: effectiveProjectCode,
-    uid: effectiveUid,
-    isGenuine
-  });
-  res.send(pageHtml);
 }
 var startRateLimit = rateLimitMiddleware(config.rateLimitStartMax);
 var callbackRateLimit = rateLimitMiddleware(config.rateLimitCallbackMax);
 var authRateLimit = rateLimitMiddleware(20, 6e4);
-router2.get("/", (_req, res) => {
+router3.get("/", (_req, res) => {
   res.json({
     success: true,
     data: {
@@ -120835,7 +120416,7 @@ router2.get("/", (_req, res) => {
 var MAX_FAILED_ATTEMPTS = 5;
 var LOCK_DURATION_MINUTES = 15;
 var PASSWORD_MAX_AGE_DAYS = 90;
-router2.post(
+router3.post(
   "/auth/login",
   authRateLimit,
   asyncHandler(async (req, res) => {
@@ -120846,7 +120427,7 @@ router2.post(
     if (!v.success) return validationError(res, v.errors);
     const ip = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.socket?.remoteAddress || "unknown";
     const userAgent = req.headers["user-agent"] || "unknown";
-    const rawIdentifier = (v.data.email || "").trim();
+    const rawIdentifier = (v.data.email || "").trim().toLowerCase();
     const emailToLookup = rawIdentifier;
     const user = await db.getUserByEmail(emailToLookup);
     if (!user) {
@@ -120900,11 +120481,13 @@ router2.post(
       if (user.password_hash.startsWith("$2a$") || user.password_hash.startsWith("$2b$")) {
         isPasswordValid = await bcrypt.compare(v.data.password, user.password_hash);
       } else {
-        const crypto9 = require("crypto");
-        const legacyHash = crypto9.createHmac("sha256", config.authSecret).update(v.data.password).digest("hex");
-        if (user.password_hash === legacyHash) {
+        const crypto12 = require("crypto");
+        const legacyHash = crypto12.createHmac("sha256", config.authSecret).update(v.data.password).digest("hex");
+        const legacyBuf = Buffer.from(legacyHash);
+        const userBuf = Buffer.from(user.password_hash);
+        if (legacyBuf.length === userBuf.length && crypto12.timingSafeEqual(legacyBuf, userBuf)) {
           isPasswordValid = true;
-          const newBcryptHash = await bcrypt.hash(v.data.password, 10);
+          const newBcryptHash = await bcrypt.hash(v.data.password, 12);
           await db.updateUserPassword(user.id, newBcryptHash);
         }
       }
@@ -120971,7 +120554,7 @@ router2.post(
     });
   })
 );
-router2.post(
+router3.post(
   "/auth/change-password",
   authenticate,
   asyncHandler(async (req, res) => {
@@ -120996,8 +120579,8 @@ router2.post(
       if (user.password_hash.startsWith("$2a$") || user.password_hash.startsWith("$2b$")) {
         isCurrentValid = await bcrypt.compare(currentPassword, user.password_hash);
       } else {
-        const crypto9 = require("crypto");
-        const legacyHash = crypto9.createHmac("sha256", config.authSecret).update(currentPassword).digest("hex");
+        const crypto12 = require("crypto");
+        const legacyHash = crypto12.createHmac("sha256", config.authSecret).update(currentPassword).digest("hex");
         isCurrentValid = user.password_hash === legacyHash;
       }
     }
@@ -121019,7 +120602,7 @@ router2.post(
     res.json({ success: true, data: { message: "Password changed successfully. Please log in again." } });
   })
 );
-router2.post(
+router3.post(
   "/auth/admin/recovery-secret/setup",
   authenticate,
   authorize(["SUPER_ADMIN", "ADMIN"]),
@@ -121028,8 +120611,8 @@ router2.post(
     if (!recoverySecret || typeof recoverySecret !== "string" || recoverySecret.length < 8) {
       return validationError(res, ["recoverySecret must be at least 8 characters"]);
     }
-    const crypto9 = require("crypto");
-    const secretHash = crypto9.createHmac("sha256", config.authSecret).update(recoverySecret).digest("hex");
+    const crypto12 = require("crypto");
+    const secretHash = crypto12.createHmac("sha256", config.authSecret).update(recoverySecret).digest("hex");
     await db.setRecoverySecret(req.user.id, secretHash);
     const ip = req.headers["x-forwarded-for"]?.split(",")[0]?.trim() || req.socket?.remoteAddress || "unknown";
     await db.createAuditLog({
@@ -121042,7 +120625,7 @@ router2.post(
     res.json({ success: true, message: "Recovery secret configured successfully." });
   })
 );
-router2.post(
+router3.post(
   "/auth/admin/recovery/verify",
   authRateLimit,
   asyncHandler(async (req, res) => {
@@ -121065,8 +120648,8 @@ router2.post(
         await db.pool.query("UPDATE users SET recovery_attempts = 0, recovery_locked_until = NULL WHERE id = $1", [user.id]);
       }
     }
-    const crypto9 = require("crypto");
-    const inputHash = crypto9.createHmac("sha256", config.authSecret).update(String(recoverySecret)).digest("hex");
+    const crypto12 = require("crypto");
+    const inputHash = crypto12.createHmac("sha256", config.authSecret).update(String(recoverySecret)).digest("hex");
     if (user.recovery_secret_hash !== inputHash) {
       const { attempts, lockedUntil } = await db.recordFailedRecovery(user.id);
       if (lockedUntil) {
@@ -121093,7 +120676,7 @@ router2.post(
     });
   })
 );
-router2.post(
+router3.post(
   "/auth/admin/recovery/reset-password",
   authRateLimit,
   asyncHandler(async (req, res) => {
@@ -121117,8 +120700,8 @@ router2.post(
     if (!user.temp_unlock_until || new Date(user.temp_unlock_until) < /* @__PURE__ */ new Date()) {
       return apiError(res, 403, "RECOVERY_EXPIRED", "Recovery window has expired or is invalid. Please verify recovery secret again.");
     }
-    const crypto9 = require("crypto");
-    const inputHash = crypto9.createHmac("sha256", config.authSecret).update(String(recoverySecret)).digest("hex");
+    const crypto12 = require("crypto");
+    const inputHash = crypto12.createHmac("sha256", config.authSecret).update(String(recoverySecret)).digest("hex");
     if (user.recovery_secret_hash !== inputHash) {
       await db.recordFailedRecovery(user.id);
       return apiError(res, 401, "INVALID_RECOVERY_SECRET", "Invalid recovery secret");
@@ -121147,7 +120730,7 @@ router2.post(
     });
   })
 );
-router2.get(
+router3.get(
   "/auth/me",
   authenticate,
   asyncHandler(async (req, res) => {
@@ -121158,7 +120741,7 @@ router2.get(
     res.json({ success: true, data: { user: { id: user.id, email: user.email, role: user.role, full_name: user.email.split("@")[0], vendor_id: user.vendor_id } } });
   })
 );
-router2.get(
+router3.get(
   "/admin/users/summary",
   authenticate,
   authorize(["SUPER_ADMIN", "ADMIN"]),
@@ -121167,7 +120750,7 @@ router2.get(
     res.json({ success: true, data: summary });
   })
 );
-router2.get(
+router3.get(
   "/admin/users/export",
   authenticate,
   authorize(["SUPER_ADMIN", "ADMIN"]),
@@ -121182,7 +120765,7 @@ router2.get(
       vendor_id: vendor_id ? String(vendor_id) : void 0,
       status: status ? String(status) : void 0
     });
-    const workbook = new import_exceljs.default.Workbook();
+    const workbook = new import_exceljs2.default.Workbook();
     workbook.creator = "Opinion Insights CAWI Platform";
     workbook.created = /* @__PURE__ */ new Date();
     const sheet = workbook.addWorksheet("Users Directory", {
@@ -121260,7 +120843,7 @@ router2.get(
     res.end();
   })
 );
-router2.get(
+router3.get(
   "/admin/users",
   authenticate,
   authorize(["SUPER_ADMIN", "ADMIN"]),
@@ -121278,7 +120861,7 @@ router2.get(
     res.json({ success: true, data: { users, count: users.length } });
   })
 );
-router2.get(
+router3.get(
   "/admin/users/:id",
   authenticate,
   authorize(["SUPER_ADMIN", "ADMIN"]),
@@ -121309,7 +120892,7 @@ router2.get(
     });
   })
 );
-router2.get(
+router3.get(
   "/admin/users/:id/activity",
   authenticate,
   authorize(["SUPER_ADMIN", "ADMIN"]),
@@ -121321,7 +120904,7 @@ router2.get(
     res.json({ success: true, data: { activity } });
   })
 );
-router2.post(
+router3.post(
   "/admin/users",
   authenticate,
   authorize(["SUPER_ADMIN", "ADMIN"]),
@@ -121349,10 +120932,10 @@ router2.post(
       return apiError(res, 409, "USER_EXISTS", "A user with this email or login ID already exists");
     }
     const bcrypt = require_umd();
-    const crypto9 = require("crypto");
+    const crypto12 = require("crypto");
     const passwordHash = await bcrypt.hash(password, 10);
     const user = await db.createUser({
-      auth_user_id: crypto9.randomUUID(),
+      auth_user_id: crypto12.randomUUID(),
       full_name: full_name ? String(full_name).trim() : email3.split("@")[0],
       email: String(email3).trim().toLowerCase(),
       password_hash: passwordHash,
@@ -121394,7 +120977,7 @@ router2.post(
     });
   })
 );
-router2.patch(
+router3.patch(
   "/admin/users/:id",
   authenticate,
   authorize(["SUPER_ADMIN", "ADMIN"]),
@@ -121449,7 +121032,7 @@ router2.patch(
     res.json({ success: true, data: { ...updated, user: updated } });
   })
 );
-router2.patch(
+router3.patch(
   "/admin/users/:id/status",
   authenticate,
   authorize(["SUPER_ADMIN", "ADMIN"]),
@@ -121478,7 +121061,7 @@ router2.patch(
     res.json({ success: true, data: { ...user, user } });
   })
 );
-router2.post(
+router3.post(
   "/admin/users/bulk-status",
   authenticate,
   authorize(["SUPER_ADMIN", "ADMIN"]),
@@ -121504,7 +121087,7 @@ router2.post(
     res.json({ success: true, data: { updated: count, updated_count: count, status } });
   })
 );
-router2.delete(
+router3.delete(
   "/admin/users/:id",
   authenticate,
   authorize(["SUPER_ADMIN", "ADMIN"]),
@@ -121535,7 +121118,7 @@ router2.delete(
     });
   })
 );
-router2.post(
+router3.post(
   "/admin/users/:id/reset-password",
   authenticate,
   authorize(["SUPER_ADMIN", "ADMIN"]),
@@ -121573,7 +121156,7 @@ router2.post(
     });
   })
 );
-router2.patch(
+router3.patch(
   "/admin/users/:id/force-password-change",
   authenticate,
   authorize(["SUPER_ADMIN", "ADMIN"]),
@@ -121589,7 +121172,7 @@ router2.patch(
     res.json({ success: true, message: force ? "Password change required on next login" : "Force password change disabled" });
   })
 );
-router2.get(
+router3.get(
   "/api/responses/review",
   authenticate,
   authorize(["SUPER_ADMIN", "ADMIN"]),
@@ -121632,7 +121215,7 @@ router2.get(
     res.json({ success: true, data: rows });
   })
 );
-router2.post(
+router3.post(
   "/api/responses/:id/approve",
   authenticate,
   authorize(["SUPER_ADMIN", "ADMIN"]),
@@ -121652,7 +121235,7 @@ router2.post(
     res.json({ success: true, data: rows[0] });
   })
 );
-router2.post(
+router3.post(
   "/api/responses/:id/reject",
   authenticate,
   authorize(["SUPER_ADMIN", "ADMIN"]),
@@ -121682,7 +121265,7 @@ router2.post(
     res.json({ success: true, data: rows[0] });
   })
 );
-router2.post(
+router3.post(
   "/api/responses/bulk-approve",
   authenticate,
   authorize(["SUPER_ADMIN", "ADMIN"]),
@@ -121705,7 +121288,7 @@ router2.post(
     res.json({ success: true, data: rows, count: rows.length });
   })
 );
-router2.post(
+router3.post(
   "/api/responses/bulk-reject",
   authenticate,
   authorize(["SUPER_ADMIN", "ADMIN"]),
@@ -121737,7 +121320,7 @@ router2.post(
     res.json({ success: true, data: rows, count: rows.length });
   })
 );
-router2.post(
+router3.post(
   "/api/invoices/generate",
   authenticate,
   authorize(["SUPER_ADMIN", "ADMIN"]),
@@ -121804,7 +121387,7 @@ router2.post(
     res.json({ success: true, data: invoiceRows, invoice: invoiceRows[0], lineItems: rows, approvedCompletes, totalAmount });
   })
 );
-router2.get(
+router3.get(
   "/api/invoices",
   authenticate,
   authorize(["SUPER_ADMIN", "ADMIN"]),
@@ -121848,7 +121431,7 @@ router2.get(
     res.json({ success: true, data: rows });
   })
 );
-router2.get(
+router3.get(
   "/api/invoices/:id",
   authenticate,
   authorize(["SUPER_ADMIN", "ADMIN"]),
@@ -121876,7 +121459,7 @@ router2.get(
     res.json({ success: true, data: { ...invoiceRows[0], lineItems: lineRows } });
   })
 );
-router2.patch(
+router3.patch(
   "/api/invoices/:id/raise",
   authenticate,
   authorize(["SUPER_ADMIN", "ADMIN"]),
@@ -121892,7 +121475,7 @@ router2.patch(
     res.json({ success: true, data: rows[0] });
   })
 );
-router2.patch(
+router3.patch(
   "/api/invoices/:id/pay",
   authenticate,
   authorize(["SUPER_ADMIN", "ADMIN"]),
@@ -121908,7 +121491,7 @@ router2.patch(
     res.json({ success: true, data: rows[0] });
   })
 );
-router2.get(
+router3.get(
   "/api/invoices/:id/export",
   authenticate,
   authorize(["SUPER_ADMIN", "ADMIN"]),
@@ -121933,7 +121516,7 @@ router2.get(
       WHERE invoice_id = $1
       ORDER BY id
     `, [id]);
-    const workbook = new import_exceljs.default.Workbook();
+    const workbook = new import_exceljs2.default.Workbook();
     workbook.creator = "Opinion Insights";
     workbook.lastModifiedBy = "Opinion Insights";
     workbook.created = /* @__PURE__ */ new Date();
@@ -122036,7 +121619,7 @@ router2.get(
     res.end();
   })
 );
-router2.patch(
+router3.patch(
   "/api/projects/:id/rates",
   authenticate,
   authorize(["SUPER_ADMIN", "ADMIN"]),
@@ -122073,7 +121656,7 @@ router2.patch(
     res.json({ success: true, data: updatedProject });
   })
 );
-router2.get(
+router3.get(
   "/api/finance/summary",
   authenticate,
   authorize(["SUPER_ADMIN", "ADMIN"]),
@@ -122093,7 +121676,7 @@ router2.get(
     res.json({ success: true, data: rows[0] });
   })
 );
-router2.get(
+router3.get(
   "/api/finance/by-project",
   authenticate,
   authorize(["SUPER_ADMIN", "ADMIN"]),
@@ -122120,7 +121703,7 @@ router2.get(
     res.json({ success: true, data: rows });
   })
 );
-router2.get(
+router3.get(
   "/health",
   asyncHandler(async (_req, res) => {
     try {
@@ -122131,7 +121714,7 @@ router2.get(
     }
   })
 );
-router2.post(
+router3.post(
   "/analyze-url",
   asyncHandler(async (req, res) => {
     const { survey_url } = req.body || {};
@@ -122143,7 +121726,7 @@ router2.post(
     res.json({ success: true, data: result });
   })
 );
-router2.get(
+router3.get(
   "/start",
   startRateLimit,
   asyncHandler(async (req, res) => {
@@ -122173,7 +121756,7 @@ router2.get(
         study_id: study.id,
         vendor_id: vendorId,
         link_code: `lnk_${offerId.toLowerCase()}_${vendorId.slice(0, 4)}`,
-        public_token: `tok_${offerId.toLowerCase()}_${vendorId.slice(0, 4)}_${Math.random().toString(36).substring(7)}`,
+        public_token: `tok_${offerId.toLowerCase()}_${vendorId.slice(0, 4)}_${require("crypto").randomBytes(6).toString("hex")}`,
         base_url: study.survey_url || "",
         uid_mode: "PROVIDED_UID",
         status: "ACTIVE"
@@ -122221,7 +121804,7 @@ router2.get(
     return res.redirect(302, redirectUrl);
   })
 );
-router2.get(
+router3.get(
   "/start/:linkCode",
   startRateLimit,
   asyncHandler(async (req, res) => {
@@ -122233,7 +121816,7 @@ router2.get(
       return apiError(res, 400, "INVALID_LINK", validation.error || "Invalid tracking link");
     }
     const { link, study } = validation;
-    const uidValidation = normalizeUid(rawUid || "ANON_" + Math.random().toString(36).substring(7));
+    const uidValidation = normalizeUid(rawUid || "ANON_" + require("crypto").randomBytes(6).toString("hex"));
     if (uidValidation.error) {
       return apiError(res, 400, "INVALID_UID", uidValidation.error);
     }
@@ -122266,7 +121849,7 @@ router2.get(
     return res.redirect(302, redirectUrl);
   })
 );
-router2.get(
+router3.get(
   "/s/:projectCode",
   startRateLimit,
   asyncHandler(async (req, res) => {
@@ -122356,7 +121939,7 @@ router2.get(
     const userAgent = req.get("User-Agent") || null;
     const referrer = req.get("Referer") || req.get("Referrer") || null;
     const landingUrl = `${req.protocol}://${req.get("host")}${req.originalUrl}`;
-    const crypto9 = require("crypto");
+    const crypto12 = require("crypto");
     const { rows: existingSess } = await db.pool.query(
       `SELECT * FROM sessions 
        WHERE (metadata_json->>'project_id' = $1 OR study_id = $2) 
@@ -122366,7 +121949,7 @@ router2.get(
     );
     let session = existingSess[0];
     if (!session) {
-      const sessionToken = "sess_" + crypto9.randomBytes(18).toString("hex");
+      const sessionToken = "sess_" + crypto12.randomBytes(18).toString("hex");
       const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1e3);
       session = await db.createSession({
         session_token: sessionToken,
@@ -122376,7 +121959,7 @@ router2.get(
         uid: original,
         normalized_uid: normalized,
         external_uid: null,
-        ip_hash: crypto9.createHash("sha256").update(ipAddress + (config.authSecret || "salt")).digest("hex"),
+        ip_hash: crypto12.createHash("sha256").update(ipAddress + (config.authSecret || "salt")).digest("hex"),
         ip_address_encrypted_or_restricted_storage: true,
         user_agent: userAgent,
         country_detected: country.country_code,
@@ -122395,7 +121978,7 @@ router2.get(
           vendor_id: assignedVendorId
         }
       });
-      const landingKey = crypto9.createHash("sha256").update(`${project.id}|${assignedVendorId}|${normalized}|LANDING`).digest("hex");
+      const landingKey = crypto12.createHash("sha256").update(`${project.id}|${assignedVendorId}|${normalized}|LANDING`).digest("hex");
       await db.createResponseEvent({
         session_id: session.id,
         study_id: studyId,
@@ -122482,10 +122065,6 @@ function analyzeSurveyUrl(surveyUrl) {
 }
 function buildOpiLaunchUrl(baseUrl, projectCode, countryCode) {
   return `${baseUrl}/track?code=${projectCode}&country=${countryCode.toUpperCase()}&uid={UID}`;
-}
-function escapeHtml(str) {
-  if (!str) return "";
-  return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
 }
 function renderProjectPausedPage(project, countryCode) {
   const code = project.project_code || "OPI";
@@ -122652,7 +122231,7 @@ function renderProjectPausedPage(project, countryCode) {
 </body>
 </html>`;
 }
-router2.get(
+router3.get(
   "/track",
   startRateLimit,
   asyncHandler(async (req, res) => {
@@ -122719,7 +122298,7 @@ router2.get(
         const allVendors = await db.getVendors(true);
         assignedVendorId = allVendors[0]?.id || null;
       }
-      const crypto9 = require("crypto");
+      const crypto12 = require("crypto");
       const { rows: existingSess } = await db.pool.query(
         `SELECT * FROM sessions
        WHERE metadata_json->>'project_id' = $1
@@ -122730,9 +122309,9 @@ router2.get(
       );
       let session = existingSess[0];
       if (!session) {
-        const sessionToken = "trk_" + crypto9.randomBytes(20).toString("hex");
+        const sessionToken = "trk_" + crypto12.randomBytes(20).toString("hex");
         const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1e3);
-        const ipHash = crypto9.createHash("sha256").update(ipAddress + config.authSecret).digest("hex");
+        const ipHash = crypto12.createHash("sha256").update(ipAddress + config.authSecret).digest("hex");
         session = await db.createSession({
           session_token: sessionToken,
           study_id: studyId,
@@ -122762,7 +122341,7 @@ router2.get(
             tracking_type: "OPI_TRACK"
           }
         });
-        const landingKey = crypto9.createHash("sha256").update(`${project.id}|${country.id}|${normalized}|LANDING`).digest("hex");
+        const landingKey = crypto12.createHash("sha256").update(`${project.id}|${country.id}|${normalized}|LANDING`).digest("hex");
         await db.createResponseEvent({
           session_id: session.id,
           study_id: studyId,
@@ -122825,34 +122404,49 @@ router2.get(
     }
   })
 );
-router2.get("/redirect/complete", callbackRateLimit, asyncHandler(async (req, res) => {
+router3.get("/redirect/complete", callbackRateLimit, asyncHandler(async (req, res) => {
   await handleRedirectLanding(req, res, "complete");
 }));
-router2.get("/redirect/terminate", callbackRateLimit, asyncHandler(async (req, res) => {
+router3.get("/redirect/terminate", callbackRateLimit, asyncHandler(async (req, res) => {
   await handleRedirectLanding(req, res, "terminate");
 }));
-router2.get("/redirect/quotafull", callbackRateLimit, asyncHandler(async (req, res) => {
+router3.get("/redirect/quotafull", callbackRateLimit, asyncHandler(async (req, res) => {
   await handleRedirectLanding(req, res, "quotafull");
 }));
-router2.get("/redirect/quota", callbackRateLimit, asyncHandler(async (req, res) => {
+router3.get("/redirect/quota", callbackRateLimit, asyncHandler(async (req, res) => {
   await handleRedirectLanding(req, res, "quotafull");
 }));
-router2.get("/redirect/qualityfail", callbackRateLimit, asyncHandler(async (req, res) => {
+router3.get("/redirect/qualityfail", callbackRateLimit, asyncHandler(async (req, res) => {
   await handleRedirectLanding(req, res, "qualityfail");
 }));
-router2.get("/redirect/qualityterm", callbackRateLimit, asyncHandler(async (req, res) => {
+router3.get("/redirect/qualityterm", callbackRateLimit, asyncHandler(async (req, res) => {
   await handleRedirectLanding(req, res, "qualityfail");
 }));
-router2.get("/redirect/securityfail", callbackRateLimit, asyncHandler(async (req, res) => {
+router3.get("/redirect/securityfail", callbackRateLimit, asyncHandler(async (req, res) => {
   await handleRedirectLanding(req, res, "securityfail");
 }));
-router2.get("/redirect/geoblock", callbackRateLimit, asyncHandler(async (req, res) => {
+router3.get("/redirect/geoblock", callbackRateLimit, asyncHandler(async (req, res) => {
   await handleRedirectLanding(req, res, "geoblock");
 }));
-router2.get("/redirect/closed", callbackRateLimit, asyncHandler(async (req, res) => {
+router3.get("/redirect/closed", callbackRateLimit, asyncHandler(async (req, res) => {
   await handleRedirectLanding(req, res, "quotafull");
 }));
-router2.get(
+router3.get("/redirect/paused", callbackRateLimit, asyncHandler(async (req, res) => {
+  await handleRedirectLanding(req, res, "paused");
+}));
+router3.get("/redirect/pause", callbackRateLimit, asyncHandler(async (req, res) => {
+  await handleRedirectLanding(req, res, "paused");
+}));
+router3.get("/redirect/duplicate", callbackRateLimit, asyncHandler(async (req, res) => {
+  await handleRedirectLanding(req, res, "duplicate");
+}));
+router3.get("/redirect/countrymismatch", callbackRateLimit, asyncHandler(async (req, res) => {
+  await handleRedirectLanding(req, res, "countrymismatch");
+}));
+router3.get("/redirect/sameip", callbackRateLimit, asyncHandler(async (req, res) => {
+  await handleRedirectLanding(req, res, "sameip");
+}));
+router3.get(
   "/redirect/:sessionToken",
   startRateLimit,
   asyncHandler(async (req, res) => {
@@ -122863,8 +122457,8 @@ router2.get(
     const links = await db.getTrackingLinks({ study_id: session.study_id, vendor_id: session.vendor_id });
     const link = links[0];
     if (!link) return apiError(res, 404, "LINK_NOT_FOUND", "Tracking link not found");
-    const crypto9 = require("crypto");
-    const startKey = crypto9.createHash("sha256").update(`${session.study_id}|${session.vendor_id}|${session.normalized_uid}|START`).digest("hex");
+    const crypto12 = require("crypto");
+    const startKey = crypto12.createHash("sha256").update(`${session.study_id}|${session.vendor_id}|${session.normalized_uid}|START`).digest("hex");
     await db.createResponseEvent({
       session_id: session.id,
       study_id: session.study_id,
@@ -122882,7 +122476,7 @@ router2.get(
     return res.redirect(302, redirectUrl);
   })
 );
-router2.get(
+router3.get(
   "/session/:sessionToken/redirect-urls",
   startRateLimit,
   asyncHandler(async (req, res) => {
@@ -122904,7 +122498,7 @@ router2.get(
     res.json({ success: true, data: signedRedirectUrls });
   })
 );
-router2.get(
+router3.get(
   "/r/:outcome",
   callbackRateLimit,
   asyncHandler(async (req, res) => {
@@ -123449,12 +123043,12 @@ async function handleCallback(req, res) {
   const statusCode = result.accepted ? 200 : result.duplicate ? 200 : 400;
   return res.status(statusCode).json({ success: true, data: result });
 }
-router2.post("/callback", callbackRateLimit, asyncHandler(handleCallback));
-router2.post("/callback/:provider", callbackRateLimit, asyncHandler(handleCallback));
+router3.post("/callback", callbackRateLimit, asyncHandler(handleCallback));
+router3.post("/callback/:provider", callbackRateLimit, asyncHandler(handleCallback));
 var ADMIN_ROLES = ["SUPER_ADMIN", "ADMIN"];
 var OPS_ROLES = ["SUPER_ADMIN", "ADMIN", "OPERATOR", "ANALYST"];
 var VENDOR_ROLES = ["VENDOR"];
-router2.post(
+router3.post(
   "/offers/discover",
   authenticate,
   authorize(ADMIN_ROLES),
@@ -123465,7 +123059,7 @@ router2.post(
     res.json({ success: true, data: result });
   })
 );
-router2.get(
+router3.get(
   "/clients",
   authenticate,
   authorize(OPS_ROLES),
@@ -123474,7 +123068,7 @@ router2.get(
     res.json({ success: true, data: clients });
   })
 );
-router2.post(
+router3.post(
   "/clients",
   authenticate,
   authorize(ADMIN_ROLES),
@@ -123485,7 +123079,7 @@ router2.post(
     res.status(201).json({ success: true, data: client });
   })
 );
-router2.get(
+router3.get(
   "/clients/:id",
   authenticate,
   authorize(OPS_ROLES),
@@ -123495,7 +123089,7 @@ router2.get(
     res.json({ success: true, data: client });
   })
 );
-router2.patch(
+router3.patch(
   "/clients/:id",
   authenticate,
   authorize(ADMIN_ROLES),
@@ -123508,7 +123102,7 @@ router2.patch(
     res.json({ success: true, data: updated });
   })
 );
-router2.get(
+router3.get(
   "/studies",
   authenticate,
   authorize([...OPS_ROLES, ...VENDOR_ROLES]),
@@ -123524,12 +123118,31 @@ router2.get(
     res.json({ success: true, data: studies, studies });
   })
 );
-router2.post(
+router3.post(
   "/studies",
   authenticate,
   authorize(ADMIN_ROLES),
   asyncHandler(async (req, res) => {
-    const v = validate3(CreateStudySchema, req.body);
+    const crypto12 = require("crypto");
+    const body = { ...req.body };
+    if (!body.title && body.name) body.title = body.name;
+    if (!body.study_code) {
+      body.study_code = "STD" + crypto12.randomInt(100, 1e3);
+    }
+    if (!body.client_id) {
+      try {
+        const { rows: clients } = await db.pool.query("SELECT id FROM clients ORDER BY created_at ASC LIMIT 1");
+        if (clients[0]) {
+          body.client_id = clients[0].id;
+        } else {
+          const client = await db.createClient({ name: "Default Client", client_code: "DEF", contact_email: "ops@cawi.io" });
+          body.client_id = client.id;
+        }
+      } catch (e) {
+        body.client_id = "00000000-0000-0000-0000-000000000001";
+      }
+    }
+    const v = validate3(CreateStudySchema, body);
     if (!v.success) return validationError(res, v.errors);
     const study = await db.createStudy({ ...v.data, created_by: req.user?.email || "system" });
     await db.createAuditLog({
@@ -123544,7 +123157,7 @@ router2.post(
     res.status(201).json({ success: true, data: study });
   })
 );
-router2.get(
+router3.get(
   "/studies/:id",
   authenticate,
   authorize(OPS_ROLES),
@@ -123554,7 +123167,7 @@ router2.get(
     res.json({ success: true, data: study });
   })
 );
-router2.patch(
+router3.patch(
   "/studies/:id",
   authenticate,
   authorize(ADMIN_ROLES),
@@ -123576,7 +123189,7 @@ router2.patch(
     res.json({ success: true, data: updated });
   })
 );
-router2.get(
+router3.get(
   "/vendors",
   authenticate,
   authorize(OPS_ROLES),
@@ -123586,7 +123199,7 @@ router2.get(
     res.json({ success: true, data: vendors, vendors });
   })
 );
-router2.post(
+router3.post(
   "/vendors",
   authenticate,
   authorize(ADMIN_ROLES),
@@ -123606,7 +123219,7 @@ router2.post(
     res.status(201).json({ success: true, data: vendor });
   })
 );
-router2.get(
+router3.get(
   "/vendors/:id",
   authenticate,
   authorize(OPS_ROLES),
@@ -123616,7 +123229,7 @@ router2.get(
     res.json({ success: true, data: vendor });
   })
 );
-router2.patch(
+router3.patch(
   "/vendors/:id",
   authenticate,
   authorize(ADMIN_ROLES),
@@ -123638,7 +123251,7 @@ router2.patch(
     res.json({ success: true, data: updated });
   })
 );
-router2.post(
+router3.post(
   "/studies/:id/vendors",
   authenticate,
   authorize(ADMIN_ROLES),
@@ -123660,7 +123273,7 @@ router2.post(
     res.status(201).json({ success: true, data: assignment });
   })
 );
-router2.get(
+router3.get(
   "/studies/:id/vendors",
   authenticate,
   authorize(OPS_ROLES),
@@ -123669,7 +123282,7 @@ router2.get(
     res.json({ success: true, data: vendors });
   })
 );
-router2.delete(
+router3.delete(
   "/studies/:id/vendors/:vendorId",
   authenticate,
   authorize(ADMIN_ROLES),
@@ -123688,7 +123301,7 @@ router2.delete(
     res.json({ success: true, data: unassigned });
   })
 );
-router2.post(
+router3.post(
   "/tracking-links",
   authenticate,
   authorize(ADMIN_ROLES),
@@ -123711,7 +123324,7 @@ router2.post(
     res.status(201).json({ success: true, data: link });
   })
 );
-router2.get(
+router3.get(
   "/tracking-links",
   authenticate,
   authorize(OPS_ROLES),
@@ -123725,7 +123338,7 @@ router2.get(
     res.json({ success: true, data: links, links });
   })
 );
-router2.get(
+router3.get(
   "/tracking-links/:id",
   authenticate,
   authorize(OPS_ROLES),
@@ -123735,7 +123348,7 @@ router2.get(
     res.json({ success: true, data: link });
   })
 );
-router2.patch(
+router3.patch(
   "/tracking-links/:id",
   authenticate,
   authorize(ADMIN_ROLES),
@@ -123757,7 +123370,7 @@ router2.patch(
     res.json({ success: true, data: updated });
   })
 );
-router2.get(
+router3.get(
   "/sessions",
   authenticate,
   authorize(OPS_ROLES),
@@ -123778,7 +123391,7 @@ router2.get(
     res.json({ success: true, data: sessions, sessions });
   })
 );
-router2.get(
+router3.get(
   "/sessions/:id",
   authenticate,
   authorize([...OPS_ROLES, ...VENDOR_ROLES]),
@@ -123786,12 +123399,15 @@ router2.get(
     const byToken = await db.getSessionByToken(req.params.id);
     const session = byToken || await db.getSessionById(req.params.id);
     if (!session) return apiError(res, 404, "NOT_FOUND", "Session not found");
+    if (req.user?.role === "VENDOR" && session.vendor_id !== req.user.vendor_id) {
+      return apiError(res, 403, "FORBIDDEN", "Access denied to session belonging to another vendor");
+    }
     const events = await db.getEventsBySession(session.id);
     const response = await db.getResponseBySession(session.id);
     res.json({ success: true, data: { session, events, response } });
   })
 );
-router2.get(
+router3.get(
   "/sessions/:id/trace",
   authenticate,
   authorize(OPS_ROLES),
@@ -123800,7 +123416,7 @@ router2.get(
     res.json({ success: true, data: trace });
   })
 );
-router2.get(
+router3.get(
   "/responses",
   authenticate,
   authorize([...OPS_ROLES, ...VENDOR_ROLES]),
@@ -123817,9 +123433,10 @@ router2.get(
     const end_date = getQueryParam(req, "end_date");
     const sort_by = getQueryParam(req, "sort_by");
     const sort_order = getQueryParam(req, "sort_order");
+    const effectiveVendorId = req.user?.role === "VENDOR" ? req.user.vendor_id || "__UNASSIGNED_VENDOR__" : vendor_id ? String(vendor_id) : void 0;
     const { rows, total } = await db.getResponses({
       study_id: study_id ? String(study_id) : void 0,
-      vendor_id: vendor_id ? String(vendor_id) : void 0,
+      vendor_id: effectiveVendorId,
       status: status ? String(status) : void 0,
       uid: uid ? String(uid) : void 0,
       search: search ? String(search) : void 0,
@@ -123834,7 +123451,7 @@ router2.get(
     res.json({ success: true, data: rows, responses: rows, meta: { total, page, limit, pages: Math.ceil(total / (limit || 25)) } });
   })
 );
-router2.get(
+router3.get(
   "/responses/export",
   authenticate,
   authorize([...OPS_ROLES, ...VENDOR_ROLES]),
@@ -123847,18 +123464,19 @@ router2.get(
     const end_date = getQueryParam(req, "end_date");
     const export_type = getQueryParam(req, "export_type") || "filtered";
     let vendor_id = getQueryParam(req, "vendor_id");
-    const filterObj = export_type === "all" ? { limit: 1e4 } : {
+    const effectiveVendorId = req.user?.role === "VENDOR" ? req.user.vendor_id || "__UNASSIGNED_VENDOR__" : vendor_id ? String(vendor_id) : void 0;
+    const filterObj = export_type === "all" ? { limit: 1e4, vendor_id: effectiveVendorId } : {
       search: search ? String(search) : void 0,
       status: status ? String(status) : void 0,
       study_id: study_id ? String(study_id) : void 0,
-      vendor_id: vendor_id ? String(vendor_id) : void 0,
+      vendor_id: effectiveVendorId,
       device: device ? String(device) : void 0,
       start_date: start_date ? String(start_date) : void 0,
       end_date: end_date ? String(end_date) : void 0,
       limit: 1e4
     };
     const { rows } = await db.getResponses(filterObj);
-    const workbook = new import_exceljs.default.Workbook();
+    const workbook = new import_exceljs2.default.Workbook();
     workbook.creator = "Opinion Insights Platform";
     workbook.created = /* @__PURE__ */ new Date();
     const worksheet = workbook.addWorksheet("Responses", {
@@ -123950,7 +123568,7 @@ router2.get(
     res.end();
   })
 );
-router2.get(
+router3.get(
   "/responses/:id",
   authenticate,
   authorize(OPS_ROLES),
@@ -123960,7 +123578,7 @@ router2.get(
     res.json({ success: true, data: response });
   })
 );
-router2.post(
+router3.post(
   "/quotas",
   authenticate,
   authorize(ADMIN_ROLES),
@@ -123971,7 +123589,7 @@ router2.post(
     res.status(201).json({ success: true, data: quota });
   })
 );
-router2.get(
+router3.get(
   "/quotas",
   authenticate,
   authorize(OPS_ROLES),
@@ -123982,7 +123600,7 @@ router2.get(
     res.json({ success: true, data: quotas });
   })
 );
-router2.patch(
+router3.patch(
   "/quotas/:id",
   authenticate,
   authorize(ADMIN_ROLES),
@@ -123995,7 +123613,7 @@ router2.patch(
     res.json({ success: true, data: quota });
   })
 );
-router2.get(
+router3.get(
   "/analytics/study/:id",
   authenticate,
   authorize(OPS_ROLES),
@@ -124067,7 +123685,7 @@ router2.get(
     });
   })
 );
-router2.get(
+router3.get(
   "/exports/responses",
   authenticate,
   authorize(OPS_ROLES),
@@ -124083,7 +123701,7 @@ router2.get(
     res.json({ success: true, data: rows, meta: { count: rows.length, exported_at: (/* @__PURE__ */ new Date()).toISOString() } });
   })
 );
-router2.get(
+router3.get(
   "/exports/vendors",
   authenticate,
   authorize(OPS_ROLES),
@@ -124093,7 +123711,7 @@ router2.get(
     res.json({ success: true, data: rows, meta: { count: rows.length, exported_at: (/* @__PURE__ */ new Date()).toISOString() } });
   })
 );
-router2.get(
+router3.get(
   "/exports/finance",
   authenticate,
   authorize(OPS_ROLES),
@@ -124103,7 +123721,7 @@ router2.get(
     res.json({ success: true, data: rows, meta: { count: rows.length, exported_at: (/* @__PURE__ */ new Date()).toISOString() } });
   })
 );
-router2.get(
+router3.get(
   "/audit-logs",
   authenticate,
   authorize(ADMIN_ROLES),
@@ -124119,7 +123737,7 @@ router2.get(
     res.json({ success: true, data: logs });
   })
 );
-router2.get(
+router3.get(
   "/debug/session/:id",
   authenticate,
   authorize(OPS_ROLES),
@@ -124128,7 +123746,7 @@ router2.get(
     res.json({ success: true, data: trace });
   })
 );
-router2.get(
+router3.get(
   "/analytics/summary",
   authenticate,
   authorize(OPS_ROLES),
@@ -124167,7 +123785,7 @@ router2.get(
     res.json({ success: true, data: summary, ...summary });
   })
 );
-router2.get(
+router3.get(
   "/analytics/funnel",
   authenticate,
   authorize(OPS_ROLES),
@@ -124199,7 +123817,7 @@ router2.get(
     });
   })
 );
-router2.get(
+router3.get(
   "/analytics/by-study",
   authenticate,
   authorize(OPS_ROLES),
@@ -124228,7 +123846,7 @@ router2.get(
     res.json({ success: true, analytics: rows });
   })
 );
-router2.get(
+router3.get(
   "/analytics/by-vendor",
   authenticate,
   authorize(OPS_ROLES),
@@ -124257,7 +123875,7 @@ router2.get(
     res.json({ success: true, analytics: rows });
   })
 );
-router2.get(
+router3.get(
   "/vendor/studies",
   authenticate,
   authorize(VENDOR_ROLES),
@@ -124270,7 +123888,7 @@ router2.get(
     res.json({ success: true, data: studies });
   })
 );
-router2.get(
+router3.get(
   "/vendor/responses",
   authenticate,
   authorize(VENDOR_ROLES),
@@ -124305,7 +123923,7 @@ router2.get(
     res.json({ success: true, data: rows, responses: rows, meta: { total, page, limit, pages: Math.ceil(total / (limit || 25)) } });
   })
 );
-router2.get(
+router3.get(
   "/vendor/analytics/summary",
   authenticate,
   authorize(VENDOR_ROLES),
@@ -124331,7 +123949,7 @@ router2.get(
     });
   })
 );
-router2.get(
+router3.get(
   "/vendor/tracking-links",
   authenticate,
   authorize(VENDOR_ROLES),
@@ -124346,7 +123964,7 @@ router2.get(
     res.json({ success: true, data: links, links });
   })
 );
-router2.post(
+router3.post(
   "/vault",
   authenticate,
   authorize(ADMIN_ROLES),
@@ -124370,7 +123988,7 @@ router2.post(
     res.status(201).json({ success: true, data: entry });
   })
 );
-router2.get(
+router3.get(
   "/vault",
   authenticate,
   authorize(ADMIN_ROLES),
@@ -124384,7 +124002,7 @@ router2.get(
     res.json({ success: true, data: result.rows, total: result.total });
   })
 );
-router2.get(
+router3.get(
   "/vault/:id",
   authenticate,
   authorize(ADMIN_ROLES),
@@ -124396,7 +124014,7 @@ router2.get(
     res.json({ success: true, data: entry });
   })
 );
-router2.put(
+router3.put(
   "/vault/:id",
   authenticate,
   authorize(ADMIN_ROLES),
@@ -124411,7 +124029,7 @@ router2.put(
     res.json({ success: true, data: updated });
   })
 );
-router2.delete(
+router3.delete(
   "/vault/:id",
   authenticate,
   authorize(ADMIN_ROLES),
@@ -124423,7 +124041,7 @@ router2.delete(
     res.json({ success: true, message: "Credential deleted" });
   })
 );
-router2.post(
+router3.post(
   "/vault/:id/retrieve",
   authenticate,
   authorize(ADMIN_ROLES),
@@ -124435,7 +124053,7 @@ router2.post(
     res.json({ success: true, data: cred });
   })
 );
-router2.get(
+router3.get(
   "/vault/:id/audit",
   authenticate,
   authorize(ADMIN_ROLES),
@@ -124444,7 +124062,7 @@ router2.get(
     res.json({ success: true, data: audit });
   })
 );
-router2.get(
+router3.get(
   "/admin/fake-clicks",
   authenticate,
   authorize(ADMIN_ROLES),
@@ -124458,7 +124076,7 @@ router2.get(
     res.json({ success: true, data: result.rows, total: result.total, limit, offset });
   })
 );
-router2.get(
+router3.get(
   "/admin/fake-clicks/stats/:studyId",
   authenticate,
   authorize(ADMIN_ROLES),
@@ -124469,7 +124087,7 @@ router2.get(
     res.json({ success: true, data: { study_id: studyId, total_fake_clicks: total, by_reason: stats } });
   })
 );
-router2.get(
+router3.get(
   "/projects/analyze-url",
   authenticate,
   authorize(OPS_ROLES),
@@ -124487,7 +124105,7 @@ router2.get(
     });
   })
 );
-router2.post(
+router3.post(
   "/projects/create-full",
   authenticate,
   authorize(["ADMIN", "PM"]),
@@ -124501,11 +124119,11 @@ router2.post(
     if (missingUrls.length > 0) {
       return validationError(res, [`survey_url is required for each country. Missing for: ${missingUrls.map((c) => c.code || "unknown").join(", ")}`]);
     }
-    const crypto9 = require("crypto");
+    const crypto12 = require("crypto");
     let projectCode = "";
     let attempts = 0;
     while (attempts < 20) {
-      const suffix = Math.floor(100 + Math.random() * 900).toString();
+      const suffix = crypto12.randomInt(100, 1e3).toString();
       const candidate = `OPI${suffix}`;
       const { rows: exists } = await db.pool.query(
         "SELECT 1 FROM projects WHERE UPPER(project_code) = $1",
@@ -124518,12 +124136,15 @@ router2.post(
       attempts++;
     }
     if (!projectCode) {
-      projectCode = "OPI" + crypto9.randomBytes(3).toString("hex").toUpperCase();
+      projectCode = "OPI" + crypto12.randomBytes(3).toString("hex").toUpperCase();
     }
     const resolvedCountries = [];
     for (const c of countries) {
       const code = (c.code || c).toString().toUpperCase().trim();
-      const surveyUrl = (c.survey_url || "").trim();
+      let surveyUrl = (c.survey_url || "").trim();
+      if (surveyUrl && !/^https?:\/\//i.test(surveyUrl)) {
+        surveyUrl = "https://" + surveyUrl;
+      }
       try {
         new URL(surveyUrl);
       } catch {
@@ -124609,7 +124230,7 @@ router2.post(
     });
   })
 );
-router2.get(
+router3.get(
   "/projects",
   authenticate,
   authorize(OPS_ROLES),
@@ -124619,7 +124240,7 @@ router2.get(
     res.json({ success: true, data: projects });
   })
 );
-router2.post(
+router3.post(
   "/projects",
   authenticate,
   authorize(["ADMIN", "PM"]),
@@ -124644,7 +124265,7 @@ router2.post(
     }
   })
 );
-router2.get(
+router3.get(
   "/projects/:id",
   authenticate,
   authorize(OPS_ROLES),
@@ -124662,7 +124283,7 @@ router2.get(
     res.json({ success: true, data: project });
   })
 );
-router2.put(
+router3.put(
   "/projects/:id",
   authenticate,
   authorize(["ADMIN", "PM"]),
@@ -124687,7 +124308,7 @@ router2.put(
     res.json({ success: true, data: updated });
   })
 );
-router2.post(
+router3.post(
   "/projects/:id/pause",
   authenticate,
   authorize(["ADMIN"]),
@@ -124709,7 +124330,7 @@ router2.post(
     }
   })
 );
-router2.post(
+router3.post(
   "/projects/:id/resume",
   authenticate,
   authorize(["ADMIN"]),
@@ -124731,7 +124352,7 @@ router2.post(
     }
   })
 );
-router2.patch(
+router3.patch(
   "/projects/:id/status",
   authenticate,
   authorize(["ADMIN"]),
@@ -124767,7 +124388,7 @@ router2.patch(
     }
   })
 );
-router2.delete(
+router3.delete(
   "/projects/:id",
   authenticate,
   authorize(["ADMIN"]),
@@ -124777,7 +124398,7 @@ router2.delete(
     res.json({ success: true, message: "Project deleted" });
   })
 );
-router2.post(
+router3.post(
   "/projects/:id/launch",
   authenticate,
   authorize(["ADMIN", "PM"]),
@@ -124789,7 +124410,7 @@ router2.post(
     res.json({ success: true, message: "Project launched successfully" });
   })
 );
-router2.get(
+router3.get(
   "/projects/:id/analytics",
   authenticate,
   authorize(OPS_ROLES),
@@ -124799,7 +124420,7 @@ router2.get(
     res.json({ success: true, data: analytics });
   })
 );
-router2.get(
+router3.get(
   "/projects/:projectId/countries",
   authenticate,
   authorize(OPS_ROLES),
@@ -124808,7 +124429,7 @@ router2.get(
     res.json({ success: true, data: countries });
   })
 );
-router2.post(
+router3.post(
   "/projects/:projectId/countries",
   authenticate,
   authorize(["ADMIN", "PM"]),
@@ -124829,7 +124450,7 @@ router2.post(
     }
   })
 );
-router2.put(
+router3.put(
   "/countries/:id",
   authenticate,
   authorize(["ADMIN", "PM"]),
@@ -124839,7 +124460,7 @@ router2.put(
     res.json({ success: true, data: updated });
   })
 );
-router2.delete(
+router3.delete(
   "/countries/:id",
   authenticate,
   authorize(["ADMIN"]),
@@ -124849,7 +124470,7 @@ router2.delete(
     res.json({ success: true, message: "Country deleted" });
   })
 );
-router2.get(
+router3.get(
   "/countries/:id/analytics",
   authenticate,
   authorize(OPS_ROLES),
@@ -124859,7 +124480,7 @@ router2.get(
     res.json({ success: true, data: analytics });
   })
 );
-router2.get(
+router3.get(
   "/countries/:countryId/links",
   authenticate,
   asyncHandler(async (req, res) => {
@@ -124867,7 +124488,7 @@ router2.get(
     res.json({ success: true, data: links });
   })
 );
-router2.post(
+router3.post(
   "/countries/:countryId/links",
   authenticate,
   authorize(["ADMIN", "PM"]),
@@ -124890,7 +124511,7 @@ router2.post(
     }
   })
 );
-router2.put(
+router3.put(
   "/links/:id",
   authenticate,
   authorize(OPS_ROLES),
@@ -124900,7 +124521,7 @@ router2.put(
     res.json({ success: true, data: updated });
   })
 );
-router2.delete(
+router3.delete(
   "/links/:id",
   authenticate,
   authorize(["ADMIN"]),
@@ -124910,7 +124531,7 @@ router2.delete(
     res.json({ success: true, message: "Link deleted" });
   })
 );
-router2.get(
+router3.get(
   "/links/:id/analytics",
   authenticate,
   asyncHandler(async (req, res) => {
@@ -124919,7 +124540,7 @@ router2.get(
     res.json({ success: true, data: analytics });
   })
 );
-router2.get(
+router3.get(
   "/links/:linkId/vendors",
   authenticate,
   asyncHandler(async (req, res) => {
@@ -124927,7 +124548,7 @@ router2.get(
     res.json({ success: true, data: assignments });
   })
 );
-router2.post(
+router3.post(
   "/links/:linkId/vendors",
   authenticate,
   authorize(["ADMIN", "PM"]),
@@ -124949,7 +124570,7 @@ router2.post(
     }
   })
 );
-router2.delete(
+router3.delete(
   "/links/:linkId/vendors/:vendorId",
   authenticate,
   authorize(["ADMIN", "PM"]),
@@ -124969,7 +124590,7 @@ var quotaEntityKeyMap = {
   country: "country_id",
   link: "link_id"
 };
-router2.get(
+router3.get(
   "/quotas/:level/:entityId",
   authenticate,
   authorize(OPS_ROLES),
@@ -124980,7 +124601,7 @@ router2.get(
     res.json({ success: true, data: quotas });
   })
 );
-router2.post(
+router3.post(
   "/quotas/:level/:entityId",
   authenticate,
   authorize(["ADMIN", "PM"]),
@@ -125000,7 +124621,7 @@ router2.post(
     res.status(201).json({ success: true, data: quota });
   })
 );
-router2.put(
+router3.put(
   "/quotas/:level/:id",
   authenticate,
   authorize(["ADMIN", "PM"]),
@@ -125012,7 +124633,7 @@ router2.put(
     res.json({ success: true, data: updated });
   })
 );
-router2.delete(
+router3.delete(
   "/quotas/:level/:id",
   authenticate,
   authorize(["ADMIN"]),
@@ -125024,13 +124645,13 @@ router2.delete(
     res.json({ success: true, message: "Quota deleted" });
   })
 );
-router2.use(surveyBuilder_default);
+router3.use(surveyBuilder_default);
 var OPS_FINANCE_ROLES = ["ADMIN", "PM"];
-router2.get("/finance/rejection-reasons", authenticate, asyncHandler(async (_req, res) => {
+router3.get("/finance/rejection-reasons", authenticate, asyncHandler(async (_req, res) => {
   const { rows } = await db.pool.query(`SELECT * FROM rejection_reasons WHERE is_active = TRUE ORDER BY sort_order`);
   res.json({ success: true, data: rows });
 }));
-router2.post("/finance/rejection-reasons", authenticate, authorize(["ADMIN"]), asyncHandler(async (req, res) => {
+router3.post("/finance/rejection-reasons", authenticate, authorize(["ADMIN"]), asyncHandler(async (req, res) => {
   const { code, label, sort_order } = req.body;
   if (!code || !label) return validationError(res, ["code and label are required"]);
   const { rows } = await db.pool.query(
@@ -125039,7 +124660,7 @@ router2.post("/finance/rejection-reasons", authenticate, authorize(["ADMIN"]), a
   );
   res.status(201).json({ success: true, data: rows[0] });
 }));
-router2.get("/finance/projects", authenticate, authorize(OPS_FINANCE_ROLES), asyncHandler(async (_req, res) => {
+router3.get("/finance/projects", authenticate, authorize(OPS_FINANCE_ROLES), asyncHandler(async (_req, res) => {
   const { rows } = await db.pool.query(`
     SELECT
       p.id, p.project_code, p.name, p.status, p.currency,
@@ -125066,14 +124687,14 @@ router2.get("/finance/projects", authenticate, authorize(OPS_FINANCE_ROLES), asy
   `);
   res.json({ success: true, data: rows });
 }));
-router2.get("/finance/projects/:id", authenticate, authorize(OPS_FINANCE_ROLES), asyncHandler(async (req, res) => {
+router3.get("/finance/projects/:id", authenticate, authorize(OPS_FINANCE_ROLES), asyncHandler(async (req, res) => {
   const { rows } = await db.pool.query(`
     SELECT p.*, c.name AS client_name FROM projects p LEFT JOIN clients c ON c.id=p.client_id WHERE p.id=$1
   `, [req.params.id]);
   if (!rows[0]) return apiError(res, 404, "NOT_FOUND", "Project not found");
   res.json({ success: true, data: rows[0] });
 }));
-router2.patch("/finance/projects/:id/rates", authenticate, authorize(["ADMIN"]), asyncHandler(async (req, res) => {
+router3.patch("/finance/projects/:id/rates", authenticate, authorize(["ADMIN"]), asyncHandler(async (req, res) => {
   const { client_rate, vendor_rate, currency } = req.body;
   const projectId = req.params.id;
   const userId = req.user?.id;
@@ -125115,14 +124736,14 @@ router2.patch("/finance/projects/:id/rates", authenticate, authorize(["ADMIN"]),
   }
   res.json({ success: true, data: rows[0], message: "Rates updated successfully" });
 }));
-router2.get("/finance/projects/:id/rate-audit", authenticate, authorize(OPS_FINANCE_ROLES), asyncHandler(async (req, res) => {
+router3.get("/finance/projects/:id/rate-audit", authenticate, authorize(OPS_FINANCE_ROLES), asyncHandler(async (req, res) => {
   const { rows } = await db.pool.query(
     `SELECT ra.*, u.full_name AS changed_by_name FROM rate_audit ra LEFT JOIN users u ON u.id=ra.changed_by WHERE ra.project_id=$1 ORDER BY ra.changed_at DESC`,
     [req.params.id]
   );
   res.json({ success: true, data: rows });
 }));
-router2.get("/finance/summary", authenticate, authorize(OPS_FINANCE_ROLES), asyncHandler(async (_req, res) => {
+router3.get("/finance/summary", authenticate, authorize(OPS_FINANCE_ROLES), asyncHandler(async (_req, res) => {
   const { rows: summary } = await db.pool.query(`
     SELECT
       COUNT(DISTINCT p.id) AS total_projects,
@@ -125172,7 +124793,7 @@ router2.get("/finance/summary", authenticate, authorize(OPS_FINANCE_ROLES), asyn
     }
   });
 }));
-router2.get("/finance/responses", authenticate, authorize(OPS_FINANCE_ROLES), asyncHandler(async (req, res) => {
+router3.get("/finance/responses", authenticate, authorize(OPS_FINANCE_ROLES), asyncHandler(async (req, res) => {
   const projectId = getQueryParam(req, "project_id");
   const vendorId = getQueryParam(req, "vendor_id");
   const clientStatus = getQueryParam(req, "client_billing_status");
@@ -125221,7 +124842,7 @@ router2.get("/finance/responses", authenticate, authorize(OPS_FINANCE_ROLES), as
   `, params);
   res.json({ success: true, data: rows, pagination: { page, limit, total, pages: Math.ceil(total / limit) } });
 }));
-router2.patch("/finance/responses/:id/review", authenticate, authorize(["ADMIN"]), asyncHandler(async (req, res) => {
+router3.patch("/finance/responses/:id/review", authenticate, authorize(["ADMIN"]), asyncHandler(async (req, res) => {
   const { client_billing_status, vendor_acceptance_status, rejection_reason_code, rejection_notes } = req.body;
   const userId = req.user?.id;
   if (!client_billing_status && !vendor_acceptance_status) {
@@ -125259,7 +124880,7 @@ router2.patch("/finance/responses/:id/review", authenticate, authorize(["ADMIN"]
   if (!rows[0]) return apiError(res, 404, "NOT_FOUND", "Response not found");
   res.json({ success: true, data: rows[0] });
 }));
-router2.post("/finance/responses/bulk-review", authenticate, authorize(["ADMIN"]), asyncHandler(async (req, res) => {
+router3.post("/finance/responses/bulk-review", authenticate, authorize(["ADMIN"]), asyncHandler(async (req, res) => {
   const { response_ids, client_billing_status, vendor_acceptance_status, rejection_reason_code, rejection_notes } = req.body;
   if (!response_ids || !Array.isArray(response_ids) || response_ids.length === 0)
     return validationError(res, ["response_ids array required"]);
@@ -125319,10 +124940,10 @@ function generateInvoiceNumber() {
   const now = /* @__PURE__ */ new Date();
   const yy = String(now.getFullYear()).slice(-2);
   const mm = String(now.getMonth() + 1).padStart(2, "0");
-  const rand = Math.floor(Math.random() * 9e3) + 1e3;
+  const rand = require("crypto").randomInt(1e3, 1e4);
   return `INV-${yy}${mm}-${rand}`;
 }
-router2.get("/finance/invoices", authenticate, authorize(OPS_FINANCE_ROLES), asyncHandler(async (req, res) => {
+router3.get("/finance/invoices", authenticate, authorize(OPS_FINANCE_ROLES), asyncHandler(async (req, res) => {
   const projectId = getQueryParam(req, "project_id");
   const status = getQueryParam(req, "status");
   const page = parseInt(getQueryParam(req, "page") || "1");
@@ -125358,7 +124979,7 @@ router2.get("/finance/invoices", authenticate, authorize(OPS_FINANCE_ROLES), asy
   `, params);
   res.json({ success: true, data: rows, pagination: { page, limit, total, pages: Math.ceil(total / limit) } });
 }));
-router2.get("/finance/invoices/preview", authenticate, authorize(OPS_FINANCE_ROLES), asyncHandler(async (req, res) => {
+router3.get("/finance/invoices/preview", authenticate, authorize(OPS_FINANCE_ROLES), asyncHandler(async (req, res) => {
   const projectId = getQueryParam(req, "project_id");
   const startDate = getQueryParam(req, "billing_period_start") || getQueryParam(req, "start_date");
   const endDate = getQueryParam(req, "billing_period_end") || getQueryParam(req, "end_date");
@@ -125470,7 +125091,7 @@ router2.get("/finance/invoices/preview", authenticate, authorize(OPS_FINANCE_ROL
     }
   });
 }));
-router2.get("/finance/invoices/:id", authenticate, authorize(OPS_FINANCE_ROLES), asyncHandler(async (req, res) => {
+router3.get("/finance/invoices/:id", authenticate, authorize(OPS_FINANCE_ROLES), asyncHandler(async (req, res) => {
   const { rows } = await db.pool.query(`
     SELECT i.*, p.project_code, p.name AS project_name, c.name AS client_name, u.full_name AS generated_by_name
     FROM invoices i
@@ -125483,7 +125104,7 @@ router2.get("/finance/invoices/:id", authenticate, authorize(OPS_FINANCE_ROLES),
   const { rows: lineItems } = await db.pool.query("SELECT * FROM invoice_line_items WHERE invoice_id=$1 ORDER BY completion_date", [req.params.id]);
   res.json({ success: true, data: { ...rows[0], line_items: lineItems } });
 }));
-router2.post("/finance/invoices/generate", authenticate, authorize(["ADMIN"]), asyncHandler(async (req, res) => {
+router3.post("/finance/invoices/generate", authenticate, authorize(["ADMIN"]), asyncHandler(async (req, res) => {
   const project_id = req.body.project_id;
   const billing_period_start = req.body.billing_period_start || req.body.start_date;
   const billing_period_end = req.body.billing_period_end || req.body.end_date;
@@ -125583,7 +125204,7 @@ router2.post("/finance/invoices/generate", authenticate, authorize(["ADMIN"]), a
     message: `Invoice ${invoiceNumber} generated for ${totalApprovedCompletes} approved completes (Total activity: ${totalActivity}, Verified: ${totalVerified}, Unverified: ${totalUnverified})`
   });
 }));
-router2.patch("/finance/invoices/:id/status", authenticate, authorize(["ADMIN"]), asyncHandler(async (req, res) => {
+router3.patch("/finance/invoices/:id/status", authenticate, authorize(["ADMIN"]), asyncHandler(async (req, res) => {
   const { status } = req.body;
   const validStatuses = ["DRAFT", "RAISED", "PAID", "CANCELLED"];
   if (!status || !validStatuses.includes(status))
@@ -125596,7 +125217,7 @@ router2.patch("/finance/invoices/:id/status", authenticate, authorize(["ADMIN"])
   if (!rows[0]) return apiError(res, 404, "NOT_FOUND", "Invoice not found");
   res.json({ success: true, data: rows[0] });
 }));
-router2.get("/finance/invoices/:id/export", authenticate, authorize(OPS_FINANCE_ROLES), asyncHandler(async (req, res) => {
+router3.get("/finance/invoices/:id/export", authenticate, authorize(OPS_FINANCE_ROLES), asyncHandler(async (req, res) => {
   const { rows: invRows } = await db.pool.query(`
     SELECT i.*, p.project_code, p.name AS project_name, c.name AS client_name, c.company_name, c.contact_name, c.contact_email
     FROM invoices i
@@ -125608,7 +125229,7 @@ router2.get("/finance/invoices/:id/export", authenticate, authorize(OPS_FINANCE_
   const inv = invRows[0];
   const { rows: lineItems } = await db.pool.query("SELECT * FROM invoice_line_items WHERE invoice_id=$1 ORDER BY completion_date", [req.params.id]);
   const unverifiedRows = await getUnverifiedRecords(inv.project_id, null, inv.billing_period_start, inv.billing_period_end);
-  const wb = new import_exceljs.default.Workbook();
+  const wb = new import_exceljs2.default.Workbook();
   wb.creator = "Opinion Insights";
   wb.created = /* @__PURE__ */ new Date();
   const currFmt = `"\u20B9"#,##0.00`;
@@ -125800,7 +125421,7 @@ router2.get("/finance/invoices/:id/export", authenticate, authorize(OPS_FINANCE_
   await wb.xlsx.write(res);
   res.end();
 }));
-router2.get("/finance/settlements", authenticate, authorize(OPS_FINANCE_ROLES), asyncHandler(async (req, res) => {
+router3.get("/finance/settlements", authenticate, authorize(OPS_FINANCE_ROLES), asyncHandler(async (req, res) => {
   const projectId = getQueryParam(req, "project_id");
   const vendorId = getQueryParam(req, "vendor_id");
   let where = "WHERE 1=1";
@@ -125824,7 +125445,7 @@ router2.get("/finance/settlements", authenticate, authorize(OPS_FINANCE_ROLES), 
   `, params);
   res.json({ success: true, data: rows });
 }));
-router2.get("/finance/settlements/preview", authenticate, authorize(OPS_FINANCE_ROLES), asyncHandler(async (req, res) => {
+router3.get("/finance/settlements/preview", authenticate, authorize(OPS_FINANCE_ROLES), asyncHandler(async (req, res) => {
   const projectId = getQueryParam(req, "project_id");
   const vendorId = getQueryParam(req, "vendor_id");
   const startDate = getQueryParam(req, "billing_period_start") || getQueryParam(req, "start_date");
@@ -125906,7 +125527,7 @@ router2.get("/finance/settlements/preview", authenticate, authorize(OPS_FINANCE_
     }
   });
 }));
-router2.post("/finance/settlements/generate", authenticate, authorize(["ADMIN"]), asyncHandler(async (req, res) => {
+router3.post("/finance/settlements/generate", authenticate, authorize(["ADMIN"]), asyncHandler(async (req, res) => {
   const project_id = req.body.project_id;
   const vendor_id = req.body.vendor_id;
   const billing_period_start = req.body.billing_period_start || req.body.start_date;
@@ -125991,7 +125612,7 @@ router2.post("/finance/settlements/generate", authenticate, authorize(["ADMIN"])
     message: `Settlement generated successfully (${totalSubmitted} submitted: ${totalVerified} verified, ${totalUnverified} unverified, ${totalAccepted} accepted, \u20B9${payableAmount.toFixed(2)} payable)`
   });
 }));
-router2.patch("/finance/settlements/:id/status", authenticate, authorize(["ADMIN"]), asyncHandler(async (req, res) => {
+router3.patch("/finance/settlements/:id/status", authenticate, authorize(["ADMIN"]), asyncHandler(async (req, res) => {
   const { status } = req.body;
   if (!["FINALIZED", "PAID"].includes(status))
     return validationError(res, ["status must be FINALIZED or PAID"]);
@@ -126003,7 +125624,7 @@ router2.patch("/finance/settlements/:id/status", authenticate, authorize(["ADMIN
   if (!rows[0]) return apiError(res, 404, "NOT_FOUND", "Settlement not found");
   res.json({ success: true, data: rows[0] });
 }));
-router2.get("/finance/settlements/:id/export", authenticate, authorize(OPS_FINANCE_ROLES), asyncHandler(async (req, res) => {
+router3.get("/finance/settlements/:id/export", authenticate, authorize(OPS_FINANCE_ROLES), asyncHandler(async (req, res) => {
   const { rows: sRows } = await db.pool.query(`
     SELECT vs.*, p.project_code, p.name AS project_name, v.name AS vendor_name, v.vendor_code, v.contact_name AS vendor_contact, v.contact_email AS vendor_email
     FROM vendor_settlements vs
@@ -126041,7 +125662,7 @@ router2.get("/finance/settlements/:id/export", authenticate, authorize(OPS_FINAN
   const unverifiedRows = await getUnverifiedRecords(s.project_id, s.vendor_id, s.billing_period_start, s.billing_period_end);
   const acceptedRows = verifiedRows.filter((r) => r.vendor_acceptance_status === "ACCEPTED");
   const rejectedRows = verifiedRows.filter((r) => r.vendor_acceptance_status === "REJECTED");
-  const wb = new import_exceljs.default.Workbook();
+  const wb = new import_exceljs2.default.Workbook();
   wb.creator = "Opinion Insights";
   wb.created = /* @__PURE__ */ new Date();
   const uidColumns = [
@@ -126335,7 +125956,7 @@ router2.get("/finance/settlements/:id/export", authenticate, authorize(OPS_FINAN
   await wb.xlsx.write(res);
   res.end();
 }));
-router2.get("/finance/export", authenticate, authorize(OPS_FINANCE_ROLES), asyncHandler(async (req, res) => {
+router3.get("/finance/export", authenticate, authorize(OPS_FINANCE_ROLES), asyncHandler(async (req, res) => {
   const { rows } = await db.pool.query(`
     SELECT
       p.project_code, p.name, p.status, p.currency, p.client_rate, p.vendor_rate,
@@ -126361,7 +125982,7 @@ router2.get("/finance/export", authenticate, authorize(OPS_FINANCE_ROLES), async
     res.setHeader("Content-Disposition", `attachment; filename="finance-export-${(/* @__PURE__ */ new Date()).toISOString().slice(0, 10)}.csv"`);
     return res.send(header + csvRows);
   }
-  const wb = new import_exceljs.default.Workbook();
+  const wb = new import_exceljs2.default.Workbook();
   const ws = wb.addWorksheet("Finance Report");
   ws.columns = [
     { header: "Project Code", key: "project_code", width: 18 },
@@ -126406,14 +126027,25 @@ router2.get("/finance/export", authenticate, authorize(OPS_FINANCE_ROLES), async
   res.setHeader("Content-Disposition", `attachment; filename="Finance-Report-${(/* @__PURE__ */ new Date()).toISOString().slice(0, 10)}.xlsx"`);
   await wb.xlsx.write(res);
 }));
-var routes_default = router2;
+var routes_default = router3;
 
 // src/index.ts
 var import_path2 = __toESM(require("path"));
 var import_fs2 = __toESM(require("fs"));
 init_config2();
-var app = (0, import_express3.default)();
+var app = (0, import_express4.default)();
 var port = config.port;
+app.disable("x-powered-by");
+app.use((_req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "SAMEORIGIN");
+  res.setHeader("X-XSS-Protection", "1; mode=block");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  if (process.env.NODE_ENV === "production") {
+    res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+  }
+  next();
+});
 app.use((0, import_cors.default)({
   origin: (origin, callback) => {
     if (!origin) return callback(null, true);
@@ -126422,8 +126054,8 @@ app.use((0, import_cors.default)({
   },
   credentials: true
 }));
-app.use(import_express3.default.json({ limit: "10mb" }));
-app.use(import_express3.default.urlencoded({ extended: true, limit: "10mb" }));
+app.use(import_express4.default.json({ limit: "10mb" }));
+app.use(import_express4.default.urlencoded({ extended: true, limit: "10mb" }));
 app.use("/api", routes_default);
 app.get("/api/health", (_req, res) => {
   res.json({
@@ -126447,7 +126079,7 @@ var staticCandidates = [
 ];
 for (const p of staticCandidates) {
   if (import_fs2.default.existsSync(p)) {
-    app.use("/static", import_express3.default.static(p, {
+    app.use("/static", import_express4.default.static(p, {
       maxAge: 0,
       etag: false,
       setHeaders: (res) => {

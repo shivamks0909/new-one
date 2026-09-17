@@ -42,7 +42,7 @@ export class CallbackService {
     studyId: string,
     uid: string,
   ): Promise<{ session: Session | null; link: TrackingLink | null }> {
-    const { normalizeUid } = await import('./trackingService.js');
+    const { normalizeUid } = await import('./trackingService');
     const { normalized } = normalizeUid(uid);
     const sessions = await db.getSessionsByStudy(studyId);
     const matchingSession = sessions.find((s: any) => s.normalized_uid === normalized) ?? null;
@@ -84,7 +84,7 @@ export class CallbackService {
     vendorId: string,
     uid: string,
   ): Promise<{ valid: boolean; error?: string; sessionId?: string }> {
-    const { verifySessionExists } = await import('./trackingService.js');
+    const { verifySessionExists } = await import('./trackingService');
     const result = await verifySessionExists(studyId, vendorId, uid);
     return {
       valid: result.valid,

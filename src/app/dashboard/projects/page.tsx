@@ -622,7 +622,7 @@ export default function ProjectsPage() {
       title="Projects"
       subtitle="Manage multi-country fieldwork projects"
       actions={
-        <Button variant="primary" onClick={openWizard}>
+        <Button variant="primary" onClick={() => router.push('/dashboard/projects/new')}>
           <Plus className="w-4 h-4 mr-1.5" /> Create Project
         </Button>
       }
@@ -663,7 +663,7 @@ export default function ProjectsPage() {
             {statusFilter === 'All' ? 'No projects yet' : `No ${statusFilter.toLowerCase()} projects`}
           </p>
           <p className="text-[12px] text-[var(--text-muted)] mb-4">Create your first project to get started</p>
-          <Button variant="primary" onClick={openWizard}>
+          <Button variant="primary" onClick={() => router.push('/dashboard/projects/new')}>
             <Plus className="w-4 h-4 mr-1.5" /> Create Project
           </Button>
         </div>

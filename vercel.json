@@ -1,30 +1,3 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "dist/handler.js",
-      "use": "@vercel/node",
-      "config": {
-        "includeFiles": ["dist/src/app/public/**"]
-      }
-    }
-  ],
-  "routes": [
-    {
-      "src": "/dashboard/static/(.*)",
-      "dest": "/dist/handler.js"
-    },
-    {
-      "src": "/dashboard/(.*)",
-      "dest": "/dist/handler.js"
-    },
-    {
-      "src": "/static/(.*)",
-      "dest": "/dist/handler.js"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/dist/handler.js"
-    }
-  ]
+  "framework": "nextjs"
 }

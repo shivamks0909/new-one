@@ -1,4 +1,4 @@
-﻿import express, { Request, Response } from 'express';
+import express, { Request, Response } from 'express';
 import { db } from '../db';
 import { authenticate, AuthRequest } from '../auth/middleware';
 import { limeSurveyProxy } from '../services/limeSurvey/limeSurveyProxy';
@@ -310,7 +310,7 @@ router.post('/surveys/:studyId/publish', authenticate, async (req: AuthRequest, 
       } catch (lsErr: any) {
         console.error('[SurveyBuilder] LS createSurvey failed:', lsErr?.message);
         // If LS is not running, create a mock LS ID for local development
-        lsSurveyId = Math.floor(Math.random() * 900000) + 100000;
+        lsSurveyId = require('crypto').randomInt(100000, 1000000);
         await db.updateStudyLsMapping(req.params.studyId, lsSurveyId, 'CREATED_LOCAL');
         console.log(`[SurveyBuilder] Using mock LS survey ID: ${lsSurveyId} (LS not running)`);
       }

@@ -481,6 +481,21 @@ export function renderRedirectStatusPage(params: StatusPageParams): string {
 
   const formattedLoi = loi || config.defaultLoi;
 
+  const escapeHtml = (val: any): string => {
+    if (val === null || val === undefined) return '';
+    return String(val)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  };
+
+  const safePid = escapeHtml(pid);
+  const safeUid = escapeHtml(uid);
+  const safeTimestamp = escapeHtml(formattedTimestamp);
+  const safeLoi = escapeHtml(formattedLoi);
+
   // Pagination dots HTML (6 total)
   const dotRoutes = [
     '/redirect/complete',
@@ -991,12 +1006,12 @@ export function renderRedirectStatusPage(params: StatusPageParams): string {
             <!-- Row 2 -->
             <div class="report-field">
               <span class="field-label">PROJECT CODE</span>
-              <span class="field-value-text" id="disp-pid">${pid}</span>
+              <span class="field-value-text" id="disp-pid">${safePid}</span>
             </div>
 
             <div class="report-field">
               <span class="field-label">PARTICIPANT UID</span>
-              <span class="field-value-text" id="disp-uid">${uid}</span>
+              <span class="field-value-text" id="disp-uid">${safeUid}</span>
             </div>
 
             <div class="report-field">
@@ -1018,12 +1033,12 @@ export function renderRedirectStatusPage(params: StatusPageParams): string {
 
             <div class="report-field">
               <span class="field-label">TIMESTAMP</span>
-              <span class="field-value-text">${formattedTimestamp}</span>
+              <span class="field-value-text">${safeTimestamp}</span>
             </div>
 
             <div class="report-field">
               <span class="field-label">LOI DURATION</span>
-              <span class="field-value-text">${formattedLoi}</span>
+              <span class="field-value-text">${safeLoi}</span>
             </div>
           </div>
 
