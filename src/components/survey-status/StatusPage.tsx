@@ -21,7 +21,6 @@ import { OutcomeHero } from './OutcomeHero';
 import { SurveyInfoCard } from './SurveyInfoCard';
 import { TrustBadges } from './TrustBadges';
 import { BottomFooter } from './BottomFooter';
-import { FluidCanvas } from './FluidCanvas';
 import { CartoonMascot } from './CartoonMascot';
 import { soundFX } from '@/lib/survey/sound-fx';
 
@@ -106,35 +105,24 @@ export function StatusPage({
 
   return (
     <div
-      className="relative h-screen max-h-screen w-full flex flex-col justify-between overflow-hidden transition-colors duration-700 select-none"
+      className="landing-page-zoom relative h-screen max-h-screen h-[100dvh] max-h-[100dvh] w-full flex flex-col justify-between overflow-hidden transition-colors duration-700 select-none"
       style={{
         background: `linear-gradient(135deg, ${config.gradient[0]} 0%, ${config.gradient[1]} 45%, ${config.gradient[2]} 100%)`,
       }}
     >
-      {/* ── Apple Liquid Fluid Realistic Moving Water Wave Canvas ── */}
-      <FluidCanvas color={config.accent} accentLight={config.accentLight} />
-
-      {/* ── Ambient Floating Blobs (Fluid Dispersion Effect) ── */}
+      {/* ── Ambient Soft Accent Glow (Lightweight Static / Zero GPU Overhead) ── */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden="true">
-        <motion.div
-          animate={{
-            x: [0, 50, -35, 0],
-            y: [0, -40, 35, 0],
-            scale: [1, 1.2, 0.95, 1],
+        <div
+          className="absolute -left-24 -top-24 h-[420px] w-[420px] rounded-full opacity-40"
+          style={{
+            background: `radial-gradient(circle, ${config.accentLight} 0%, transparent 70%)`,
           }}
-          transition={{ duration: 16, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute -left-28 -top-28 h-[460px] w-[460px] rounded-full blur-3xl opacity-60"
-          style={{ backgroundColor: config.accentLight }}
         />
-        <motion.div
-          animate={{
-            x: [0, -50, 35, 0],
-            y: [0, 40, -35, 0],
-            scale: [1, 1.25, 0.9, 1],
+        <div
+          className="absolute -right-24 -bottom-24 h-[440px] w-[440px] rounded-full opacity-30"
+          style={{
+            background: `radial-gradient(circle, ${config.accent} 0%, transparent 70%)`,
           }}
-          transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute -right-28 -bottom-28 h-[480px] w-[480px] rounded-full blur-3xl opacity-50"
-          style={{ backgroundColor: `${config.accent}33` }}
         />
       </div>
 
@@ -210,13 +198,13 @@ export function StatusPage({
         </div>
       </header>
 
-      {/* ── Main Viewport (Zero Scroll, Full Screen Responsive Layout) ── */}
+      {/* ── Main Viewport (Zero-Scroll One Page Layout) ── */}
       <main className="relative z-10 w-full flex-1 min-h-0 flex flex-col justify-center px-6 sm:px-8 py-2 overflow-hidden">
         <div className="max-w-7xl mx-auto w-full h-full min-h-0 flex flex-col justify-center">
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 xl:gap-10 items-center h-full min-h-0">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 xl:gap-8 items-center h-full min-h-0">
             {/* Left Column (Typography, CTA, Trust Badges) */}
-            <div className="lg:col-span-7 flex flex-col items-start gap-3 sm:gap-4 min-h-0 justify-center">
+            <div className="lg:col-span-7 flex flex-col items-start gap-2.5 sm:gap-3.5 min-h-0 justify-center">
               {/* Eyebrow Status Pill (Liquid Glass Effect) */}
               <div
                 onClick={() => soundFX.playAudioFile(activeSoundUrl)}
@@ -305,7 +293,7 @@ export function StatusPage({
             {/* Right Column (Apple Liquid Glass Card with Hero Badge + Cartoon Mascot) */}
             <div className="lg:col-span-5 flex flex-col items-center justify-center w-full min-h-0">
               <div
-                className="relative w-full max-w-md rounded-[28px] bg-white/90 backdrop-blur-2xl p-5 sm:p-6 border border-white/95 transition-all duration-300 flex flex-col gap-4 min-h-0"
+                className="relative w-full max-w-md rounded-[28px] bg-white/90 backdrop-blur-2xl p-4 sm:p-5 border border-white/95 transition-all duration-300 flex flex-col gap-3 min-h-0"
                 style={{
                   boxShadow:
                     '0 24px 60px rgba(15, 23, 42, 0.10), 0 4px 20px rgba(15, 23, 42, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.9)',

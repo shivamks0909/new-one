@@ -220,3 +220,41 @@ a:hover { color: var(--blue-hover); }
   :root { --sidebar-width: 0px; }
 }
 
+/* ── Non-Scrollable One Page for Landing Pages ── */
+body:has(.landing-page-zoom),
+html:has(.landing-page-zoom) {
+  overflow: hidden !important;
+  height: 100vh !important;
+  max-height: 100vh !important;
+}
+
+.landing-page-zoom {
+  zoom: 1.15;
+}
+
+@media (min-height: 850px) {
+  .landing-page-zoom {
+    zoom: 1.25;
+  }
+}
+
+@media (min-height: 1000px) {
+  .landing-page-zoom {
+    zoom: 1.35;
+  }
+}
+
+@media (max-height: 700px) {
+  .landing-page-zoom {
+    zoom: 1.02;
+  }
+}
+
+@media (max-height: 600px) {
+  .landing-page-zoom {
+    zoom: 0.92;
+  }
+}
+
+
+
