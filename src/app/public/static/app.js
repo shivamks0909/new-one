@@ -3786,7 +3786,7 @@ async function doDeleteUser(userId) {
       method: "DELETE",
     });
     hideModal();
-    showToast("User account has been deleted / suspended.", "success");
+    showToast("User account has been deleted successfully.", "success");
     renderUsers(1);
   } catch (err) {
     showToast("Delete failed: " + err.message, "error");

@@ -108,7 +108,7 @@ export class Database {
              v.name as vendor_name, v.vendor_code
       FROM users u
       LEFT JOIN vendors v ON v.id = u.vendor_id
-      WHERE 1=1
+      WHERE u.status != 'DELETED'
     `;
     const params: any[] = [];
     if (filters.search) {
@@ -140,6 +140,7 @@ export class Database {
         COUNT(CASE WHEN role = 'VENDOR' THEN 1 END)::int as vendor_users,
         COUNT(CASE WHEN status = 'SUSPENDED' THEN 1 END)::int as suspended_users
       FROM users
+      WHERE status != 'DELETED'
     `);
     return rows[0] || { total_users: 0, active_users: 0, vendor_users: 0, suspended_users: 0 };
   }
@@ -198,12 +199,27 @@ export class Database {
   }
 
   async deleteUser(id: string): Promise<boolean> {
-    // Soft delete / disable to protect historical respondent audit records
-    const { rowCount } = await this.pool.query(
-      `UPDATE users SET status = 'SUSPENDED', updated_at = NOW() WHERE id = $1`,
-      [id]
-    );
-    return (rowCount ?? 0) > 0;
+    try {
+      // Nullify references in related tables if any
+      await this.pool.query(`UPDATE credential_vault SET last_accessed_by = NULL WHERE last_accessed_by = $1`, [id]).catch(() => {});
+      await this.pool.query(`UPDATE responses SET reviewed_by = NULL WHERE reviewed_by::text = $1`, [id]).catch(() => {});
+      await this.pool.query(`UPDATE rate_audit SET changed_by = NULL WHERE changed_by::text = $1`, [id]).catch(() => {});
+      await this.pool.query(`UPDATE invoices SET generated_by = NULL WHERE generated_by::text = $1`, [id]).catch(() => {});
+      await this.pool.query(`UPDATE vendor_settlements SET generated_by = NULL WHERE generated_by::text = $1`, [id]).catch(() => {});
+
+      const { rowCount } = await this.pool.query(
+        `DELETE FROM users WHERE id = $1`,
+        [id]
+      );
+      return (rowCount ?? 0) > 0;
+    } catch (err: any) {
+      console.error('Error hard deleting user, falling back to soft delete:', err);
+      const { rowCount } = await this.pool.query(
+        `UPDATE users SET status = 'DELETED', updated_at = NOW() WHERE id = $1`,
+        [id]
+      );
+      return (rowCount ?? 0) > 0;
+    }
   }
 
 

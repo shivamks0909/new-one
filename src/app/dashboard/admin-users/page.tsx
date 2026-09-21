@@ -122,6 +122,7 @@ export default function AdminUsersPage() {
     try {
       await apiClient.delete(`/admin/users/${userId}`);
       showToast('User deleted successfully', 'success');
+      setUsers(prev => prev.filter(u => u.id !== userId));
       loadData();
     } catch (err: any) {
       showToast(err?.message || 'Failed to delete user', 'error');

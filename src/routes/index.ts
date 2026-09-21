@@ -1717,7 +1717,7 @@ router.delete(
     }
 
     const user = await db.getUserById(id);
-    if (!user) return apiError(res, 404, 'USER_NOT_FOUND', 'User not found');
+    if (!user || user.status === 'DELETED') return apiError(res, 404, 'USER_NOT_FOUND', 'User not found');
 
     const deleted = await db.deleteUser(id);
     if (!deleted) {
@@ -1736,8 +1736,8 @@ router.delete(
 
     res.json({
       success: true,
-      message: 'User account deactivated / deleted successfully',
-      data: { id, status: 'SUSPENDED' },
+      message: 'User account deleted successfully',
+      data: { id, deleted: true },
     });
   }),
 );
