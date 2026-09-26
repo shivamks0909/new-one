@@ -257,18 +257,76 @@ export default function VendorWorkspacePage() {
 
           {activeTab === 'responses' && (
             <div className="glass-card overflow-hidden animate-slide-up">
-              <div className="p-4 px-6 border-b border-[var(--glass-border)] bg-[rgba(255,255,255,0.02)]">
-                <h3 className="font-bold text-[var(--text-primary)] text-base">Responses</h3>
+              <div className="p-4 px-6 border-b border-[var(--glass-border)] bg-[rgba(255,255,255,0.02)] flex items-center justify-between">
+                <div>
+                  <h3 className="font-bold text-[var(--text-primary)] text-base">Fieldwork Responses</h3>
+                  <p className="text-xs text-[var(--text-muted)] mt-0.5">Real-time participant transaction records ({responses.length} displayed)</p>
+                </div>
+                <Link
+                  href="/dashboard/responses"
+                  className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-[var(--accent-1)] text-white hover:opacity-90 transition-opacity"
+                >
+                  Open Full Responses Table →
+                </Link>
               </div>
               {responses.length === 0 ? (
                 <div className="p-8 text-center text-[var(--text-muted)]">No responses yet</div>
               ) : (
                 <DataTable
                   columns={[
-                    { key: 'uid', header: 'UID' },
-                    { key: 'study_title', header: 'Study' },
-                    { key: 'status', header: 'Status', render: (row) => <StatusBadge status={row.status} /> },
-                    { key: 'created_at', header: 'Submitted', render: (row) => formatDate(row.created_at) },
+                    {
+                      key: 'uid',
+                      header: 'Participant UID',
+                      render: (row: any) => (
+                        <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded bg-[var(--bg-tertiary)] border border-[var(--glass-border)] text-[var(--accent-1)]">
+                          {row.normalized_uid || row.uid || '—'}
+                        </span>
+                      )
+                    },
+                    {
+                      key: 'study_title',
+                      header: 'Project / Study',
+                      render: (row: any) => (
+                        <div className="flex flex-col py-0.5">
+                          <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded bg-[var(--bg-tertiary)] border border-[var(--glass-border)] text-[var(--text-primary)] w-fit">
+                            {row.project_code || row.study_code || '—'}
+                          </span>
+                          <span className="text-xs text-[var(--text-muted)] truncate max-w-[200px] mt-0.5">
+                            {row.project_name || row.study_title || 'Direct / External Link'}
+                          </span>
+                        </div>
+                      )
+                    },
+                    {
+                      key: 'status',
+                      header: 'Disposition',
+                      render: (row: any) => {
+                        const isUnv = row.is_unverified || row._source_type === 'UNVERIFIED' || row.final_status === 'UNVERIFIED';
+                        const isFraud = row.rejection_reason?.includes('REPLAY') || row.rejection_reason?.includes('FRAUD');
+                        const displayStatus = (row.final_status && row.final_status !== 'UNVERIFIED') ? row.final_status : (row.status || 'UNKNOWN');
+                        return (
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <StatusBadge status={displayStatus} />
+                            {isFraud ? (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                                <span>🚫</span>
+                                <span>FRAUD</span>
+                              </span>
+                            ) : isUnv ? (
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                                <span>⚠️</span>
+                                <span>UNVERIFIED</span>
+                              </span>
+                            ) : null}
+                          </div>
+                        );
+                      }
+                    },
+                    {
+                      key: 'created_at',
+                      header: 'Timestamp',
+                      render: (row: any) => formatDate(row.created_at)
+                    },
                   ]}
                   data={responses}
                   keyField="id"

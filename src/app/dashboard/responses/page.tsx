@@ -107,10 +107,7 @@ export default function ResponsesPage() {
       if (statusFilter && activeTab !== 'unverified') params.status = statusFilter;
       if (searchQuery.trim()) params.search = searchQuery.trim();
 
-      // Strict role isolation: VENDOR users are restricted to their assigned vendor_id
-      if (role === 'VENDOR' && vendor_id) {
-        params.vendor_id = vendor_id;
-      }
+      // Vendor sees all responses in the fieldwork response table same as admin
 
       const res = await apiClient.get<any>('/responses', params);
 

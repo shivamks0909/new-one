@@ -4520,10 +4520,8 @@ router.get(
     const sort_by = getQueryParam(req, 'sort_by');
     const sort_order = getQueryParam(req, 'sort_order');
 
-    // Strict multi-tenant isolation: VENDOR role is strictly scoped to their own vendor_id
-    const effectiveVendorId = req.user?.role === 'VENDOR'
-      ? (req.user.vendor_id || '__UNASSIGNED_VENDOR__')
-      : (vendor_id ? String(vendor_id) : undefined);
+    // Vendor sees all responses in the response table same as admin
+    const effectiveVendorId = vendor_id ? String(vendor_id) : undefined;
 
     const type = getQueryParam(req, 'type');
     const filterType = (type === 'unverified' || status === 'UNVERIFIED')
@@ -4584,11 +4582,7 @@ router.get(
     const export_type = getQueryParam(req, 'export_type') || 'filtered';
 
     let vendor_id = getQueryParam(req, 'vendor_id');
-
-    // Strict multi-tenant isolation: VENDOR role is strictly scoped to their own vendor_id
-    const effectiveVendorId = req.user?.role === 'VENDOR'
-      ? (req.user.vendor_id || '__UNASSIGNED_VENDOR__')
-      : (vendor_id ? String(vendor_id) : undefined);
+    const effectiveVendorId = vendor_id ? String(vendor_id) : undefined;
 
     const typeParam = getQueryParam(req, 'type');
     const filterObj = export_type === 'all' ? { limit: 10000, vendor_id: effectiveVendorId, type: typeParam ? String(typeParam) : undefined } : {
@@ -5067,7 +5061,6 @@ router.get(
   authenticate, authorize(VENDOR_ROLES),
   asyncHandler(async (req: AuthRequest, res: Response) => {
     const vendorId = req.user?.vendor_id;
-    if (!vendorId) return apiError(res, 403, 'FORBIDDEN', 'Vendor ID not found');
 
     const page = parseInt(getQueryParam(req, 'page') || '1', 10);
     const limit = parseInt(getQueryParam(req, 'limit') || '25', 10);
@@ -5080,9 +5073,10 @@ router.get(
     const end_date = getQueryParam(req, 'end_date');
     const sort_by = getQueryParam(req, 'sort_by');
     const sort_order = getQueryParam(req, 'sort_order');
+    const queryVendorId = getQueryParam(req, 'vendor_id');
 
     const { rows, total } = await db.getResponses({
-      vendor_id: vendorId,
+      vendor_id: queryVendorId ? String(queryVendorId) : undefined,
       study_id: study_id ? String(study_id) : undefined,
       status: status ? String(status) : undefined,
       uid: uid ? String(uid) : undefined,
