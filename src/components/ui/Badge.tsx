@@ -54,14 +54,22 @@ const statusVariantMap: Record<string, BadgeProps['variant']> = {
   PAUSED: 'warning',
   SCREENED_OUT: 'warning',
   QUOTA_FULL: 'warning',
+  QUOTAFULL: 'warning',
   TERMINATED: 'danger',
   TERMINATE: 'danger',
+  QUALITYFAIL: 'danger',
+  QUALITYTERM: 'danger',
+  QUALITY_FAIL: 'danger',
+  SECURITYFAIL: 'danger',
+  SECURITY_REJECT: 'danger',
+  GEOBLOCK: 'danger',
   FAILED: 'danger',
   ERROR: 'danger',
   EXPIRED: 'danger',
   CLOSED: 'neutral',
   INACTIVE: 'neutral',
   SURVEY_CLOSED: 'neutral',
+  UNVERIFIED: 'warning',
 };
 
 export function StatusBadge({ status }: StatusBadgeProps) {

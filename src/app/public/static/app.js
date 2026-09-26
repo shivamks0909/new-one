@@ -120,23 +120,23 @@ function showLoading(container = "#content-area") {
   $(container).innerHTML = `
     <div class="stats-grid" style="margin-bottom:24px;">
       ${Array(4)
-        .fill(0)
-        .map(
-          () =>
-            '<div class="section-card"><div class="section-card-body"><div class="skeleton-box" style="width:30px;height:30px;border-radius:8px;margin-bottom:12px;"></div><div class="skeleton-box" style="width:60%;height:14px;margin-bottom:8px;"></div><div class="skeleton-box" style="width:40%;height:28px;"></div></div></div>'
-        )
-        .join("")}
+      .fill(0)
+      .map(
+        () =>
+          '<div class="section-card"><div class="section-card-body"><div class="skeleton-box" style="width:30px;height:30px;border-radius:8px;margin-bottom:12px;"></div><div class="skeleton-box" style="width:60%;height:14px;margin-bottom:8px;"></div><div class="skeleton-box" style="width:40%;height:28px;"></div></div></div>'
+      )
+      .join("")}
     <div class="section-card" style="margin-bottom:24px;">
       <div class="section-card-body">
         <div class="skeleton-box" style="width:120px;height:18px;margin-bottom:16px;"></div>
         <div style="display:flex;gap:12px;">
           ${Array(4)
-            .fill(0)
-            .map(
-              () =>
-                '<div style="flex:1;"><div class="skeleton-box" style="width:100%;height:60px;border-radius:8px;"></div></div>'
-            )
-            .join("")}
+      .fill(0)
+      .map(
+        () =>
+          '<div style="flex:1;"><div class="skeleton-box" style="width:100%;height:60px;border-radius:8px;"></div></div>'
+      )
+      .join("")}
         </div>
       </div>
     </div>
@@ -144,22 +144,22 @@ function showLoading(container = "#content-area") {
       <div class="section-card"><div class="section-card-body">
         <div class="skeleton-box" style="width:140px;height:18px;margin-bottom:16px;"></div>
         ${Array(3)
-          .fill(0)
-          .map(
-            () =>
-              '<div class="skeleton-box" style="width:100%;height:36px;margin-bottom:8px;border-radius:6px;"></div>'
-          )
-          .join("")}
+      .fill(0)
+      .map(
+        () =>
+          '<div class="skeleton-box" style="width:100%;height:36px;margin-bottom:8px;border-radius:6px;"></div>'
+      )
+      .join("")}
       </div></div>
       <div class="section-card"><div class="section-card-body">
         <div class="skeleton-box" style="width:140px;height:18px;margin-bottom:16px;"></div>
         ${Array(3)
-          .fill(0)
-          .map(
-            () =>
-              '<div class="skeleton-box" style="width:100%;height:36px;margin-bottom:8px;border-radius:6px;"></div>'
-          )
-          .join("")}
+      .fill(0)
+      .map(
+        () =>
+          '<div class="skeleton-box" style="width:100%;height:36px;margin-bottom:8px;border-radius:6px;"></div>'
+      )
+      .join("")}
       </div></div>
     </div>
   `;
@@ -319,8 +319,8 @@ function renderStatCard(
   const suffix = numericVal ? numMatch[2] || "" : "";
   const countAttr = numericVal
     ? ` data-count-up="${escapeHtml(
-        numMatch[1]
-      )}" data-count-suffix="${escapeHtml(suffix)}"`
+      numMatch[1]
+    )}" data-count-suffix="${escapeHtml(suffix)}"`
     : "";
   return `
     <div class="stat-card">
@@ -457,30 +457,30 @@ function renderTable(headers, rows, keyField = "id", onRowClick = null) {
     <div class="table-container">
       <table class="data-table">
         <thead><tr>${headers
-          .map((h) => `<th>${escapeHtml(h)}</th>`)
-          .join("")}</tr></thead>
+      .map((h) => `<th>${escapeHtml(h)}</th>`)
+      .join("")}</tr></thead>
         <tbody>
           ${rows
-            .map((row) => {
-              const rowId = escapeHtml(
-                row[keyField] ||
-                  row["id"] ||
-                  row["session_id"] ||
-                  row["uid"] ||
-                  ""
-              );
-              const clickAttr = onRowClick
-                ? `onclick="${onRowClick}('${rowId}')" style="cursor:pointer;"`
-                : "";
-              return `<tr data-id="${rowId}" ${clickAttr}>${headers
-                .map((_, i) => {
-                  const val = row[Object.keys(row)[i]] ?? "";
-                  const content = isHtml(val) ? val : escapeHtml(String(val));
-                  return `<td>${content}</td>`;
-                })
-                .join("")}</tr>`;
-            })
-            .join("")}
+      .map((row) => {
+        const rowId = escapeHtml(
+          row[keyField] ||
+          row["id"] ||
+          row["session_id"] ||
+          row["uid"] ||
+          ""
+        );
+        const clickAttr = onRowClick
+          ? `onclick="${onRowClick}('${rowId}')" style="cursor:pointer;"`
+          : "";
+        return `<tr data-id="${rowId}" ${clickAttr}>${headers
+          .map((_, i) => {
+            const val = row[Object.keys(row)[i]] ?? "";
+            const content = isHtml(val) ? val : escapeHtml(String(val));
+            return `<td>${content}</td>`;
+          })
+          .join("")}</tr>`;
+      })
+      .join("")}
         </tbody>
       </table>
     </div>
@@ -735,11 +735,11 @@ async function renderDashboard() {
       d.setDate(d.getDate() - i);
       const dayStr = d.toLocaleDateString("en-US", { weekday: "short", month: "numeric", day: "numeric" });
       const dYMD = d.toISOString().slice(0, 10);
-      
+
       const dayClicks = responses.filter(r => (r.created_at || "").slice(0, 10) === dYMD).length +
-                        sessions.filter(s => (s.created_at || "").slice(0, 10) === dYMD).length;
+        sessions.filter(s => (s.created_at || "").slice(0, 10) === dYMD).length;
       const dayCompletes = responses.filter(r => (r.created_at || "").slice(0, 10) === dYMD && (r.status === "COMPLETE" || r.final_status === "COMPLETE")).length;
-      
+
       days.push({
         label: dayStr,
         date: dYMD,
@@ -911,9 +911,8 @@ async function renderDashboard() {
             <span style="font-size:0.8125rem; color:var(--text-muted);">${projects.length || studies.length} Active</span>
           </div>
           <div class="section-card-body no-pad">
-            ${
-              (projects.length || studies.length)
-                ? `
+            ${(projects.length || studies.length)
+        ? `
               <table class="data-table">
                 <thead>
                   <tr>
@@ -926,15 +925,15 @@ async function renderDashboard() {
                 </thead>
                 <tbody>
                   ${(projects.length ? projects : studies)
-                    .slice(0, 6)
-                    .map((p) => {
-                      const code = p.project_code || p.study_code || p.id.slice(0, 8);
-                      const name = p.name || p.title || "—";
-                      const tgt = p.target_completes || 50;
-                      const comps = p.completes_count || completes || 0;
-                      const prog = tgt ? Math.min(100, Math.round((comps / tgt) * 100)) : 0;
-                      const rate = p.client_rate ? "₹" + p.client_rate : "—";
-                      return `
+          .slice(0, 6)
+          .map((p) => {
+            const code = p.project_code || p.study_code || p.id.slice(0, 8);
+            const name = p.name || p.title || "—";
+            const tgt = p.target_completes || 50;
+            const comps = p.completes_count || completes || 0;
+            const prog = tgt ? Math.min(100, Math.round((comps / tgt) * 100)) : 0;
+            const rate = p.client_rate ? "₹" + p.client_rate : "—";
+            return `
                       <tr onclick="renderProjectDetail('${p.id}')" style="cursor:pointer;">
                         <td>
                           <div style="font-weight:600; font-size:0.85rem; color:var(--text-primary);">${escapeHtml(code)}</div>
@@ -953,13 +952,13 @@ async function renderDashboard() {
                         </td>
                       </tr>
                     `;
-                    })
-                    .join("")}
+          })
+          .join("")}
                 </tbody>
               </table>
             `
-                : '<div class="empty-state" style="padding:40px;"><div class="empty-state-icon">📁</div><h3>No projects yet</h3><p>Create your first project to launch fieldwork.</p></div>'
-            }
+        : '<div class="empty-state" style="padding:40px;"><div class="empty-state-icon">📁</div><h3>No projects yet</h3><p>Create your first project to launch fieldwork.</p></div>'
+      }
           </div>
         </div>
       </div>
@@ -981,9 +980,9 @@ async function renderDashboard() {
           <div class="section-card-body" style="padding:16px 20px;">
             <div style="display:flex; align-items:flex-end; gap:12px; height:180px; padding-top:20px; border-bottom:1px solid var(--border-light);">
               ${days.map(d => {
-                const clickHeight = Math.max(12, Math.round((d.clicks / maxTrendVal) * 140));
-                const compHeight = Math.max(6, Math.round((d.completes / maxTrendVal) * 140));
-                return `
+        const clickHeight = Math.max(12, Math.round((d.clicks / maxTrendVal) * 140));
+        const compHeight = Math.max(6, Math.round((d.completes / maxTrendVal) * 140));
+        return `
                   <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; height:100%; justify-content:flex-end;">
                     <div style="display:flex; gap:3px; align-items:flex-end; width:100%; justify-content:center; height:140px;">
                       <div style="width:40%; max-width:18px; height:${clickHeight}px; background:var(--accent); border-radius:3px 3px 0 0; transition:height 0.3s;" title="${d.date}: ${d.clicks} Clicks"></div>
@@ -992,7 +991,7 @@ async function renderDashboard() {
                     <span style="font-size:0.7rem; color:var(--text-muted); white-space:nowrap;">${d.label.split(',')[0]}</span>
                   </div>
                 `;
-              }).join("")}
+      }).join("")}
             </div>
           </div>
         </div>
@@ -1042,9 +1041,8 @@ async function renderDashboard() {
             <span style="font-size:0.8125rem; color:var(--text-muted);">${vendors.length} Vendors</span>
           </div>
           <div class="section-card-body no-pad">
-            ${
-              vendors.length
-                ? `
+            ${vendors.length
+        ? `
               <table class="data-table">
                 <thead>
                   <tr>
@@ -1057,28 +1055,27 @@ async function renderDashboard() {
                 </thead>
                 <tbody>
                   ${vendors
-                    .slice(0, 6)
-                    .map(
-                      (v, i) => `
+          .slice(0, 6)
+          .map(
+            (v, i) => `
                     <tr>
-                      <td style="font-weight:500;">${escapeHtml(v.name)}${
-                        i === 0 && vendors.length > 1
-                          ? ' <span style="font-size:0.6875rem;color:var(--color-success);font-weight:700;margin-left:4px;">★ TOP</span>'
-                          : ""
-                      }</td>
+                      <td style="font-weight:500;">${escapeHtml(v.name)}${i === 0 && vendors.length > 1
+                ? ' <span style="font-size:0.6875rem;color:var(--color-success);font-weight:700;margin-left:4px;">★ TOP</span>'
+                : ""
+              }</td>
                       <td>${v.quota_target || 50}</td>
                       <td>${v.quota_used || completes || 0}</td>
                       <td style="color:var(--color-success);font-weight:600;">100%</td>
                       <td>${formatCurrency(v.cpi_cents || 0)}</td>
                     </tr>
                   `
-                    )
-                    .join("")}
+          )
+          .join("")}
                 </tbody>
               </table>
             `
-                : '<div class="empty-state" style="padding:40px;"><div class="empty-state-icon">🏢</div><h3>No vendors yet</h3><p>Add vendors to track fieldwork partners.</p></div>'
-            }
+        : '<div class="empty-state" style="padding:40px;"><div class="empty-state-icon">🏢</div><h3>No vendors yet</h3><p>Add vendors to track fieldwork partners.</p></div>'
+      }
           </div>
         </div>
 
@@ -1090,16 +1087,15 @@ async function renderDashboard() {
           </div>
           <div class="section-card-body no-pad">
             <div class="live-feed">
-              ${
-                recentActivityList.length
-                  ? recentActivityList
-                      .slice(0, 8)
-                      .map((item) => {
-                        const isVer = item.verification_status === "VERIFIED";
-                        const verBadge = isVer
-                          ? '<span class="badge" style="background:var(--color-success-bg); color:var(--color-success); font-size:0.68rem; padding:1px 6px;">✓ VERIFIED</span>'
-                          : '<span class="badge" style="background:var(--color-danger-bg); color:var(--color-danger); font-size:0.68rem; padding:1px 6px;">⚠ UNVERIFIED</span>';
-                        return `
+              ${recentActivityList.length
+        ? recentActivityList
+          .slice(0, 8)
+          .map((item) => {
+            const isVer = item.verification_status === "VERIFIED";
+            const verBadge = isVer
+              ? '<span class="badge" style="background:var(--color-success-bg); color:var(--color-success); font-size:0.68rem; padding:1px 6px;">✓ VERIFIED</span>'
+              : '<span class="badge" style="background:var(--color-danger-bg); color:var(--color-danger); font-size:0.68rem; padding:1px 6px;">⚠ UNVERIFIED</span>';
+            return `
                           <div class="live-feed-item" onclick="openResponseDetailModal('${escapeHtml(String(item.id))}')" style="cursor:pointer; display:flex; justify-content:space-between; align-items:center; padding:10px 16px; border-bottom:1px solid var(--border-light);">
                             <div class="feed-left" style="display:flex; align-items:center; gap:8px;">
                               <span style="font-size:0.75rem; color:var(--text-muted); width:50px;">${timeAgo(item.created_at)}</span>
@@ -1110,10 +1106,10 @@ async function renderDashboard() {
                             <span style="color:var(--text-muted); font-size:0.75rem;">${formatDateTime(item.created_at)}</span>
                           </div>
                         `;
-                      })
-                      .join("")
-                  : '<div class="empty-state" style="padding:30px;"><div class="empty-state-icon">📡</div><h3>No recent activity</h3><p>Telemetry activity will appear here as sessions occur.</p></div>'
-              }
+          })
+          .join("")
+        : '<div class="empty-state" style="padding:30px;"><div class="empty-state-icon">📡</div><h3>No recent activity</h3><p>Telemetry activity will appear here as sessions occur.</p></div>'
+      }
             </div>
           </div>
         </div>
@@ -1191,22 +1187,22 @@ async function renderStudies(page = 1) {
         <button class="btn btn-primary" onclick="openCreateStudyModal()">+ Create Study</button>
       </div>
       ${renderTable(
-        ["ID", "Name", "Status", "Vendors", "Target", "Created"],
-        studies.map((s) => ({
-          id: renderIdCell(s.id),
-          name: s.name || s.title || "—",
-          status: renderBadge(s.status),
-          vendors: s.vendor_count || 0,
-          target: s.target_completes || 0,
-          created: formatDate(s.created_at),
-        })),
-        "id"
-      )}
+      ["ID", "Name", "Status", "Vendors", "Target", "Created"],
+      studies.map((s) => ({
+        id: renderIdCell(s.id),
+        name: s.name || s.title || "—",
+        status: renderBadge(s.status),
+        vendors: s.vendor_count || 0,
+        target: s.target_completes || 0,
+        created: formatDate(s.created_at),
+      })),
+      "id"
+    )}
       <div class="pagination">${renderPagination(
-        page,
-        data.totalPages || 1,
-        "renderStudies"
-      )}</div>
+      page,
+      data.totalPages || 1,
+      "renderStudies"
+    )}</div>
     `;
     $("#content-area").innerHTML = content;
   } catch (e) {
@@ -1227,24 +1223,24 @@ async function renderVendors(page = 1) {
         <button class="btn btn-primary" onclick="openCreateVendorModal()">+ Create Vendor</button>
       </div>
       ${renderTable(
-        ["ID", "Name", "Contact", "CPI", "Quota", "Status"],
-        vendors.map((v) => ({
-          id: renderIdCell(v.id),
-          name: v.name,
-          contact: v.contact_email || "—",
-          cpi: formatCurrency(v.cpi_cents || 0),
-          quota: v.quota_target
-            ? `${v.quota_used || 0}/${v.quota_target}`
-            : "—",
-          status: renderBadge(v.status),
-        })),
-        "id"
-      )}
+      ["ID", "Name", "Contact", "CPI", "Quota", "Status"],
+      vendors.map((v) => ({
+        id: renderIdCell(v.id),
+        name: v.name,
+        contact: v.contact_email || "—",
+        cpi: formatCurrency(v.cpi_cents || 0),
+        quota: v.quota_target
+          ? `${v.quota_used || 0}/${v.quota_target}`
+          : "—",
+        status: renderBadge(v.status),
+      })),
+      "id"
+    )}
       <div class="pagination">${renderPagination(
-        page,
-        data.totalPages || 1,
-        "renderVendors"
-      )}</div>
+      page,
+      data.totalPages || 1,
+      "renderVendors"
+    )}</div>
     `;
     $("#content-area").innerHTML = content;
   } catch (e) {
@@ -1268,31 +1264,31 @@ async function renderTrackingLinks(page = 1) {
         <h3>Tracking Links</h3>
       </div>
       ${renderTable(
-        [
-          "Code",
-          "Study ID",
-          "Vendor ID",
-          "UID Mode",
-          "Status",
-          "Clicks",
-          "Created",
-        ],
-        (links.tracking_links || []).map((l) => ({
-          code: renderIdCell(l.link_code),
-          study: renderIdCell(l.study_id),
-          vendor: renderIdCell(l.vendor_id),
-          uid_mode: l.uid_mode || "—",
-          status: renderBadge(l.status),
-          clicks: l.click_count || 0,
-          created: formatDate(l.created_at),
-        })),
-        "id"
-      )}
+      [
+        "Code",
+        "Study ID",
+        "Vendor ID",
+        "UID Mode",
+        "Status",
+        "Clicks",
+        "Created",
+      ],
+      (links.tracking_links || []).map((l) => ({
+        code: renderIdCell(l.link_code),
+        study: renderIdCell(l.study_id),
+        vendor: renderIdCell(l.vendor_id),
+        uid_mode: l.uid_mode || "—",
+        status: renderBadge(l.status),
+        clicks: l.click_count || 0,
+        created: formatDate(l.created_at),
+      })),
+      "id"
+    )}
       <div class="pagination">${renderPagination(
-        page,
-        links.totalPages || 1,
-        "renderTrackingLinks"
-      )}</div>
+      page,
+      links.totalPages || 1,
+      "renderTrackingLinks"
+    )}</div>
     `;
     $("#content-area").innerHTML = content;
   } catch (e) {
@@ -1391,63 +1387,51 @@ async function renderResponses(page = 1) {
         <p style="margin-top:4px; color:var(--text-muted); font-size:0.8125rem;">Enterprise market research data & respondent audit trail</p>
       </div>
       <div style="display:flex; gap:8px;">
-        <button class="btn btn-secondary" onclick="renderResponses(${
-          responsesState.page
-        })" title="Refresh">↻ Refresh</button>
+        <button class="btn btn-secondary" onclick="renderResponses(${responsesState.page
+    })" title="Refresh">↻ Refresh</button>
         <button class="btn btn-primary" id="excel-export-btn" onclick="exportResponsesExcel('filtered')">📊 Export Excel</button>
       </div>
     </div>
     <div class="responses-filter-toolbar">
       <input type="text" id="resp-search" placeholder="Search UID, Project, IP..." value="${escapeHtml(
-        responsesState.search
-      )}" style="flex:2; min-width:200px;" />
+      responsesState.search
+    )}" style="flex:2; min-width:200px;" />
       <select id="resp-status" style="flex:1; min-width:130px;">
         <option value="">All Statuses</option>
-        <option value="COMPLETE" ${
-          responsesState.status === "COMPLETE" ? "selected" : ""
-        }>Complete</option>
-        <option value="TERMINATE" ${
-          responsesState.status === "TERMINATE" ? "selected" : ""
-        }>Terminate</option>
-        <option value="OVER QUOTA" ${
-          responsesState.status === "OVER QUOTA" ? "selected" : ""
-        }>Over Quota</option>
-        <option value="QUALITY TERM" ${
-          responsesState.status === "QUALITY TERM" ? "selected" : ""
-        }>Quality Term</option>
-        <option value="SURVEY CLOSED" ${
-          responsesState.status === "SURVEY CLOSED" ? "selected" : ""
-        }>Survey Closed</option>
+        <option value="COMPLETE" ${responsesState.status === "COMPLETE" ? "selected" : ""
+    }>Complete</option>
+        <option value="TERMINATE" ${responsesState.status === "TERMINATE" ? "selected" : ""
+    }>Terminate</option>
+        <option value="OVER QUOTA" ${responsesState.status === "OVER QUOTA" ? "selected" : ""
+    }>Over Quota</option>
+        <option value="QUALITY TERM" ${responsesState.status === "QUALITY TERM" ? "selected" : ""
+    }>Quality Term</option>
+        <option value="SURVEY CLOSED" ${responsesState.status === "SURVEY CLOSED" ? "selected" : ""
+    }>Survey Closed</option>
       </select>
       <select id="resp-project" style="flex:1; min-width:140px;">
         <option value="">All Projects</option>
         ${studiesList
-          .map(
-            (s) =>
-              `<option value="${s.id}" ${
-                responsesState.project_id === s.id ? "selected" : ""
-              }>${escapeHtml(s.study_code || s.name || s.id)}</option>`
-          )
-          .join("")}
+      .map(
+        (s) =>
+          `<option value="${s.id}" ${responsesState.project_id === s.id ? "selected" : ""
+          }>${escapeHtml(s.study_code || s.name || s.id)}</option>`
+      )
+      .join("")}
       </select>
       <select id="resp-device" style="flex:1; min-width:110px;">
         <option value="">All Devices</option>
-        <option value="Desktop" ${
-          responsesState.device === "Desktop" ? "selected" : ""
-        }>Desktop</option>
-        <option value="Mobile" ${
-          responsesState.device === "Mobile" ? "selected" : ""
-        }>Mobile</option>
-        <option value="Tablet" ${
-          responsesState.device === "Tablet" ? "selected" : ""
-        }>Tablet</option>
+        <option value="Desktop" ${responsesState.device === "Desktop" ? "selected" : ""
+    }>Desktop</option>
+        <option value="Mobile" ${responsesState.device === "Mobile" ? "selected" : ""
+    }>Mobile</option>
+        <option value="Tablet" ${responsesState.device === "Tablet" ? "selected" : ""
+    }>Tablet</option>
       </select>
-      <input type="date" id="resp-start-date" value="${
-        responsesState.start_date
-      }" title="Start Date" />
-      <input type="date" id="resp-end-date" value="${
-        responsesState.end_date
-      }" title="End Date" />
+      <input type="date" id="resp-start-date" value="${responsesState.start_date
+    }" title="Start Date" />
+      <input type="date" id="resp-end-date" value="${responsesState.end_date
+    }" title="End Date" />
     </div>
     <div class="resp-table-wrap" id="resp-table-container">
       <table class="responses-table">
@@ -1463,44 +1447,39 @@ async function renderResponses(page = 1) {
         </colgroup>
         <thead>
           <tr>
-            <th class="sortable" onclick="toggleRespSort('uid')">UID${
-              responsesState.sort_by === "uid"
-                ? responsesState.sort_order === "ASC"
-                  ? " ↑"
-                  : " ↓"
-                : ""
-            }</th>
-            <th class="sortable" onclick="toggleRespSort('project')">Project${
-              responsesState.sort_by === "project"
-                ? responsesState.sort_order === "ASC"
-                  ? " ↑"
-                  : " ↓"
-                : ""
-            }</th>
+            <th class="sortable" onclick="toggleRespSort('uid')">UID${responsesState.sort_by === "uid"
+      ? responsesState.sort_order === "ASC"
+        ? " ↑"
+        : " ↓"
+      : ""
+    }</th>
+            <th class="sortable" onclick="toggleRespSort('project')">Project${responsesState.sort_by === "project"
+      ? responsesState.sort_order === "ASC"
+        ? " ↑"
+        : " ↓"
+      : ""
+    }</th>
             <th>Verification</th>
             <th>IP Address</th>
-            <th class="sortable" onclick="toggleRespSort('device')">Device${
-              responsesState.sort_by === "device"
-                ? responsesState.sort_order === "ASC"
-                  ? " ↑"
-                  : " ↓"
-                : ""
-            }</th>
+            <th class="sortable" onclick="toggleRespSort('device')">Device${responsesState.sort_by === "device"
+      ? responsesState.sort_order === "ASC"
+        ? " ↑"
+        : " ↓"
+      : ""
+    }</th>
             <th>User Agent</th>
-            <th class="sortable" onclick="toggleRespSort('status')">Outcome${
-              responsesState.sort_by === "status"
-                ? responsesState.sort_order === "ASC"
-                  ? " ↑"
-                  : " ↓"
-                : ""
-            }</th>
-            <th class="sortable" onclick="toggleRespSort('timestamp')">Timestamp${
-              responsesState.sort_by === "timestamp"
-                ? responsesState.sort_order === "ASC"
-                  ? " ↑"
-                  : " ↓"
-                : ""
-            }</th>
+            <th class="sortable" onclick="toggleRespSort('status')">Outcome${responsesState.sort_by === "status"
+      ? responsesState.sort_order === "ASC"
+        ? " ↑"
+        : " ↓"
+      : ""
+    }</th>
+            <th class="sortable" onclick="toggleRespSort('timestamp')">Timestamp${responsesState.sort_by === "timestamp"
+      ? responsesState.sort_order === "ASC"
+        ? " ↑"
+        : " ↓"
+      : ""
+    }</th>
           </tr>
         </thead>
         <tbody id="resp-table-tbody">${skeletonRows}</tbody>
@@ -1511,18 +1490,14 @@ async function renderResponses(page = 1) {
       <div style="display:flex; align-items:center; gap:8px;">
         <span style="font-size:0.85rem; color:var(--text-muted);">Per page:</span>
         <select id="resp-limit-select" onchange="changeRespLimit(this.value)" style="padding:4px 8px; font-size:0.85rem; border-radius:6px; background:var(--bg-input); color:var(--text-primary); border:1px solid var(--border-default);">
-          <option value="25" ${
-            responsesState.limit === 25 ? "selected" : ""
-          }>25</option>
-          <option value="50" ${
-            responsesState.limit === 50 ? "selected" : ""
-          }>50</option>
-          <option value="100" ${
-            responsesState.limit === 100 ? "selected" : ""
-          }>100</option>
-          <option value="250" ${
-            responsesState.limit === 250 ? "selected" : ""
-          }>250</option>
+          <option value="25" ${responsesState.limit === 25 ? "selected" : ""
+    }>25</option>
+          <option value="50" ${responsesState.limit === 50 ? "selected" : ""
+    }>50</option>
+          <option value="100" ${responsesState.limit === 100 ? "selected" : ""
+    }>100</option>
+          <option value="250" ${responsesState.limit === 250 ? "selected" : ""
+    }>250</option>
         </select>
       </div>
       <div id="resp-pagination-info" style="font-size:0.875rem; color:var(--text-secondary);">Loading...</div>
@@ -1596,25 +1571,20 @@ async function fetchAndRenderResponsesData() {
 
     if ($("#resp-pagination-controls")) {
       const totalPages = Math.ceil(total / limit) || 1;
-      let pagHtml = `<button ${
-        page === 1 ? "disabled" : ""
-      } onclick="renderResponses(${
-        page - 1
-      })" class="btn btn-secondary btn-sm">←  Prev</button>`;
+      let pagHtml = `<button ${page === 1 ? "disabled" : ""
+        } onclick="renderResponses(${page - 1
+        })" class="btn btn-secondary btn-sm">←  Prev</button>`;
       for (let i = 1; i <= totalPages; i++) {
         if (i === 1 || i === totalPages || (i >= page - 1 && i <= page + 1)) {
-          pagHtml += `<button class="btn btn-sm ${
-            i === page ? "btn-primary" : "btn-secondary"
-          }" onclick="renderResponses(${i})">${i}</button>`;
+          pagHtml += `<button class="btn btn-sm ${i === page ? "btn-primary" : "btn-secondary"
+            }" onclick="renderResponses(${i})">${i}</button>`;
         } else if (i === page - 2 || i === page + 2) {
           pagHtml += `<span style="padding:0 4px; color:var(--text-muted);">...</span>`;
         }
       }
-      pagHtml += `<button ${
-        page >= totalPages ? "disabled" : ""
-      } onclick="renderResponses(${
-        page + 1
-      })" class="btn btn-secondary btn-sm">Next  →</button>`;
+      pagHtml += `<button ${page >= totalPages ? "disabled" : ""
+        } onclick="renderResponses(${page + 1
+        })" class="btn btn-secondary btn-sm">Next  →</button>`;
       $("#resp-pagination-controls").innerHTML = pagHtml;
     }
 
@@ -1655,8 +1625,8 @@ async function fetchAndRenderResponsesData() {
           const sessionId = r.session_id || r.id;
           const verificationStatus = (r.verification_status || r._source_type || 'VERIFIED').toUpperCase();
           const isVerified = verificationStatus === 'VERIFIED';
-          
-          const verificationHtml = isVerified 
+
+          const verificationHtml = isVerified
             ? `<span class="badge" style="background:var(--success-bg);color:var(--success-text);font-size:0.75rem;">✓ VERIFIED</span>`
             : `<span class="badge" style="background:var(--danger-bg);color:var(--danger-text);font-size:0.75rem;">⚠ UNVERIFIED</span>`;
 
@@ -1667,16 +1637,16 @@ async function fetchAndRenderResponsesData() {
             <td class="cell-uid">
               <div style="display:inline-flex;align-items:center;gap:4px;">
                 <span class="font-mono id-text" title="${escapeHtml(
-                  uid
-                )}">${escapeHtml(uid)}</span>
+            uid
+          )}">${escapeHtml(uid)}</span>
                 ${compactCopy(uid, "Copy UID")}
               </div>
             </td>
             <td class="cell-project">
               <div style="display:inline-flex;align-items:center;gap:4px;">
                 <span class="font-mono id-text" title="${escapeHtml(
-                  project
-                )}">${escapeHtml(project)}</span>
+            project
+          )}">${escapeHtml(project)}</span>
                 ${compactCopy(project, "Copy Project ID")}
               </div>
             </td>
@@ -1686,8 +1656,8 @@ async function fetchAndRenderResponsesData() {
             <td class="cell-ip">
               <div style="display:inline-flex;align-items:center;gap:4px;">
                 <span class="font-mono id-text" title="${escapeHtml(
-                  ip
-                )}">${escapeHtml(ip)}</span>
+            ip
+          )}">${escapeHtml(ip)}</span>
                 ${compactCopy(ip, "Copy IP")}
               </div>
             </td>
@@ -1706,8 +1676,8 @@ async function fetchAndRenderResponsesData() {
             </td>
             <td class="cell-status">${renderBadge(statusVal)}</td>
             <td class="cell-ts"><span style="font-variant-numeric:tabular-nums;font-size:0.8rem;">${escapeHtml(
-              ts
-            )}</span></td>
+            ts
+          )}</span></td>
           </tr>
         `;
         })
@@ -1735,8 +1705,8 @@ async function fetchAndRenderResponsesData() {
           const ts = formatDateTime(r.created_at || r.updated_at);
           const verificationStatus = (r.verification_status || r._source_type || 'VERIFIED').toUpperCase();
           const isVerified = verificationStatus === 'VERIFIED';
-          
-          const verificationHtml = isVerified 
+
+          const verificationHtml = isVerified
             ? `<span class="badge" style="background:var(--success-bg);color:var(--success-text);font-size:0.75rem;">✓ VERIFIED</span>`
             : `<span class="badge" style="background:var(--danger-bg);color:var(--danger-text);font-size:0.75rem;">⚠ UNVERIFIED</span>`;
 
@@ -1770,8 +1740,8 @@ async function fetchAndRenderResponsesData() {
               <div class="mc-row">
                 <span class="mc-label">User Agent</span>
                 <span class="mc-value mono" style="word-break:break-all;">${escapeHtml(
-                  ua
-                )}</span>
+            ua
+          )}</span>
               </div>
             </div>
           </div>
@@ -1823,8 +1793,8 @@ async function renderAnalytics(page = 1) {
           <div class="stat-card-icon icon-info">📊</div>
           <div class="stat-label">Total Sessions</div>
           <div class="stat-value">${formatNumber(
-            funnel.total_sessions || 0
-          )}</div>
+      funnel.total_sessions || 0
+    )}</div>
         </div>
         <div class="stat-card">
           <div class="stat-card-icon icon-success">✅</div>
@@ -1835,38 +1805,38 @@ async function renderAnalytics(page = 1) {
           <div class="stat-card-icon icon-accent">ðŸ“ˆ</div>
           <div class="stat-label">Conversion Rate</div>
           <div class="stat-value">${(
-            (funnel.completed / funnel.total_sessions) * 100 || 0
-          ).toFixed(1)}%</div>
+        (funnel.completed / funnel.total_sessions) * 100 || 0
+      ).toFixed(1)}%</div>
         </div>
       </div>
       <div class="grid-2">
         <div class="table-container">
           <div class="table-header"><h3>By Study</h3></div>
           ${renderTable(
-            ["Study", "Started", "Completed", "Rate"],
-            (byStudy.analytics || []).map((a) => ({
-              study: renderIdCell(a.study_id),
-              started: a.sessions_started || 0,
-              completed: a.sessions_completed || 0,
-              rate: a.conversion_rate
-                ? a.conversion_rate.toFixed(1) + "%"
-                : "0%",
-            })),
-            "study_id"
-          )}
+        ["Study", "Started", "Completed", "Rate"],
+        (byStudy.analytics || []).map((a) => ({
+          study: renderIdCell(a.study_id),
+          started: a.sessions_started || 0,
+          completed: a.sessions_completed || 0,
+          rate: a.conversion_rate
+            ? a.conversion_rate.toFixed(1) + "%"
+            : "0%",
+        })),
+        "study_id"
+      )}
         </div>
         <div class="table-container">
           <div class="table-header"><h3>By Vendor</h3></div>
           ${renderTable(
-            ["Vendor", "Sessions", "Completes", "Avg CPI"],
-            (byVendor.analytics || []).map((a) => ({
-              vendor: renderIdCell(a.vendor_id),
-              sessions: a.sessions_count || 0,
-              completes: a.completes || 0,
-              cpi: formatCurrency(a.avg_cpi_cents || 0),
-            })),
-            "vendor_id"
-          )}
+        ["Vendor", "Sessions", "Completes", "Avg CPI"],
+        (byVendor.analytics || []).map((a) => ({
+          vendor: renderIdCell(a.vendor_id),
+          sessions: a.sessions_count || 0,
+          completes: a.completes || 0,
+          cpi: formatCurrency(a.avg_cpi_cents || 0),
+        })),
+        "vendor_id"
+      )}
         </div>
       </div>
     `;
@@ -1962,23 +1932,23 @@ async function renderFinance(page = 1) {
         </div>
         <div class="section-card-body">
           ${renderTable(
-            ["Project Code", "Project Name", "Client Rate", "Vendor Rate", "Est. Margin / ID", "Currency", "Actions"],
-            projects.map((p) => {
-              const cRate = Number(p.client_rate) || 0;
-              const vRate = Number(p.vendor_rate) || 0;
-              const margin = cRate - vRate;
-              return {
-                code: `<strong>${escapeHtml(p.project_code)}</strong>`,
-                name: escapeHtml(p.name),
-                client_rate: formatINR(cRate),
-                vendor_rate: formatINR(vRate),
-                margin: `<span style="color:${margin >= 0 ? 'var(--color-success)' : 'var(--color-danger)'}; font-weight:600;">${formatINR(margin)}</span>`,
-                currency: p.currency || 'INR',
-                actions: `<button class="btn btn-sm btn-secondary" onclick="openSetRatesModal('${p.id}', '${escapeHtml(p.project_code)}', ${cRate}, ${vRate}, '${p.currency || 'INR'}')">⚠️ Set Rates</button>`,
-              };
-            }),
-            "id"
-          )}
+      ["Project Code", "Project Name", "Client Rate", "Vendor Rate", "Est. Margin / ID", "Currency", "Actions"],
+      projects.map((p) => {
+        const cRate = Number(p.client_rate) || 0;
+        const vRate = Number(p.vendor_rate) || 0;
+        const margin = cRate - vRate;
+        return {
+          code: `<strong>${escapeHtml(p.project_code)}</strong>`,
+          name: escapeHtml(p.name),
+          client_rate: formatINR(cRate),
+          vendor_rate: formatINR(vRate),
+          margin: `<span style="color:${margin >= 0 ? 'var(--color-success)' : 'var(--color-danger)'}; font-weight:600;">${formatINR(margin)}</span>`,
+          currency: p.currency || 'INR',
+          actions: `<button class="btn btn-sm btn-secondary" onclick="openSetRatesModal('${p.id}', '${escapeHtml(p.project_code)}', ${cRate}, ${vRate}, '${p.currency || 'INR'}')">⚠️ Set Rates</button>`,
+        };
+      }),
+      "id"
+    )}
         </div>
       </div>
 
@@ -1990,25 +1960,25 @@ async function renderFinance(page = 1) {
         </div>
         <div class="section-card-body">
           ${renderTable(
-            ["Invoice #", "Project", "Client", "Period", "Approved Qty", "Rate", "Total Amount", "Status", "Actions"],
-            invoices.map((inv) => ({
-              inv_num: `<strong>${escapeHtml(inv.invoice_number)}</strong>`,
-              proj: escapeHtml(inv.project_code || inv.project_name || '—'),
-              client: escapeHtml(inv.client_name || '—'),
-              period: `${formatDate(inv.billing_period_start)} – ${formatDate(inv.billing_period_end)}`,
-              qty: formatNumber(inv.total_approved_completes),
-              rate: formatINR(inv.client_rate),
-              total: `<strong>${formatINR(inv.total_amount)}</strong>`,
-              status: renderBadge(inv.status),
-              actions: `
+      ["Invoice #", "Project", "Client", "Period", "Approved Qty", "Rate", "Total Amount", "Status", "Actions"],
+      invoices.map((inv) => ({
+        inv_num: `<strong>${escapeHtml(inv.invoice_number)}</strong>`,
+        proj: escapeHtml(inv.project_code || inv.project_name || '—'),
+        client: escapeHtml(inv.client_name || '—'),
+        period: `${formatDate(inv.billing_period_start)} – ${formatDate(inv.billing_period_end)}`,
+        qty: formatNumber(inv.total_approved_completes),
+        rate: formatINR(inv.client_rate),
+        total: `<strong>${formatINR(inv.total_amount)}</strong>`,
+        status: renderBadge(inv.status),
+        actions: `
                 <div style="display:flex; gap:6px;">
                   <button class="btn btn-sm btn-secondary" onclick="downloadInvoiceExcel('${inv.id}')" title="Download Excel">ðŸ“¥ Excel</button>
                   ${inv.status === 'RAISED' ? `<button class="btn btn-sm btn-success" onclick="markInvoice('${inv.id}', 'PAID')" title="Mark as Paid">âœ“ Paid</button>` : ''}
                 </div>
               `,
-            })),
-            "id"
-          )}
+      })),
+      "id"
+    )}
           <div class="pagination">${renderPagination(page, pagination.pages || 1, "renderFinance")}</div>
         </div>
       </div>
@@ -2481,28 +2451,28 @@ async function renderRejectionManagement(page = 1) {
         </div>
         <div class="section-card-body">
           ${renderTable(
-            ["Select", "UID", "Project", "Vendor", "Final Status", "Commercial Status", "Rejection Reason", "Reviewed At", "Actions"],
-            rows.map((r) => {
-              const isChecked = selectedResponseIds.has(r.id);
-              return {
-                select: `<input type="checkbox" class="row-checkbox" value="${r.id}" ${isChecked ? 'checked' : ''} onchange="toggleRowSelect('${r.id}', this.checked)" style="cursor:pointer;">`,
-                uid: `<code style="font-weight:600;">${escapeHtml(r.uid)}</code>`,
-                project: escapeHtml(r.project_code || '—'),
-                vendor: escapeHtml(r.vendor_name || '—'),
-                survey_status: renderBadge(r.final_status),
-                review_status: renderBadge(r.vendor_acceptance_status),
-                reason: r.rejection_reason_code ? `<span class="badge badge-danger">${escapeHtml(r.rejection_reason_code)}</span>` : '<span style="color:var(--text-muted);">—</span>',
-                date: r.reviewed_at ? formatDateTime(r.reviewed_at) : '<span style="color:var(--text-muted);">Pending</span>',
-                actions: `
+      ["Select", "UID", "Project", "Vendor", "Final Status", "Commercial Status", "Rejection Reason", "Reviewed At", "Actions"],
+      rows.map((r) => {
+        const isChecked = selectedResponseIds.has(r.id);
+        return {
+          select: `<input type="checkbox" class="row-checkbox" value="${r.id}" ${isChecked ? 'checked' : ''} onchange="toggleRowSelect('${r.id}', this.checked)" style="cursor:pointer;">`,
+          uid: `<code style="font-weight:600;">${escapeHtml(r.uid)}</code>`,
+          project: escapeHtml(r.project_code || '—'),
+          vendor: escapeHtml(r.vendor_name || '—'),
+          survey_status: renderBadge(r.final_status),
+          review_status: renderBadge(r.vendor_acceptance_status),
+          reason: r.rejection_reason_code ? `<span class="badge badge-danger">${escapeHtml(r.rejection_reason_code)}</span>` : '<span style="color:var(--text-muted);">—</span>',
+          date: r.reviewed_at ? formatDateTime(r.reviewed_at) : '<span style="color:var(--text-muted);">Pending</span>',
+          actions: `
                   <div style="display:flex; gap:6px;">
                     <button class="btn btn-sm btn-success" onclick="quickApprove('${r.id}')" title="Approve">âœ“ Accept</button>
                     <button class="btn btn-sm btn-danger" onclick="openSingleRejectModal('${r.id}', '${escapeHtml(r.uid)}')" title="Reject">✕ Reject</button>
                   </div>
                 `,
-              };
-            }),
-            "id"
-          )}
+        };
+      }),
+      "id"
+    )}
           <div class="pagination">${renderPagination(page, pagination.pages || 1, "renderRejectionManagement")}</div>
         </div>
       </div>
@@ -2757,43 +2727,43 @@ async function renderVendorSettlements() {
         </div>
         <div class="section-card-body">
           ${renderTable(
-            ["Project", "Vendor", "Rate", "Total Activity", "Verified", "Unverified", "Accepted", "Rejected (Rej %)", "Gross Value", "Rejection Adj.", "Final Payable", "Status", "Actions"],
-            settlements.map((s) => {
-              const rate = Number(s.vendor_rate) || 0;
-              const sub = Number(s.total_submitted) || 0;
-              const ver = Number(s.total_verified) || (Number(s.total_accepted) + Number(s.total_rejected));
-              const unver = Number(s.total_unverified) || 0;
-              const acc = Number(s.total_accepted) || 0;
-              const rej = Number(s.total_rejected) || 0;
-              const payable = Number(s.payable_amount) || 0;
-              const rejVal = Number(s.rejection_deduction || s.rejected_amount) || 0;
-              const grossVal = Number(s.gross_submitted_value || (ver * rate)) || 0;
-              const rejPct = ver > 0 ? ((rej / ver) * 100).toFixed(1) : (Number(s.rejection_percentage) || 0).toFixed(1);
+      ["Project", "Vendor", "Rate", "Total Activity", "Verified", "Unverified", "Accepted", "Rejected (Rej %)", "Gross Value", "Rejection Adj.", "Final Payable", "Status", "Actions"],
+      settlements.map((s) => {
+        const rate = Number(s.vendor_rate) || 0;
+        const sub = Number(s.total_submitted) || 0;
+        const ver = Number(s.total_verified) || (Number(s.total_accepted) + Number(s.total_rejected));
+        const unver = Number(s.total_unverified) || 0;
+        const acc = Number(s.total_accepted) || 0;
+        const rej = Number(s.total_rejected) || 0;
+        const payable = Number(s.payable_amount) || 0;
+        const rejVal = Number(s.rejection_deduction || s.rejected_amount) || 0;
+        const grossVal = Number(s.gross_submitted_value || (ver * rate)) || 0;
+        const rejPct = ver > 0 ? ((rej / ver) * 100).toFixed(1) : (Number(s.rejection_percentage) || 0).toFixed(1);
 
-              return {
-                project: `<strong>${escapeHtml(s.project_code || '—')}</strong>`,
-                vendor: escapeHtml(s.vendor_name || '—'),
-                rate: formatINR(rate),
-                submitted: formatNumber(sub),
-                verified: `<span style="font-weight:600; color:#059669;">${formatNumber(ver)}</span>`,
-                unverified: `<span style="font-weight:600; color:#d97706;" title="Audit Only">${formatNumber(unver)}</span>`,
-                accepted: `<span style="color:var(--color-success); font-weight:600;">${formatNumber(acc)}</span>`,
-                rejected: `<span style="color:var(--color-danger); font-weight:600;">${formatNumber(rej)} (${rejPct}%)</span>`,
-                gross: formatINR(grossVal),
-                adj: `<span style="color:var(--color-danger);">- ${formatINR(rejVal)}</span>`,
-                payable: `<strong style="color:var(--color-success); font-size:1.05rem;">${formatINR(payable)}</strong>`,
-                status: renderBadge(s.status),
-                actions: `
+        return {
+          project: `<strong>${escapeHtml(s.project_code || '—')}</strong>`,
+          vendor: escapeHtml(s.vendor_name || '—'),
+          rate: formatINR(rate),
+          submitted: formatNumber(sub),
+          verified: `<span style="font-weight:600; color:#059669;">${formatNumber(ver)}</span>`,
+          unverified: `<span style="font-weight:600; color:#d97706;" title="Audit Only">${formatNumber(unver)}</span>`,
+          accepted: `<span style="color:var(--color-success); font-weight:600;">${formatNumber(acc)}</span>`,
+          rejected: `<span style="color:var(--color-danger); font-weight:600;">${formatNumber(rej)} (${rejPct}%)</span>`,
+          gross: formatINR(grossVal),
+          adj: `<span style="color:var(--color-danger);">- ${formatINR(rejVal)}</span>`,
+          payable: `<strong style="color:var(--color-success); font-size:1.05rem;">${formatINR(payable)}</strong>`,
+          status: renderBadge(s.status),
+          actions: `
                   <div style="display:flex; gap:6px;">
                     <button class="btn btn-sm btn-secondary" onclick="downloadSettlementExcel('${s.id}')" title="Download 7-Sheet Professional Excel">ðŸ“¥ 7-Sheet Excel</button>
                     ${s.status === 'DRAFT' ? `<button class="btn btn-sm btn-info" onclick="finalizeSettlement('${s.id}')">Finalize</button>` : ''}
                     ${s.status === 'FINALIZED' ? `<button class="btn btn-sm btn-success" onclick="markSettlementPaid('${s.id}')">Pay</button>` : ''}
                   </div>
                 `,
-              };
-            }),
-            "id"
-          )}
+        };
+      }),
+      "id"
+    )}
         </div>
       </div>
     `;
@@ -2877,23 +2847,23 @@ async function renderAudit(page = 1) {
     const content = `
       <div class="section-header"><h3>Audit Log</h3></div>
       ${renderTable(
-        ["Time", "User", "Action", "Resource", "Details"],
-        logs.map((l) => ({
-          time: formatDateTime(l.timestamp),
-          user: l.user_email || l.user || "system",
-          action: renderBadge(l.action),
-          resource: renderIdCell(l.resource_id || l.entity_id),
-          details: escapeHtml(
-            JSON.stringify(l.metadata || l.after || l.before || {})
-          ),
-        })),
-        "id"
-      )}
+      ["Time", "User", "Action", "Resource", "Details"],
+      logs.map((l) => ({
+        time: formatDateTime(l.timestamp),
+        user: l.user_email || l.user || "system",
+        action: renderBadge(l.action),
+        resource: renderIdCell(l.resource_id || l.entity_id),
+        details: escapeHtml(
+          JSON.stringify(l.metadata || l.after || l.before || {})
+        ),
+      })),
+      "id"
+    )}
       <div class="pagination">${renderPagination(
-        page,
-        data.totalPages || 1,
-        "renderAudit"
-      )}</div>
+      page,
+      data.totalPages || 1,
+      "renderAudit"
+    )}</div>
     `;
     $("#content-area").innerHTML = content;
   } catch (e) {
@@ -2911,38 +2881,38 @@ async function renderQuotas(page = 1) {
     const content = `
       <div class="section-header"><h3>Quota Tracking & Management</h3></div>
       ${renderTable(
-        [
-          "Study / Quota Name",
-          "Target Completes",
-          "Achieved",
-          "Remaining",
-          "Status",
-        ],
-        list.map((s) => {
-          const target = s.target_completes || 500;
-          const achieved = s.vendor_count || 0;
-          const remaining = Math.max(0, target - achieved);
-          const pct = target ? (achieved / target) * 100 : 0;
-          const statusText =
-            pct >= 100 ? "FULL" : pct >= 80 ? "LIMITED" : "OPEN";
-          const statusBadge = renderBadge(
-            statusText,
-            statusText === "FULL"
-              ? "danger"
-              : statusText === "LIMITED"
+      [
+        "Study / Quota Name",
+        "Target Completes",
+        "Achieved",
+        "Remaining",
+        "Status",
+      ],
+      list.map((s) => {
+        const target = s.target_completes || 500;
+        const achieved = s.vendor_count || 0;
+        const remaining = Math.max(0, target - achieved);
+        const pct = target ? (achieved / target) * 100 : 0;
+        const statusText =
+          pct >= 100 ? "FULL" : pct >= 80 ? "LIMITED" : "OPEN";
+        const statusBadge = renderBadge(
+          statusText,
+          statusText === "FULL"
+            ? "danger"
+            : statusText === "LIMITED"
               ? "warning"
               : "success"
-          );
-          return {
-            name: s.name || s.study_code,
-            target,
-            achieved,
-            remaining,
-            status: statusBadge,
-          };
-        }),
-        "name"
-      )}
+        );
+        return {
+          name: s.name || s.study_code,
+          target,
+          achieved,
+          remaining,
+          status: statusBadge,
+        };
+      }),
+      "name"
+    )}
     `;
     $("#content-area").innerHTML = content;
   } catch (e) {
@@ -2977,15 +2947,13 @@ async function renderSettings() {
             <h4 style="font-size:0.9375rem; font-weight:600; margin-bottom:16px; color:var(--text-primary);">Account</h4>
             <div class="form-group" style="margin-bottom:14px;">
               <label>Email</label>
-              <input type="email" value="${
-                currentUser?.email || ""
-              }" disabled>
+              <input type="email" value="${currentUser?.email || ""
+    }" disabled>
             </div>
             <div class="form-group" style="margin-bottom:14px;">
               <label>Role</label>
-              <input type="text" value="${
-                currentUser?.role || "ADMIN"
-              }" disabled>
+              <input type="text" value="${currentUser?.role || "ADMIN"
+    }" disabled>
             </div>
             <div style="padding-top:8px;">
               <p style="font-size:0.8125rem; color:var(--text-muted);">Settings are managed by the system administrator.</p>
@@ -3137,18 +3105,18 @@ async function renderUsers(page = 1) {
                 </td>
               </tr>
             ` : users.map(u => {
-              const isSuspended = u.status === "SUSPENDED";
-              const roleBadge = u.role === "ADMIN"
-                ? '<span class="badge badge-purple" style="font-weight: 700;">ADMIN</span>'
-                : '<span class="badge badge-info" style="font-weight: 700;">VENDOR</span>';
-              const statusBadge = isSuspended
-                ? '<span class="badge badge-danger">â— SUSPENDED</span>'
-                : '<span class="badge badge-success">â— ACTIVE</span>';
-              const vendorDisplay = u.role === "ADMIN"
-                ? '<span style="color: var(--text-muted); font-size: 0.85rem;">—</span>'
-                : (u.vendor_name ? `<span style="font-weight: 600; color: var(--text-primary);">${escapeHtml(u.vendor_name)}</span>` : '<span style="color: var(--color-warning);">Unassigned</span>');
+      const isSuspended = u.status === "SUSPENDED";
+      const roleBadge = u.role === "ADMIN"
+        ? '<span class="badge badge-purple" style="font-weight: 700;">ADMIN</span>'
+        : '<span class="badge badge-info" style="font-weight: 700;">VENDOR</span>';
+      const statusBadge = isSuspended
+        ? '<span class="badge badge-danger">â— SUSPENDED</span>'
+        : '<span class="badge badge-success">â— ACTIVE</span>';
+      const vendorDisplay = u.role === "ADMIN"
+        ? '<span style="color: var(--text-muted); font-size: 0.85rem;">—</span>'
+        : (u.vendor_name ? `<span style="font-weight: 600; color: var(--text-primary);">${escapeHtml(u.vendor_name)}</span>` : '<span style="color: var(--color-warning);">Unassigned</span>');
 
-              return `
+      return `
                 <tr data-user-id="${escapeHtml(u.id)}">
                   <td style="text-align: center;">
                     <input type="checkbox" class="user-row-checkbox" value="${escapeHtml(u.id)}" onchange="handleUserRowSelect(this)" style="cursor: pointer;">
@@ -3197,7 +3165,7 @@ async function renderUsers(page = 1) {
                   </td>
                 </tr>
               `;
-            }).join("")}
+    }).join("")}
           </tbody>
         </table>
       </div>
@@ -3678,15 +3646,15 @@ async function openUserDetailsModal(userId) {
                 No audit activity recorded for this user yet.
               </div>
             ` : activities.map(act => {
-              let icon = "ðŸ“";
-              if (act.action.includes("LOGIN")) icon = "ðŸ”";
-              else if (act.action.includes("PASSWORD")) icon = "ðŸ”‘";
-              else if (act.action.includes("SUSPEND")) icon = "â›”";
-              else if (act.action.includes("ACTIVATE")) icon = "✅";
-              else if (act.action.includes("CREATE")) icon = "âž•";
-              else if (act.action.includes("DELETE")) icon = "ðŸ—‘";
+      let icon = "ðŸ“";
+      if (act.action.includes("LOGIN")) icon = "ðŸ”";
+      else if (act.action.includes("PASSWORD")) icon = "ðŸ”‘";
+      else if (act.action.includes("SUSPEND")) icon = "â›”";
+      else if (act.action.includes("ACTIVATE")) icon = "✅";
+      else if (act.action.includes("CREATE")) icon = "âž•";
+      else if (act.action.includes("DELETE")) icon = "ðŸ—‘";
 
-              return `
+      return `
                 <div class="timeline-item">
                   <div class="timeline-icon">${icon}</div>
                   <div class="timeline-content">
@@ -3701,7 +3669,7 @@ async function openUserDetailsModal(userId) {
                   </div>
                 </div>
               `;
-            }).join("")}
+    }).join("")}
           </div>
         </div>
       </div>
@@ -3818,21 +3786,18 @@ async function downloadUsersExcel() {
 function renderPagination(current, total, handler) {
   if (total <= 1) return "";
   let html = "";
-  html += `<button ${current === 1 ? "disabled" : ""} onclick="${handler}(${
-    current - 1
-  })">←  Prev</button>`;
+  html += `<button ${current === 1 ? "disabled" : ""} onclick="${handler}(${current - 1
+    })">←  Prev</button>`;
   for (let i = 1; i <= total; i++) {
     if (i === 1 || i === total || (i >= current - 1 && i <= current + 1)) {
-      html += `<button class="${
-        i === current ? "active" : ""
-      }" onclick="${handler}(${i})">${i}</button>`;
+      html += `<button class="${i === current ? "active" : ""
+        }" onclick="${handler}(${i})">${i}</button>`;
     } else if (i === current - 2 || i === current + 2) {
       html += "<span>...</span>";
     }
   }
-  html += `<button ${current === total ? "disabled" : ""} onclick="${handler}(${
-    current + 1
-  })">Next  →</button>`;
+  html += `<button ${current === total ? "disabled" : ""} onclick="${handler}(${current + 1
+    })">Next  →</button>`;
   html += `<span class="pagination-info">Page ${current} of ${total}</span>`;
   return html;
 }
@@ -3878,13 +3843,13 @@ async function renderProjects() {
                 </tr>
               </thead>
               <tbody>
-                ${projects.map(function(p) {
-                  const isPaused = p.status === 'PAUSED';
-                  const statusBadge = isPaused
-                    ? `<span class="badge" style="background:rgba(245,158,11,0.15);color:#d97706;border:1px solid rgba(245,158,11,0.35);font-weight:700;padding:4px 10px;border-radius:999px;display:inline-flex;align-items:center;gap:6px;"><span style="color:#f59e0b;font-size:0.75rem;">🟡</span> Paused</span>`
-                    : `<span class="badge" style="background:rgba(16,185,129,0.15);color:#059669;border:1px solid rgba(16,185,129,0.35);font-weight:700;padding:4px 10px;border-radius:999px;display:inline-flex;align-items:center;gap:6px;"><span style="color:#10b981;font-size:0.75rem;">🟢</span> Active</span>`;
+                ${projects.map(function (p) {
+      const isPaused = p.status === 'PAUSED';
+      const statusBadge = isPaused
+        ? `<span class="badge" style="background:rgba(245,158,11,0.15);color:#d97706;border:1px solid rgba(245,158,11,0.35);font-weight:700;padding:4px 10px;border-radius:999px;display:inline-flex;align-items:center;gap:6px;"><span style="color:#f59e0b;font-size:0.75rem;">🟡</span> Paused</span>`
+        : `<span class="badge" style="background:rgba(16,185,129,0.15);color:#059669;border:1px solid rgba(16,185,129,0.35);font-weight:700;padding:4px 10px;border-radius:999px;display:inline-flex;align-items:center;gap:6px;"><span style="color:#10b981;font-size:0.75rem;">🟢</span> Active</span>`;
 
-                  return `
+      return `
                     <tr style="border-bottom:1px solid var(--border-light);transition:background 0.15s;" onmouseover="this.style.background='var(--bg-muted)'" onmouseout="this.style.background='transparent'">
                       <td style="padding:14px 16px;vertical-align:middle;">
                         <span onclick="renderProjectDetail('${escapeHtml(p.id)}')" style="font-family:ui-monospace,monospace;font-size:0.875rem;font-weight:800;background:var(--accent);color:#fff;padding:3px 8px;border-radius:5px;cursor:pointer;letter-spacing:0.03em;">
@@ -3932,7 +3897,7 @@ async function renderProjects() {
                       </td>
                     </tr>
                   `;
-                }).join('')}
+    }).join('')}
               </tbody>
             </table>
           </div>
@@ -3956,7 +3921,7 @@ async function renderProjectDetail(projectId) {
       const countriesRes = await api('/projects/' + projectId + '/countries').catch(() => ({ data: [] }));
       rawCountries = countriesRes.data || [];
     }
-    const countries = rawCountries.map(function(c) {
+    const countries = rawCountries.map(function (c) {
       var l = (c.links && c.links[0]) || {};
       return {
         ...c,
@@ -3974,7 +3939,7 @@ async function renderProjectDetail(projectId) {
       CA: '🇨🇦', AU: '🇦🇺', JP: '🇯🇵', BR: '🇧🇷', SG: '🇸🇬', ES: '🇪🇸', IT: '🇮🇹'
     };
 
-    const countryBlocks = countries.map(function(c) {
+    const countryBlocks = countries.map(function (c) {
       const flag = flagMap[(c.country_code || '').toUpperCase()] || '🌐';
       const opiUrl = baseUrl + '/track?code=' + encodeURIComponent(proj.project_code) + '&country=' + encodeURIComponent(c.country_code) + '&uid={UID}';
       const testUrl = baseUrl + '/track?code=' + encodeURIComponent(proj.project_code) + '&country=' + encodeURIComponent(c.country_code) + '&uid=TEST_PREVIEW';
@@ -4069,14 +4034,14 @@ async function renderProjectDetail(projectId) {
                   Status: ${isPaused ? '🟡 PAUSED' : '🟢 ACTIVE'}
                 </span>
                 ${isAdmin ? (
-                  isPaused
-                    ? `<button class="btn btn-sm" id="btn-detail-resume" onclick="confirmResumeProject('${proj.id}', '${escapeHtml(proj.name)}', true)" style="background:rgba(16,185,129,0.15);color:#059669;border:1px solid rgba(16,185,129,0.4);font-weight:700;padding:5px 14px;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+        isPaused
+          ? `<button class="btn btn-sm" id="btn-detail-resume" onclick="confirmResumeProject('${proj.id}', '${escapeHtml(proj.name)}', true)" style="background:rgba(16,185,129,0.15);color:#059669;border:1px solid rgba(16,185,129,0.4);font-weight:700;padding:5px 14px;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
                         Resume Project
                        </button>`
-                    : `<button class="btn btn-sm" id="btn-detail-pause" onclick="confirmPauseProject('${proj.id}', '${escapeHtml(proj.name)}', true)" style="background:rgba(245,158,11,0.15);color:#d97706;border:1px solid rgba(245,158,11,0.4);font-weight:700;padding:5px 14px;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+          : `<button class="btn btn-sm" id="btn-detail-pause" onclick="confirmPauseProject('${proj.id}', '${escapeHtml(proj.name)}', true)" style="background:rgba(245,158,11,0.15);color:#d97706;border:1px solid rgba(245,158,11,0.4);font-weight:700;padding:5px 14px;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
                         Pause Project
                        </button>`
-                ) : ''}
+      ) : ''}
               </div>
               <h2 style="margin:0 0 6px;font-size:1.4rem;font-weight:700;color:var(--text-primary);line-height:1.3;">
                 ${escapeHtml(proj.name)}
@@ -4146,11 +4111,11 @@ async function renderProjectDetail(projectId) {
 }
 
 // ── Project Action Menus & Modals ───────────────────────────────────────────
-window.toggleProjectMenu = function(event, id) {
+window.toggleProjectMenu = function (event, id) {
   event.stopPropagation();
   var menu = document.getElementById('project-menu-' + id);
   var allMenus = document.querySelectorAll('.project-dropdown-menu');
-  allMenus.forEach(function(m) {
+  allMenus.forEach(function (m) {
     if (m !== menu) m.style.display = 'none';
   });
   if (menu) {
@@ -4158,18 +4123,18 @@ window.toggleProjectMenu = function(event, id) {
   }
 };
 
-window.closeProjectMenus = function() {
+window.closeProjectMenus = function () {
   var allMenus = document.querySelectorAll('.project-dropdown-menu');
-  allMenus.forEach(function(m) { m.style.display = 'none'; });
+  allMenus.forEach(function (m) { m.style.display = 'none'; });
 };
 
-document.addEventListener('click', function() {
+document.addEventListener('click', function () {
   if (typeof window.closeProjectMenus === 'function') {
     window.closeProjectMenus();
   }
 });
 
-window.confirmPauseProject = function(projectId, projectName, fromDetail = false) {
+window.confirmPauseProject = function (projectId, projectName, fromDetail = false) {
   showModal(
     'Pause Project?',
     `<div style="padding:0.5rem 0;">
@@ -4185,7 +4150,7 @@ window.confirmPauseProject = function(projectId, projectName, fromDetail = false
   );
 };
 
-window.executePauseProject = async function(projectId, fromDetail = false) {
+window.executePauseProject = async function (projectId, fromDetail = false) {
   const btn = document.getElementById('btn-modal-pause');
   if (btn) { btn.disabled = true; btn.textContent = 'Pausing...'; }
   try {
@@ -4203,7 +4168,7 @@ window.executePauseProject = async function(projectId, fromDetail = false) {
   }
 };
 
-window.confirmResumeProject = function(projectId, projectName, fromDetail = false) {
+window.confirmResumeProject = function (projectId, projectName, fromDetail = false) {
   showModal(
     'Resume Project?',
     `<div style="padding:0.5rem 0;">
@@ -4219,7 +4184,7 @@ window.confirmResumeProject = function(projectId, projectName, fromDetail = fals
   );
 };
 
-window.executeResumeProject = async function(projectId, fromDetail = false) {
+window.executeResumeProject = async function (projectId, fromDetail = false) {
   const btn = document.getElementById('btn-modal-resume');
   if (btn) { btn.disabled = true; btn.textContent = 'Resuming...'; }
   try {
@@ -4237,7 +4202,7 @@ window.executeResumeProject = async function(projectId, fromDetail = false) {
   }
 };
 
-window.showEditProjectModal = async function(projectId) {
+window.showEditProjectModal = async function (projectId) {
   showModal(
     'Edit Project',
     '<div class="loading-screen" style="min-height:160px;"><div class="spinner-lg"></div></div>'
@@ -4280,7 +4245,7 @@ window.showEditProjectModal = async function(projectId) {
   }
 };
 
-window.submitEditProject = async function(projectId) {
+window.submitEditProject = async function (projectId) {
   const name = ($('#ep-name')?.value || '').trim();
   const client_name = ($('#ep-client-name')?.value || '').trim();
   const client_rate = parseFloat($('#ep-client-rate')?.value || '0');
@@ -4310,18 +4275,18 @@ window.submitEditProject = async function(projectId) {
 };
 
 function copyToClipboard(text, btn) {
-  navigator.clipboard.writeText((text || '').trim()).then(function() {
+  navigator.clipboard.writeText((text || '').trim()).then(function () {
     if (btn) {
       var origHtml = btn.innerHTML;
       btn.innerHTML = '✅ Copied!';
       btn.classList.add('btn-success');
-      setTimeout(function() {
+      setTimeout(function () {
         btn.innerHTML = origHtml;
         btn.classList.remove('btn-success');
       }, 2000);
     }
     showToast("Link copied to clipboard!", "success");
-  }).catch(function() {
+  }).catch(function () {
     showToast("Failed to copy link automatically. Please select and copy manually.", "warning");
   });
 }
@@ -4340,8 +4305,8 @@ async function showCreateProjectModal() {
   // Pre-load vendor list for dropdowns
   try {
     var vRes = await api('/vendors?active=true');
-    _cpVendorList = (vRes.data || []).filter(function(v) { return v.status === 'ACTIVE'; });
-  } catch(e) { _cpVendorList = []; }
+    _cpVendorList = (vRes.data || []).filter(function (v) { return v.status === 'ACTIVE'; });
+  } catch (e) { _cpVendorList = []; }
 
   showModal(
     'Create Project',
@@ -4400,7 +4365,7 @@ async function showCreateProjectModal() {
 
 function cpVendorOptions(selectedId) {
   var opts = '<option value="">— No vendor —</option>';
-  _cpVendorList.forEach(function(v) {
+  _cpVendorList.forEach(function (v) {
     opts += '<option value="' + v.id + '"' + (v.id === selectedId ? ' selected' : '') + '>' + escapeHtml(v.name) + '</option>';
   });
   return opts;
@@ -4413,7 +4378,7 @@ function cpRenderCards() {
     container.innerHTML = '<p style="font-size:0.8rem;color:var(--text-muted);text-align:center;padding:1rem 0;">No countries added yet.</p>';
     return;
   }
-  container.innerHTML = _cpCountries.map(function(c, i) {
+  container.innerHTML = _cpCountries.map(function (c, i) {
     return `<div id="cp-card-${i}" style="border:1px solid var(--border-default);border-radius:0.6rem;padding:1rem;background:var(--bg-surface);position:relative;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;">
         <span style="font-weight:700;font-size:0.95rem;">${escapeHtml(c.name || c.code)} <span style="color:var(--text-muted);font-size:0.8rem;">(${escapeHtml(c.code)})</span></span>
@@ -4465,7 +4430,7 @@ function cpUrlChanged(i, url) {
   if (infoEl) infoEl.innerHTML = _cpCountries[i]._analyzing ? '<span style="color:var(--text-muted);">Analyzing…</span>' : '';
   clearTimeout(_cpUrlTimers[i]);
   if (!url || url.length < 10) return;
-  _cpUrlTimers[i] = setTimeout(function() { cpAnalyzeUrl(i, url); }, 600);
+  _cpUrlTimers[i] = setTimeout(function () { cpAnalyzeUrl(i, url); }, 600);
 }
 
 async function cpAnalyzeUrl(i, url) {
@@ -4478,7 +4443,7 @@ async function cpAnalyzeUrl(i, url) {
       var infoEl = document.getElementById('cp-url-info-' + i);
       if (infoEl) infoEl.innerHTML = cpUrlInfoHtml(_cpCountries[i]);
     }
-  } catch(e) {
+  } catch (e) {
     if (_cpCountries[i]) { _cpCountries[i]._analyzing = false; }
   }
 }
@@ -4499,15 +4464,15 @@ function cpAddCountry() {
   var raw = input.value.trim();
   if (!raw) return;
 
-  var nameMap = {'IN':'India','FR':'France','DE':'Germany','US':'United States','GB':'United Kingdom','UK':'United Kingdom','AU':'Australia','CA':'Canada','SG':'Singapore','AE':'UAE','PH':'Philippines','TH':'Thailand','MY':'Malaysia','ID':'Indonesia','NG':'Nigeria','ZA':'South Africa','BR':'Brazil','MX':'Mexico','AR':'Argentina','CO':'Colombia','PL':'Poland','IT':'Italy','ES':'Spain','NL':'Netherlands','SE':'Sweden','NO':'Norway','DK':'Denmark','FI':'Finland','BE':'Belgium','CH':'Switzerland','AT':'Austria','JP':'Japan','KR':'South Korea','CN':'China','TW':'Taiwan','HK':'Hong Kong','VN':'Vietnam'};
-  var reverseMap = {'INDIA':'IN','FRANCE':'FR','GERMANY':'DE','UNITED STATES':'US','USA':'US','UNITED KINGDOM':'GB','AUSTRALIA':'AU','CANADA':'CA','SINGAPORE':'SG','JAPAN':'JP','BRAZIL':'BR','SPAIN':'ES','ITALY':'IT','NETHERLANDS':'NL'};
+  var nameMap = { 'IN': 'India', 'FR': 'France', 'DE': 'Germany', 'US': 'United States', 'GB': 'United Kingdom', 'UK': 'United Kingdom', 'AU': 'Australia', 'CA': 'Canada', 'SG': 'Singapore', 'AE': 'UAE', 'PH': 'Philippines', 'TH': 'Thailand', 'MY': 'Malaysia', 'ID': 'Indonesia', 'NG': 'Nigeria', 'ZA': 'South Africa', 'BR': 'Brazil', 'MX': 'Mexico', 'AR': 'Argentina', 'CO': 'Colombia', 'PL': 'Poland', 'IT': 'Italy', 'ES': 'Spain', 'NL': 'Netherlands', 'SE': 'Sweden', 'NO': 'Norway', 'DK': 'Denmark', 'FI': 'Finland', 'BE': 'Belgium', 'CH': 'Switzerland', 'AT': 'Austria', 'JP': 'Japan', 'KR': 'South Korea', 'CN': 'China', 'TW': 'Taiwan', 'HK': 'Hong Kong', 'VN': 'Vietnam' };
+  var reverseMap = { 'INDIA': 'IN', 'FRANCE': 'FR', 'GERMANY': 'DE', 'UNITED STATES': 'US', 'USA': 'US', 'UNITED KINGDOM': 'GB', 'AUSTRALIA': 'AU', 'CANADA': 'CA', 'SINGAPORE': 'SG', 'JAPAN': 'JP', 'BRAZIL': 'BR', 'SPAIN': 'ES', 'ITALY': 'IT', 'NETHERLANDS': 'NL' };
 
   var code = raw.toUpperCase();
   if (reverseMap[code]) code = reverseMap[code];
   if (code === 'UK') code = 'GB';
 
-  if (code.length < 2 || code.length > 3) { if(errEl) errEl.textContent = 'Enter 2–3 char country code (e.g. IN, US, GB)'; return; }
-  if (_cpCountries.some(function(c) { return c.code === code; })) { if(errEl) errEl.textContent = code + ' is already added'; return; }
+  if (code.length < 2 || code.length > 3) { if (errEl) errEl.textContent = 'Enter 2–3 char country code (e.g. IN, US, GB)'; return; }
+  if (_cpCountries.some(function (c) { return c.code === code; })) { if (errEl) errEl.textContent = code + ' is already added'; return; }
   if (errEl) errEl.textContent = '';
   var name = nameMap[code] || code;
   _cpCountries.push({ code: code, name: name, survey_url: '', uid_param: null, uid_placeholder: null, vendor_id: null, target_completes: 500 });
@@ -4537,7 +4502,7 @@ async function submitCreateProject() {
   }
 
   // Collect current URL values from DOM (in case user didn't trigger oninput)
-  _cpCountries.forEach(function(c, i) {
+  _cpCountries.forEach(function (c, i) {
     var urlEl = document.getElementById('cp-url-' + i);
     var vendorEl = document.getElementById('cp-vendor-' + i);
     var targetEl = document.getElementById('cp-target-' + i);
@@ -4551,9 +4516,9 @@ async function submitCreateProject() {
   });
 
   // Validate each country has a survey URL
-  var missing = _cpCountries.filter(function(c) { return !c.survey_url; });
+  var missing = _cpCountries.filter(function (c) { return !c.survey_url; });
   if (missing.length > 0) {
-    var msg = 'Survey URL is required for: ' + missing.map(function(c) { return c.code; }).join(', ');
+    var msg = 'Survey URL is required for: ' + missing.map(function (c) { return c.code; }).join(', ');
     if (errEl) errEl.textContent = msg;
     showToast(msg, 'error');
     return;
@@ -4568,7 +4533,7 @@ async function submitCreateProject() {
         client_name: clientNameEl && clientNameEl.value.trim() ? clientNameEl.value.trim() : null,
         client_rate: clientRateEl && clientRateEl.value ? parseFloat(clientRateEl.value) : 70,
         vendor_rate: vendorRateEl && vendorRateEl.value ? parseFloat(vendorRateEl.value) : 50,
-        countries: _cpCountries.map(function(c) {
+        countries: _cpCountries.map(function (c) {
           return {
             code: c.code,
             survey_url: c.survey_url,
@@ -4592,12 +4557,12 @@ async function submitCreateProject() {
 var _createProjectCountries = [];
 function addCountryToProject() { cpAddCountry(); }
 function removeCountryTag(code) {
-  var i = _cpCountries.findIndex(function(c) { return c.code === code; });
+  var i = _cpCountries.findIndex(function (c) { return c.code === code; });
   if (i >= 0) cpRemoveCountry(i);
 }
-function renderCountryTags() {}
-function debounceAnalyzeSurveyUrl() {}
-function previewUrlAnalysis() {}
+function renderCountryTags() { }
+function debounceAnalyzeSurveyUrl() { }
+function previewUrlAnalysis() { }
 
 // ─── Modal Forms ───────────────────────────────────────────────────────────────
 
@@ -4894,8 +4859,8 @@ async function doLogin() {
     if (payload.security?.passwordExpired) {
       showToast(
         "Your password is " +
-          (payload.security.daysSincePasswordChange || 0) +
-          " days old. Please change it in Settings.",
+        (payload.security.daysSincePasswordChange || 0) +
+        " days old. Please change it in Settings.",
         "warning",
         8000
       );
@@ -5134,8 +5099,7 @@ async function renderRedirectLinks() {
           <span style="font-size:0.8125rem; color:var(--text-muted);">Last 10 received callbacks</span>
         </div>
         <div class="section-card-body no-pad">
-          ${
-            responses.length ? `
+          ${responses.length ? `
             <table class="data-table">
               <thead>
                 <tr>
@@ -5148,11 +5112,11 @@ async function renderRedirectLinks() {
               </thead>
               <tbody>
                 ${responses.slice(0, 10).map(r => {
-                  const isVer = (r.verification_status || r._source_type || "VERIFIED").toUpperCase() === "VERIFIED";
-                  const verHtml = isVer 
-                    ? '<span class="badge" style="background:var(--color-success-bg); color:var(--color-success); font-size:0.75rem;">✓ VERIFIED</span>'
-                    : '<span class="badge" style="background:var(--color-danger-bg); color:var(--color-danger); font-size:0.75rem;">⚠ UNVERIFIED</span>';
-                  return `
+      const isVer = (r.verification_status || r._source_type || "VERIFIED").toUpperCase() === "VERIFIED";
+      const verHtml = isVer
+        ? '<span class="badge" style="background:var(--color-success-bg); color:var(--color-success); font-size:0.75rem;">✓ VERIFIED</span>'
+        : '<span class="badge" style="background:var(--color-danger-bg); color:var(--color-danger); font-size:0.75rem;">⚠ UNVERIFIED</span>';
+      return `
                     <tr onclick="openResponseDetailModal('${r.session_id || r.id}')" style="cursor:pointer;">
                       <td class="cell-uid font-mono">${escapeHtml(r.uid || "—")}</td>
                       <td>${verHtml}</td>
@@ -5161,11 +5125,11 @@ async function renderRedirectLinks() {
                       <td>${formatDateTime(r.created_at)}</td>
                     </tr>
                   `;
-                }).join("")}
+    }).join("")}
               </tbody>
             </table>
             ` : '<div class="empty-state" style="padding:30px;"><div class="empty-state-icon">📡</div><h3>No callbacks received yet</h3><p>Incoming redirects will be logged here in real time.</p></div>'
-          }
+      }
         </div>
       </div>
     `;

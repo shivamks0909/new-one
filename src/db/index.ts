@@ -201,11 +201,11 @@ export class Database {
   async deleteUser(id: string): Promise<boolean> {
     try {
       // Nullify references in related tables if any
-      await this.pool.query(`UPDATE credential_vault SET last_accessed_by = NULL WHERE last_accessed_by = $1`, [id]).catch(() => {});
-      await this.pool.query(`UPDATE responses SET reviewed_by = NULL WHERE reviewed_by::text = $1`, [id]).catch(() => {});
-      await this.pool.query(`UPDATE rate_audit SET changed_by = NULL WHERE changed_by::text = $1`, [id]).catch(() => {});
-      await this.pool.query(`UPDATE invoices SET generated_by = NULL WHERE generated_by::text = $1`, [id]).catch(() => {});
-      await this.pool.query(`UPDATE vendor_settlements SET generated_by = NULL WHERE generated_by::text = $1`, [id]).catch(() => {});
+      await this.pool.query(`UPDATE credential_vault SET last_accessed_by = NULL WHERE last_accessed_by = $1`, [id]).catch(() => { });
+      await this.pool.query(`UPDATE responses SET reviewed_by = NULL WHERE reviewed_by::text = $1`, [id]).catch(() => { });
+      await this.pool.query(`UPDATE rate_audit SET changed_by = NULL WHERE changed_by::text = $1`, [id]).catch(() => { });
+      await this.pool.query(`UPDATE invoices SET generated_by = NULL WHERE generated_by::text = $1`, [id]).catch(() => { });
+      await this.pool.query(`UPDATE vendor_settlements SET generated_by = NULL WHERE generated_by::text = $1`, [id]).catch(() => { });
 
       const { rowCount } = await this.pool.query(
         `DELETE FROM users WHERE id = $1`,
@@ -1264,7 +1264,15 @@ export class Database {
       WITH unified_responses AS (
         SELECT id, session_id, study_id, project_id, vendor_id, uid, final_status, created_at, updated_at, terminal_at, first_terminal_event, NULL as rejection_reason, NULL as raw_payload, NULL as fake_ip, NULL as fake_ua, 'VERIFIED' as _source_type FROM responses
         UNION ALL
-        SELECT id, NULL as session_id, study_id, project_id, vendor_id, uid, 'UNVERIFIED' as final_status, created_at, created_at as updated_at, created_at as terminal_at, 'fake_click' as first_terminal_event, rejection_reason, raw_payload, ip_address as fake_ip, user_agent as fake_ua, 'UNVERIFIED' as _source_type FROM fake_click_events
+        SELECT id, NULL as session_id, study_id, project_id, vendor_id, uid, 
+          COALESCE(
+            NULLIF(UPPER(raw_payload->>'claimed_status'), ''),
+            NULLIF(UPPER(raw_payload->>'outcome'), ''),
+            NULLIF(UPPER(raw_payload->'query'->>'status'), ''),
+            NULLIF(UPPER(raw_payload->>'status'), ''),
+            'UNVERIFIED'
+          ) as final_status, 
+          created_at, created_at as updated_at, created_at as terminal_at, 'fake_click' as first_terminal_event, rejection_reason, raw_payload, ip_address as fake_ip, user_agent as fake_ua, 'UNVERIFIED' as _source_type FROM fake_click_events
       )
       SELECT 
         r.id,
@@ -1340,7 +1348,15 @@ export class Database {
       WITH unified_responses AS (
         SELECT id, session_id, study_id, vendor_id, uid, final_status, created_at, updated_at, terminal_at, first_terminal_event, NULL as rejection_reason, NULL as raw_payload, NULL as fake_ip, NULL as fake_ua, 'VERIFIED' as _source_type FROM responses
         UNION ALL
-        SELECT id, NULL as session_id, study_id, vendor_id, uid, 'UNVERIFIED' as final_status, created_at, created_at as updated_at, created_at as terminal_at, 'fake_click' as first_terminal_event, rejection_reason, raw_payload, ip_address as fake_ip, user_agent as fake_ua, 'UNVERIFIED' as _source_type FROM fake_click_events
+        SELECT id, NULL as session_id, study_id, vendor_id, uid, 
+          COALESCE(
+            NULLIF(UPPER(raw_payload->>'claimed_status'), ''),
+            NULLIF(UPPER(raw_payload->>'outcome'), ''),
+            NULLIF(UPPER(raw_payload->'query'->>'status'), ''),
+            NULLIF(UPPER(raw_payload->>'status'), ''),
+            'UNVERIFIED'
+          ) as final_status, 
+          created_at, created_at as updated_at, created_at as terminal_at, 'fake_click' as first_terminal_event, rejection_reason, raw_payload, ip_address as fake_ip, user_agent as fake_ua, 'UNVERIFIED' as _source_type FROM fake_click_events
       )
       SELECT COUNT(*) 
       FROM unified_responses r
@@ -1374,23 +1390,23 @@ export class Database {
 
       const isUnv = r.verification_status === 'UNVERIFIED' || r._source_type === 'UNVERIFIED' || r.final_status === 'UNVERIFIED';
 
-      // Map status enum to exact required display names: COMPLETE, TERMINATE, OVER QUOTA, QUALITY TERM, SURVEY CLOSED, UNVERIFIED
-      let statusDisplay = isUnv ? 'UNVERIFIED' : 'COMPLETE';
-      if (!isUnv) {
-        const sUpper = (r.final_status || '').toUpperCase();
-        if (['COMPLETE', 'COMPLETED', 'SUCCESS'].includes(sUpper)) {
-          statusDisplay = 'COMPLETE';
-        } else if (['TERMINATE', 'TERMINATED', 'FAILED'].includes(sUpper)) {
-          statusDisplay = 'TERMINATE';
-        } else if (['QUOTA_FULL', 'QUOTA', 'OVER QUOTA'].includes(sUpper)) {
-          statusDisplay = 'OVER QUOTA';
-        } else if (['SECURITY_REJECT', 'QUALITY_TERM', 'PURPLE'].includes(sUpper)) {
-          statusDisplay = 'QUALITY TERM';
-        } else if (['EXPIRED', 'CLOSED', 'SURVEY CLOSED'].includes(sUpper)) {
-          statusDisplay = 'SURVEY CLOSED';
-        } else {
-          statusDisplay = sUpper || 'COMPLETE';
-        }
+      // Map status enum to exact required display names: COMPLETE, TERMINATE, OVER QUOTA, QUALITY TERM, SURVEY CLOSED
+      const sUpper = (r.final_status || '').toUpperCase();
+      let statusDisplay = 'COMPLETE';
+      if (['COMPLETE', 'COMPLETED', 'SUCCESS'].includes(sUpper)) {
+        statusDisplay = 'COMPLETE';
+      } else if (['TERMINATE', 'TERMINATED', 'FAILED'].includes(sUpper)) {
+        statusDisplay = 'TERMINATE';
+      } else if (['QUOTA_FULL', 'QUOTA', 'OVER QUOTA', 'QUOTAFULL'].includes(sUpper)) {
+        statusDisplay = 'OVER QUOTA';
+      } else if (['SECURITY_REJECT', 'QUALITY_TERM', 'QUALITYTERM', 'QUALITYFAIL', 'QUALITY_FAIL', 'PURPLE'].includes(sUpper)) {
+        statusDisplay = 'QUALITY TERM';
+      } else if (['EXPIRED', 'CLOSED', 'SURVEY CLOSED'].includes(sUpper)) {
+        statusDisplay = 'SURVEY CLOSED';
+      } else if (sUpper && sUpper !== 'UNVERIFIED') {
+        statusDisplay = sUpper;
+      } else {
+        statusDisplay = isUnv ? 'COMPLETE' : 'UNKNOWN';
       }
 
       const projectDisplay = r.study_code || r.external_offer_id || r.study_title || r.study_id;
@@ -1412,9 +1428,10 @@ export class Database {
       return {
         ...r,
         is_unverified: isUnv,
-        final_status: isUnv ? 'UNVERIFIED' : r.final_status,
+        final_status: statusDisplay,
         status: statusDisplay,
         raw_status: r.final_status,
+        verification_status: isUnv ? 'UNVERIFIED' : 'VERIFIED',
         rejection_reason: r.rejection_reason || (isUnv ? 'Direct client link — no tracking token' : null),
         project: r.project_code || projectDisplay,
         project_code: r.project_code || r.study_code || r.external_offer_id || projectDisplay,

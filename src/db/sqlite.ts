@@ -373,4 +373,54 @@ export const sqliteDb = {
     const now = new Date().toISOString();
     for (let i = 0; i < orderedIds.length; i++) { stmt.run(i + 1, now, orderedIds[i], studyId); }
   },
+  recordFakeClick: async (event: any) => {
+    const id = crypto.randomUUID();
+    const now = new Date().toISOString();
+    const claimedStatus = (
+      event.claimed_status ||
+      event.raw_payload?.claimed_status ||
+      event.raw_payload?.outcome ||
+      event.raw_payload?.status ||
+      event.raw_payload?.attempted_status ||
+      event.raw_payload?.query?.status ||
+      'UNKNOWN'
+    ).toUpperCase();
+    const verification = event.verification || (
+      event.rejection_reason?.includes('REPLAY') || event.rejection_reason?.includes('FRAUD') || event.rejection_reason?.includes('SIGNATURE')
+        ? 'FRAUD'
+        : 'UNVERIFIED'
+    );
+    run(
+      `INSERT INTO fake_click_events (id, study_id, vendor_id, project_id, uid, normalized_uid, rejection_reason, claimed_status, verification, raw_payload, ip_address, ip_hash, user_agent, provider, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [
+    id,
+    event.study_id || null,
+    event.vendor_id || null,
+    event.project_id || null,
+    event.uid,
+    event.normalized_uid,
+    event.rejection_reason,
+    claimedStatus,
+    verification,
+    JSON.stringify(event.raw_payload ?? {}),
+    event.ip_address || null,
+    event.ip_hash || null,
+    event.user_agent || null,
+    event.provider || null,
+    now,
+  ]
+);
+return get('SELECT * FROM fake_click_events WHERE id = ?', [id]);
+  },
+getFakeClicks: async (filters?: any) => {
+  let sql = 'SELECT * FROM fake_click_events WHERE 1=1';
+  const params: any[] = [];
+  if (filters?.study_id) { sql += ' AND study_id = ?'; params.push(filters.study_id); }
+  if (filters?.uid) { sql += ' AND uid = ?'; params.push(filters.uid); }
+  if (filters?.rejection_reason) { sql += ' AND rejection_reason = ?'; params.push(filters.rejection_reason); }
+  sql += ' ORDER BY created_at DESC';
+  const rows = all(sql, params);
+  return { rows, total: rows.length };
+},
 };

@@ -4117,7 +4117,7 @@ router.get('/callback/:provider', callbackRateLimit, asyncHandler(async (req: Re
     raw_payload: { provider, uid, status, query: req.query },
     ip_address: req.ip || '',
     user_agent: req.get('User-Agent'),
-    provider,
+    provider: String(provider || ''),
   });
 
   const redirectParams = new URLSearchParams({

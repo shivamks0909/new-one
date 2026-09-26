@@ -34,37 +34,37 @@ export function normalizeUid(uid: string): { normalized: string; original: strin
 // ─── Status Normalization ─────────────────────────────────────────────────────
 
 const STATUS_MAP: Record<string, string> = {
-  complete:        'COMPLETE',
-  completed:       'COMPLETE',
-  c:               'COMPLETE',
-  '1':             'COMPLETE',
-  success:         'COMPLETE',
-  finish:          'COMPLETE',
-  finished:        'COMPLETE',
-  terminate:       'TERMINATE',
-  terminated:      'TERMINATE',
-  t:               'TERMINATE',
-  '2':             'TERMINATE',
-  screened:        'TERMINATE',
-  quota:           'QUOTA_FULL',
-  quota_full:      'QUOTA_FULL',
-  quotafull:       'QUOTA_FULL',
-  qf:              'QUOTA_FULL',
-  '3':             'QUOTA_FULL',
-  over_quota:      'QUOTA_FULL',
-  security:        'SECURITY_REJECT',
+  complete: 'COMPLETE',
+  completed: 'COMPLETE',
+  c: 'COMPLETE',
+  '1': 'COMPLETE',
+  success: 'COMPLETE',
+  finish: 'COMPLETE',
+  finished: 'COMPLETE',
+  terminate: 'TERMINATE',
+  terminated: 'TERMINATE',
+  t: 'TERMINATE',
+  '2': 'TERMINATE',
+  screened: 'TERMINATE',
+  quota: 'QUOTA_FULL',
+  quota_full: 'QUOTA_FULL',
+  quotafull: 'QUOTA_FULL',
+  qf: 'QUOTA_FULL',
+  '3': 'QUOTA_FULL',
+  over_quota: 'QUOTA_FULL',
+  security: 'SECURITY_REJECT',
   security_reject: 'SECURITY_REJECT',
-  securityreject:  'SECURITY_REJECT',
-  fraud:           'SECURITY_REJECT',
-  '4':             'SECURITY_REJECT',
-  blocked:         'SECURITY_REJECT',
-  invalid:         'INVALID',
-  close:           'CLOSED',
-  closed:          'CLOSED',
-  expired:         'EXPIRED',
-  in_progress:     'IN_PROGRESS',
-  inprogress:      'IN_PROGRESS',
-  started:         'STARTED',
+  securityreject: 'SECURITY_REJECT',
+  fraud: 'SECURITY_REJECT',
+  '4': 'SECURITY_REJECT',
+  blocked: 'SECURITY_REJECT',
+  invalid: 'INVALID',
+  close: 'CLOSED',
+  closed: 'CLOSED',
+  expired: 'EXPIRED',
+  in_progress: 'IN_PROGRESS',
+  inprogress: 'IN_PROGRESS',
+  started: 'STARTED',
 };
 
 export function normalizeStatus(raw: string): string {
@@ -796,15 +796,15 @@ export async function processCallback(
   const resolvedProjectId = session.metadata_json?.project_id || undefined;
 
   await db.updateResponseRecord(session.id, {
-    project_id:           resolvedProjectId,
-    final_status:        transition.finalStatus,
+    project_id: resolvedProjectId,
+    final_status: transition.finalStatus,
     first_terminal_event: transition.firstTerminalEvent,
-    terminal_at:          transition.terminalAt,
-    is_counted:           transition.isCounted,
-    counted_at:           transition.isCounted ? new Date() : null,
-    rejection_reason:     transition.rejectionReason,
-    callback_source:      provider,
-    loi_seconds:          loiSeconds,
+    terminal_at: transition.terminalAt,
+    is_counted: transition.isCounted,
+    counted_at: transition.isCounted ? new Date() : null,
+    rejection_reason: transition.rejectionReason,
+    callback_source: provider,
+    loi_seconds: loiSeconds,
   });
 
   // ── Step 5: Update session current_status ────────────────────────────────
@@ -848,7 +848,7 @@ export async function processCallback(
 
 // ─── TrackingService class (kept for backward compatibility) ──────────────────
 export class TrackingService {
-  normalizeUid   = normalizeUid;
+  normalizeUid = normalizeUid;
   normalizeStatus = normalizeStatus;
   generateIdempotencyKey = generateIdempotencyKey;
   processCallback = processCallback;
